@@ -103,14 +103,16 @@ export default function UserManagementPage() {
   const { data: adminCustomer, isLoading: isAdminCustomerLoading } = useDoc<Customer>(adminUserDocRef);
 
   const isLoading = isUserLoading || isAdminCustomerLoading;
-  
+
   useEffect(() => {
-    if (!isLoading && (!user || adminCustomer?.phoneNumber !== "770326828")) {
+    // If loading is finished and the user is not the admin, redirect.
+    if (!isLoading && adminCustomer?.phoneNumber !== "770326828") {
       router.replace("/account");
     }
-  }, [isLoading, user, adminCustomer, router]);
+  }, [isLoading, adminCustomer, router]);
 
 
+  // While loading, show a loading screen.
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -119,8 +121,8 @@ export default function UserManagementPage() {
     );
   }
 
-  // This will only render if the user is authorized and loading is complete.
-  if (user && adminCustomer?.phoneNumber === "770326828") {
+  // If loading is complete and user is the admin, render the page.
+  if (adminCustomer?.phoneNumber === "770326828") {
     return (
       <div className="bg-background text-foreground min-h-screen">
         <header className="p-4 flex items-center justify-between relative">
@@ -143,10 +145,11 @@ export default function UserManagementPage() {
     );
   }
 
-  // Fallback for the redirect, although useEffect should handle it.
+  // If loading is complete but user is not admin, they are being redirected.
+  // Showing a message here prevents a flash of an empty screen.
   return (
     <div className="flex items-center justify-center h-screen">
-      <p>إعادة توجيه...</p>
+      <p>غير مصرح لك بالدخول. جاري إعادة التوجيه...</p>
     </div>
   );
 }
