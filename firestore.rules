@@ -5,12 +5,15 @@
  * This ruleset enforces a strict user-ownership model for customer data, with an exception for a specific admin user (identified by UID corresponding to phone number 770326828) who has full read access to all customer data for management purposes.
  *
  * Data Structure:
- * All customer data is stored under the `/customers/{customerId}` path, where `{customerId}` is the unique identifier for the customer.
+ * - /customers/{customerId}: Stores public and private data for each customer.
+ * - /customers/{customerId}/operations/{operationId}: A log of financial transactions for a customer.
+ * - /customers/{customerId}/notifications/{notificationId}: Notifications for a customer.
  *
  * Key Security Decisions:
- * - Customers can only access their own data.
+ * - Customers can only access their own data (documents and subcollections).
  * - The admin user can read any customer's data and list all customers.
- * - The `id` field within the document must match the `customerId` in the path to ensure data consistency.
+ * - The `id` field within a customer document must match the `customerId` in the path to ensure data consistency.
+ * - Users can create their own documents and subcollection documents.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -44,6 +47,11 @@ service cloud.firestore {
 
       match /operations/{operationId} {
         allow read, list, create: if isOwner(customerId);
+      }
+      
+      match /notifications/{notificationId} {
+        allow read, list, create: if isOwner(customerId);
+        allow update: if isOwner(customerId); // Allow user to mark notifications as read
       }
     }
   }

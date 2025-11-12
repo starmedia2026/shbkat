@@ -86,6 +86,52 @@
         "description",
         "status"
       ]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Represents a user notification for a financial transaction or system message.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Type of the notification.",
+          "enum": [
+            "transfer_sent",
+            "transfer_received",
+            "topup_admin",
+            "purchase",
+            "system_message"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the notification."
+        },
+        "body": {
+          "type": "string",
+          "description": "The main content of the notification."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The transaction amount related to the notification, if applicable."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp of the notification."
+        },
+        "read": {
+          "type": "boolean",
+          "description": "Indicates if the notification has been read by the user."
+        }
+      },
+      "required": [
+        "type",
+        "title",
+        "body",
+        "date",
+        "read"
+      ]
     }
   },
   "auth": {
@@ -114,19 +160,39 @@
       {
         "path": "/customers/{customerId}/operations/{operationId}",
         "definition": {
-            "entityName": "Operation",
-            "schema": {
-                "$ref": "#/backend/entities/Operation"
+          "entityName": "Operation",
+          "schema": {
+            "$ref": "#/backend/entities/Operation"
+          },
+          "description": "Stores a log of all financial operations for a specific customer.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "The unique identifier for the customer."
             },
-            "description": "Stores a log of all financial operations for a specific customer.",
+            {
+              "name": "operationId",
+              "description": "The unique identifier for the operation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/customers/{customerId}/notifications/{notificationId}",
+        "definition": {
+            "entityName": "Notification",
+            "schema": {
+                "$ref": "#/backend/entities/Notification"
+            },
+            "description": "Stores notifications for a specific customer.",
             "params": [
                 {
                     "name": "customerId",
                     "description": "The unique identifier for the customer."
                 },
                 {
-                    "name": "operationId",
-                    "description": "The unique identifier for the operation."
+                    "name": "notificationId",
+                    "description": "The unique identifier for the notification."
                 }
             ]
         }

@@ -115,22 +115,34 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
             toast({ variant: "destructive", title: "رصيد غير كافٍ", description: "رصيدك الحالي لا يسمح بإتمام عملية الشراء." });
             return;
         }
-
+        
+        const now = new Date().toISOString();
         const operationDocRef = doc(collection(firestore, `customers/${user.uid}/operations`));
+        const notificationDocRef = doc(collection(firestore, `customers/${user.uid}/notifications`));
         const newBalance = customer.balance - category.price;
 
         const operationData = {
             type: "purchase",
             amount: -category.price,
-            date: new Date().toISOString(),
+            date: now,
             description: `شراء: ${category.name} - ${networkName}`,
             status: "completed"
+        };
+
+        const notificationData = {
+            type: "purchase",
+            title: "شراء باقة",
+            body: `تم شراء ${category.name} من ${networkName} بنجاح.`,
+            amount: -category.price,
+            date: now,
+            read: false,
         };
         
         try {
             const batch = writeBatch(firestore);
             batch.update(customerDocRef!, { balance: newBalance });
             batch.set(operationDocRef, operationData);
+            batch.set(notificationDocRef, notificationData);
             await batch.commit();
 
             toast({

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Bell,
   Eye,
@@ -15,13 +15,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
+import { doc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+
+interface Notification {
+    id: string;
+    read: boolean;
+}
 
 export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [hasNotifications, setHasNotifications] = useState(false); // Changed to false
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
@@ -31,8 +35,19 @@ export default function HomePage() {
   }, [firestore, user?.uid]);
 
   const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
+  
+  const notificationsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(
+        collection(firestore, `customers/${user.uid}/notifications`),
+        where("read", "==", false)
+    );
+  }, [firestore, user?.uid]);
+
+  const { data: notifications, isLoading: areNotificationsLoading } = useCollection<Notification>(notificationsQuery);
 
   const isLoading = isUserLoading || isCustomerLoading;
+  const hasNotifications = !areNotificationsLoading && notifications && notifications.length > 0;
 
   const formatDisplayName = (fullName?: string): string => {
     if (!fullName) return "مستخدم جديد";
@@ -41,6 +56,25 @@ export default function HomePage() {
       return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
     }
     return fullName;
+  };
+  
+  const handleNotificationsClick = async () => {
+    if (!firestore || !user?.uid || !notifications || notifications.length === 0) return;
+    
+    // Mark all unread notifications as read
+    const batch = writeBatch(firestore);
+    notifications.forEach(notification => {
+        if (!notification.read) {
+            const notifRef = doc(firestore, `customers/${user.uid}/notifications`, notification.id);
+            batch.update(notifRef, { read: true });
+        }
+    });
+    
+    try {
+        await batch.commit();
+    } catch (error) {
+        console.error("Error marking notifications as read: ", error);
+    }
   };
 
   return (
@@ -55,7 +89,7 @@ export default function HomePage() {
           )}
         </div>
         <div className="relative">
-          <Link href="/notifications">
+          <Link href="/notifications" onClick={handleNotificationsClick}>
             <Button variant="ghost" size="icon">
               <Bell className="h-6 w-6 text-primary" />
               {hasNotifications && (

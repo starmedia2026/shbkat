@@ -136,7 +136,6 @@ export default function TransferPage() {
                 throw "Document not found!";
             }
             
-            // Check balance again inside transaction
             const currentSenderBalance = senderDoc.data().balance;
             if (currentSenderBalance < transferAmount) {
                 throw new Error("رصيد غير كافٍ");
@@ -145,16 +144,13 @@ export default function TransferPage() {
             const newSenderBalance = currentSenderBalance - transferAmount;
             const newRecipientBalance = recipientDoc.data().balance + transferAmount;
             
-            // Update balances
             transaction.update(senderRef, { balance: newSenderBalance });
             transaction.update(recipientRef, { balance: newRecipientBalance });
 
-            // Create operation logs
-            const senderOperationRef = doc(collection(firestore, `customers/${user.uid}/operations`));
-            const recipientOperationRef = doc(collection(firestore, `customers/${recipient.id}/operations`));
-            
             const now = new Date().toISOString();
 
+            // Create operations
+            const senderOperationRef = doc(collection(firestore, `customers/${user.uid}/operations`));
             transaction.set(senderOperationRef, {
                 type: 'transfer_sent',
                 amount: -transferAmount,
@@ -163,12 +159,34 @@ export default function TransferPage() {
                 status: 'completed'
             });
 
+            const recipientOperationRef = doc(collection(firestore, `customers/${recipient.id}/operations`));
             transaction.set(recipientOperationRef, {
                 type: 'transfer_received',
                 amount: transferAmount,
                 date: now,
                 description: `استلام من ${sender.name} (${sender.phoneNumber})`,
                 status: 'completed'
+            });
+            
+            // Create notifications
+            const senderNotificationRef = doc(collection(firestore, `customers/${user.uid}/notifications`));
+            transaction.set(senderNotificationRef, {
+                type: 'transfer_sent',
+                title: 'تم إرسال حوالة',
+                body: `تم تحويل ${transferAmount.toLocaleString()} ريال إلى ${recipient.name}.`,
+                amount: -transferAmount,
+                date: now,
+                read: false,
+            });
+
+            const recipientNotificationRef = doc(collection(firestore, `customers/${recipient.id}/notifications`));
+            transaction.set(recipientNotificationRef, {
+                type: 'transfer_received',
+                title: 'تم استلام حوالة',
+                body: `تم استلام ${transferAmount.toLocaleString()} ريال من ${sender.name}.`,
+                amount: transferAmount,
+                date: now,
+                read: false,
             });
         });
         

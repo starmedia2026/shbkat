@@ -90,75 +90,69 @@ function UserManagementContent() {
 }
 
 export default function UserManagementPage() {
-  const router = useRouter();
-  const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+    const router = useRouter();
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
 
-  const customerDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, "customers", user.uid);
-  }, [firestore, user?.uid]);
+    const customerDocRef = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return doc(firestore, "customers", user.uid);
+    }, [firestore, user?.uid]);
 
-  const { data: customerData, isLoading: isCustomerLoading } = useDoc(customerDocRef);
+    const { data: adminData, isLoading: isAdminLoading } = useDoc(customerDocRef);
+    
+    const isLoading = isUserLoading || isAdminLoading;
+    const isAdmin = adminData?.phoneNumber === "770326828";
 
-  useEffect(() => {
-    const checkAdmin = () => {
-      // Don't do anything until both user and customer data have loaded
-      if (isUserLoading || isCustomerLoading) return;
+    useEffect(() => {
+        // Wait until loading is finished before checking authorization
+        if (!isLoading) {
+            if (!isAdmin) {
+                router.replace("/account");
+            }
+        }
+    }, [isLoading, isAdmin, router]);
 
-      const isAdminUser = customerData?.phoneNumber === "770326828";
-      setIsAdmin(isAdminUser);
-      setIsAuthLoading(false); // Authorization check is complete
+    // Show a loading state while we verify
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p>جاري التحميل والتحقق...</p>
+            </div>
+        );
+    }
+    
+    // If the user is admin, show the content. Otherwise, this will soon redirect.
+    if (isAdmin) {
+        return (
+            <div className="bg-background text-foreground min-h-screen">
+                <header className="p-4 flex items-center justify-between relative">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute left-4"
+                        onClick={() => router.back()}
+                    >
+                        <ArrowLeft className="h-6 w-6" />
+                    </Button>
+                    <h1 className="text-lg font-bold text-center flex-grow">
+                        إدارة المستخدمين
+                    </h1>
+                </header>
+                <main className="p-4">
+                    <UserManagementContent />
+                </main>
+            </div>
+        );
+    }
 
-      if (!isAdminUser) {
-        router.replace("/account");
-      }
-    };
-
-    checkAdmin();
-  }, [user, customerData, isUserLoading, isCustomerLoading, router]);
-
-  if (isAuthLoading) {
+    // Fallback for non-admins, though the useEffect should handle it.
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p>جاري التحميل والتحقق...</p>
-      </div>
+        <div className="flex items-center justify-center h-screen">
+            <p>غير مصرح لك بالدخول. جاري إعادة التوجيه...</p>
+        </div>
     );
-  }
-
-  if (isAdmin) {
-    return (
-      <div className="bg-background text-foreground min-h-screen">
-        <header className="p-4 flex items-center justify-between relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute left-4"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </Button>
-          <h1 className="text-lg font-bold text-center flex-grow">
-            إدارة المستخدمين
-          </h1>
-        </header>
-        <main className="p-4">
-          <UserManagementContent />
-        </main>
-      </div>
-    );
-  }
-  
-  // This is a fallback, but the useEffect should have already redirected.
-  return (
-      <div className="flex items-center justify-center h-screen">
-          <p>غير مصرح لك بالدخول. جاري إعادة التوجيه...</p>
-      </div>
-  );
 }
-
 
 function CustomerCard({ customer }: { customer: Customer }) {
     const firestore = useFirestore();
@@ -178,6 +172,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
         const topUpAmount = Number(amount);
         const customerDocRef = doc(firestore, "customers", customer.id);
         const operationDocRef = doc(collection(firestore, `customers/${customer.id}/operations`));
+        const notificationDocRef = doc(collection(firestore, `customers/${customer.id}/notifications`));
         const newBalance = customer.balance + topUpAmount;
 
         const operationData = {
@@ -187,11 +182,21 @@ function CustomerCard({ customer }: { customer: Customer }) {
             description: "تغذية الرصيد من قبل الإدارة",
             status: "completed"
         };
+        
+        const notificationData = {
+            type: "topup_admin",
+            title: "تمت إضافة رصيد إلى حسابك",
+            body: `تمت إضافة ${topUpAmount.toLocaleString()} ريال إلى رصيدك من قبل الإدارة.`,
+            amount: topUpAmount,
+            date: new Date().toISOString(),
+            read: false
+        };
 
         try {
             const batch = writeBatch(firestore);
             batch.update(customerDocRef, { balance: newBalance });
             batch.set(operationDocRef, operationData);
+            batch.set(notificationDocRef, notificationData);
             await batch.commit();
             
             toast({
