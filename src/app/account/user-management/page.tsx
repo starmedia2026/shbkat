@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,61 +89,77 @@ function UserManagementContent() {
     )
 }
 
-export default function UserManagementPage() {
+function AdminPageContainer() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
   const customerDocRef = useMemoFirebase(() => {
-      if (!firestore || !user?.uid) return null;
-      return doc(firestore, "customers", user.uid);
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'customers', user.uid);
   }, [firestore, user?.uid]);
 
-  const { data: adminData, isLoading: isAdminLoading } = useDoc(customerDocRef);
-  
-  const isLoading = isUserLoading || isAdminLoading;
-  const isAdmin = !isLoading && adminData?.phoneNumber === "770326828";
+  const { data: adminData, isLoading: isAdminDataLoading } = useDoc(customerDocRef);
+
+  // Combine all loading states
+  const isLoading = isUserLoading || isAdminDataLoading;
 
   useEffect(() => {
-      if (!isLoading && !isAdmin) {
-          router.replace("/account");
+    // Only perform actions once everything has loaded
+    if (!isLoading) {
+      if (adminData?.phoneNumber !== '770326828') {
+        // If not an admin, redirect immediately
+        router.replace('/account');
       }
-  }, [isLoading, isAdmin, router]);
+    }
+  }, [isLoading, adminData, router]);
 
+  // While loading, show a full-screen loading indicator to prevent flashes
   if (isLoading) {
-      return (
-          <div className="flex items-center justify-center h-screen">
-              <p>جاري التحميل والتحقق...</p>
-          </div>
-      );
-  }
-  
-  if (isAdmin) {
-      return (
-          <div className="bg-background text-foreground min-h-screen">
-              <header className="p-4 flex items-center justify-between relative">
-                  <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute left-4"
-                      onClick={() => router.back()}
-                  >
-                      <ArrowLeft className="h-6 w-6" />
-                  </Button>
-                  <h1 className="text-lg font-bold text-center flex-grow">
-                      إدارة المستخدمين
-                  </h1>
-              </header>
-              <main className="p-4">
-                  <UserManagementContent />
-              </main>
-          </div>
-      );
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>جاري التحميل والتحقق...</p>
+      </div>
+    );
   }
 
-  // Fallback for non-admins, though the useEffect should handle it.
+  // Only render the content if the user is confirmed to be an admin
+  if (adminData?.phoneNumber === '770326828') {
+    return (
+      <div className="bg-background text-foreground min-h-screen">
+        <header className="p-4 flex items-center justify-between relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-4"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-lg font-bold text-center flex-grow">
+            إدارة المستخدمين
+          </h1>
+        </header>
+        <main className="p-4">
+          <UserManagementContent />
+        </main>
+      </div>
+    );
+  }
+
+  // Fallback, in case the useEffect redirect hasn't fired yet
   return null;
 }
+
+
+export default function UserManagementPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-screen"><p>جاري التحميل...</p></div>}>
+            <AdminPageContainer />
+        </Suspense>
+    );
+}
+
 
 function CustomerCard({ customer }: { customer: Customer }) {
     const firestore = useFirestore();
