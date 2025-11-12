@@ -94,8 +94,6 @@ export default function UserManagementPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   const adminUserDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -104,38 +102,30 @@ export default function UserManagementPage() {
   
   const { data: adminCustomer, isLoading: isAdminCustomerLoading } = useDoc<Customer>(adminUserDocRef);
 
+  const isLoading = isUserLoading || isAdminCustomerLoading;
+  
+  const isAuthorized = !isLoading && user && adminCustomer?.phoneNumber === "770326828";
+  const shouldRedirect = !isLoading && (!user || adminCustomer?.phoneNumber !== "770326828");
+
   useEffect(() => {
-    const checkAuth = () => {
-      // Don't do anything until both user and their customer data have loaded
-      if (isUserLoading || isAdminCustomerLoading) {
-        return;
-      }
-      
-      // If no user is logged in, redirect to home
-      if (!user) {
-        router.push("/");
-        return;
-      }
-      
-      // Check if the user is the admin
-      if (adminCustomer?.phoneNumber === "770326828") {
-        setIsAdmin(true);
-      } else {
-        // If not admin, redirect to the account page
-        router.push("/account");
-      }
+    if (shouldRedirect) {
+      router.replace("/account");
+    }
+  }, [shouldRedirect, router]);
 
-      // Finish loading
-      setIsLoading(false);
-    };
-
-    checkAuth();
-  }, [user, isUserLoading, adminCustomer, isAdminCustomerLoading, router]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p>جاري التحميل والتحقق...</p>
+      </div>
+    );
+  }
+
+  if (shouldRedirect) {
+     return (
+      <div className="flex items-center justify-center h-screen">
+        <p>إعادة توجيه...</p>
       </div>
     );
   }
@@ -156,7 +146,7 @@ export default function UserManagementPage() {
         </h1>
       </header>
       <main className="p-4 space-y-6">
-        {isAdmin ? <UserManagementContent /> : <p>ليس لديك صلاحية الوصول لهذه الصفحة.</p>}
+        {isAuthorized ? <UserManagementContent /> : <p>ليس لديك صلاحية الوصول لهذه الصفحة.</p>}
       </main>
     </div>
   );
