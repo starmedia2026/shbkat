@@ -19,32 +19,13 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, Firestore
 import { doc, collection, writeBatch } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { networks } from "@/lib/networks";
 
-const networkData: { [key: string]: { name: string; categories: any[] } } = {
-  behim: {
-    name: "شبكة بيحم",
-    categories: [
-      { id: "100", name: "فئة 100", price: 100, validity: "أسبوع", capacity: "1 GB" },
-      { id: "200", name: "فئة 200", price: 200, validity: "شهر", capacity: "2 GB" },
-      { id: "500", name: "فئة 500", price: 500, validity: "شهر", capacity: "5 GB" },
-      { id: "1000", name: "فئة 1000", price: 1000, validity: "شهرين", capacity: "10 GB" },
-    ],
-  },
-  hadhramout: {
-    name: "شبكة حضرموت",
-    categories: [
-      { id: "150", name: "باقة 150", price: 150, validity: "يومين", capacity: "500 MB" },
-      { id: "300", name: "باقة 300", price: 300, validity: "أسبوع", capacity: "1.5 GB" },
-    ],
-  },
-    "aden-net": {
-    name: "شبكة عدن نت",
-    categories: [
-        { id: "1gb", name: "باقة 1 جيجا", price: 1200, validity: "شهر", capacity: "1 GB" },
-        { id: "5gb", name: "باقة 5 جيجا", price: 5000, validity: "شهر", capacity: "5 GB" },
-    ],
-    },
-};
+const networkData = networks.reduce((acc, network) => {
+    acc[network.id] = network;
+    return acc;
+  }, {} as { [key: string]: { name: string; categories: any[] } });
+  
 
 interface Customer {
     id: string;

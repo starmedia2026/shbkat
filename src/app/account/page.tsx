@@ -13,6 +13,7 @@ import {
   Phone,
   MapPin,
   Users,
+  Wifi,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -37,6 +38,7 @@ import { useAuth } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const locationMap: { [key: string]: string } = {
   shibam: "شبام",
@@ -56,7 +58,7 @@ export default function AccountPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
   useEffect(() => {
     setIsClient(true);
@@ -69,16 +71,8 @@ export default function AccountPage() {
 
   const { data: customer, isLoading: isCustomerLoading } =
     useDoc(customerDocRef);
-  const isLoading = isUserLoading || isCustomerLoading;
+  const isLoading = isUserLoading || isCustomerLoading || isAdminLoading;
   
-  useEffect(() => {
-    if (customer) {
-      // Check if the logged-in user's phone number is the admin number
-      setIsAdmin(customer.phoneNumber === "770326828");
-    }
-  }, [customer]);
-
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -180,11 +174,18 @@ export default function AccountPage() {
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
                {isAdmin && (
-                <AccountItem
-                  icon={Users}
-                  label="إدارة المستخدمين"
-                  href="/account/user-management"
-                />
+                <>
+                  <AccountItem
+                    icon={Users}
+                    label="إدارة المستخدمين"
+                    href="/account/user-management"
+                  />
+                  <AccountItem
+                    icon={Wifi}
+                    label="إدارة الشبكات"
+                    href="/account/network-management"
+                  />
+                </>
                )}
               <AccountItem
                 icon={Shield}

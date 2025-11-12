@@ -6,16 +6,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { Button as UIButton } from "@/components/ui/button";
+import { networks as allNetworks } from "@/lib/networks";
 
-const networks = [
-  { id: "behim", name: "شبكة بيحم", logo: "/behim-logo.png", isFavorite: true },
-  { id: "hadhramout", name: "شبكة حضرموت", logo: "/hadhramout-logo.png", isFavorite: false },
-  { id: "aden-net", name: "شبكة عدن نت", logo: "/aden-net-logo.png", isFavorite: false },
-];
 
 export default function NetworksPage() {
   const router = useRouter();
-  const [favoriteNetworks, setFavoriteNetworks] = React.useState(networks.filter(n => n.isFavorite).map(n => n.id));
+  const [favoriteNetworks, setFavoriteNetworks] = React.useState<string[]>([]); // You would likely store this in user preferences
+
+  // In a real app, you'd fetch favorite status from user data
+  // For now, let's just use local state
 
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -39,7 +38,7 @@ export default function NetworksPage() {
         <h1 className="text-lg font-bold text-center flex-grow">الشبكات</h1>
       </header>
       <main className="p-4 space-y-4">
-        {networks.map((network) => (
+        {allNetworks.map((network) => (
           <Link href={`/networks/${network.id}`} key={network.id} className="block">
             <Card className="w-full shadow-md rounded-2xl hover:shadow-lg transition-shadow cursor-pointer bg-card/50 hover:bg-card">
               <CardContent className="p-4 flex items-center justify-between">
