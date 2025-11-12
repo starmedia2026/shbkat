@@ -16,8 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from "@/firebase";
-import { collection, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { collection, doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import {
@@ -90,68 +90,59 @@ function UserManagementContent() {
 }
 
 export default function UserManagementPage() {
-    const router = useRouter();
-    const { user, isUserLoading } = useUser();
-    const firestore = useFirestore();
+  const router = useRouter();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
 
-    const customerDocRef = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
-        return doc(firestore, "customers", user.uid);
-    }, [firestore, user?.uid]);
+  const customerDocRef = useMemoFirebase(() => {
+      if (!firestore || !user?.uid) return null;
+      return doc(firestore, "customers", user.uid);
+  }, [firestore, user?.uid]);
 
-    const { data: adminData, isLoading: isAdminLoading } = useDoc(customerDocRef);
-    
-    const isLoading = isUserLoading || isAdminLoading;
-    const isAdmin = adminData?.phoneNumber === "770326828";
+  const { data: adminData, isLoading: isAdminLoading } = useDoc(customerDocRef);
+  
+  const isLoading = isUserLoading || isAdminLoading;
+  const isAdmin = !isLoading && adminData?.phoneNumber === "770326828";
 
-    useEffect(() => {
-        // Wait until loading is finished before checking authorization
-        if (!isLoading) {
-            if (!isAdmin) {
-                router.replace("/account");
-            }
-        }
-    }, [isLoading, isAdmin, router]);
+  useEffect(() => {
+      if (!isLoading && !isAdmin) {
+          router.replace("/account");
+      }
+  }, [isLoading, isAdmin, router]);
 
-    // Show a loading state while we verify
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <p>جاري التحميل والتحقق...</p>
-            </div>
-        );
-    }
-    
-    // If the user is admin, show the content. Otherwise, this will soon redirect.
-    if (isAdmin) {
-        return (
-            <div className="bg-background text-foreground min-h-screen">
-                <header className="p-4 flex items-center justify-between relative">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute left-4"
-                        onClick={() => router.back()}
-                    >
-                        <ArrowLeft className="h-6 w-6" />
-                    </Button>
-                    <h1 className="text-lg font-bold text-center flex-grow">
-                        إدارة المستخدمين
-                    </h1>
-                </header>
-                <main className="p-4">
-                    <UserManagementContent />
-                </main>
-            </div>
-        );
-    }
+  if (isLoading) {
+      return (
+          <div className="flex items-center justify-center h-screen">
+              <p>جاري التحميل والتحقق...</p>
+          </div>
+      );
+  }
+  
+  if (isAdmin) {
+      return (
+          <div className="bg-background text-foreground min-h-screen">
+              <header className="p-4 flex items-center justify-between relative">
+                  <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-4"
+                      onClick={() => router.back()}
+                  >
+                      <ArrowLeft className="h-6 w-6" />
+                  </Button>
+                  <h1 className="text-lg font-bold text-center flex-grow">
+                      إدارة المستخدمين
+                  </h1>
+              </header>
+              <main className="p-4">
+                  <UserManagementContent />
+              </main>
+          </div>
+      );
+  }
 
-    // Fallback for non-admins, though the useEffect should handle it.
-    return (
-        <div className="flex items-center justify-center h-screen">
-            <p>غير مصرح لك بالدخول. جاري إعادة التوجيه...</p>
-        </div>
-    );
+  // Fallback for non-admins, though the useEffect should handle it.
+  return null;
 }
 
 function CustomerCard({ customer }: { customer: Customer }) {
@@ -159,7 +150,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
     const { toast } = useToast();
     const [amount, setAmount] = useState("");
 
-    const handleTopUp = async () => {
+    const handleTopUp = () => {
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
             toast({
                 variant: "destructive",
@@ -192,26 +183,34 @@ function CustomerCard({ customer }: { customer: Customer }) {
             read: false
         };
 
-        try {
-            const batch = writeBatch(firestore);
-            batch.update(customerDocRef, { balance: newBalance });
-            batch.set(operationDocRef, operationData);
-            batch.set(notificationDocRef, notificationData);
-            await batch.commit();
-            
+        const batch = writeBatch(firestore);
+        batch.update(customerDocRef, { balance: newBalance });
+        batch.set(operationDocRef, operationData);
+        batch.set(notificationDocRef, notificationData);
+        
+        batch.commit().then(() => {
             toast({
                 title: "نجاح",
                 description: `تم تغذية حساب ${customer.name} بمبلغ ${amount} ريال. الرصيد الجديد: ${newBalance.toLocaleString()}`,
             });
             setAmount(""); // Clear input
-        } catch (error) {
-            console.error("Failed to update balance:", error);
+        }).catch((error) => {
+            const contextualError = new FirestorePermissionError({
+                operation: 'write',
+                path: 'batch-write', // Generic path for batch
+                requestResourceData: {
+                  update: { path: customerDocRef.path, data: { balance: newBalance } },
+                  setOp: { path: operationDocRef.path, data: operationData },
+                  setNotif: { path: notificationDocRef.path, data: notificationData }
+                }
+            });
+            errorEmitter.emit('permission-error', contextualError);
             toast({
                 variant: "destructive",
                 title: "فشل تحديث الرصيد",
                 description: "حدث خطأ أثناء محاولة تحديث رصيد العميل.",
             });
-        }
+        });
     };
 
 

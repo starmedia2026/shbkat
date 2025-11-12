@@ -15,8 +15,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc, runTransaction, collection, writeBatch } from "firebase/firestore";
+import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { doc, collection, writeBatch } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
@@ -105,8 +105,8 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
     
     const { data: customer } = useDoc<Customer>(customerDocRef);
 
-    const handlePurchase = async () => {
-        if (!customer || !user) {
+    const handlePurchase = () => {
+        if (!customer || !user || !customerDocRef) {
             toast({ variant: "destructive", title: "خطأ", description: "يجب تسجيل الدخول أولاً." });
             return;
         }
@@ -138,25 +138,33 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
             read: false,
         };
         
-        try {
-            const batch = writeBatch(firestore);
-            batch.update(customerDocRef!, { balance: newBalance });
-            batch.set(operationDocRef, operationData);
-            batch.set(notificationDocRef, notificationData);
-            await batch.commit();
-
+        const batch = writeBatch(firestore);
+        batch.update(customerDocRef, { balance: newBalance });
+        batch.set(operationDocRef, operationData);
+        batch.set(notificationDocRef, notificationData);
+        
+        batch.commit().then(() => {
             toast({
                 title: "نجاح",
                 description: `تم شراء ${category.name} بنجاح.`,
             });
-        } catch (error) {
-            console.error("Purchase failed:", error);
+        }).catch((error) => {
+            const contextualError = new FirestorePermissionError({
+                operation: 'write',
+                path: 'batch-write', // Generic path for batch
+                requestResourceData: {
+                  update: { path: customerDocRef.path, data: { balance: newBalance } },
+                  setOp: { path: operationDocRef.path, data: operationData },
+                  setNotif: { path: notificationDocRef.path, data: notificationData }
+                }
+            });
+            errorEmitter.emit('permission-error', contextualError);
             toast({
                 variant: "destructive",
                 title: "فشل الشراء",
                 description: "حدث خطأ أثناء محاولة إتمام عملية الشراء.",
             });
-        }
+        });
     };
     
     const canBuy = customer && customer.balance >= category.price;
