@@ -2,7 +2,7 @@
  * @fileoverview Firestore Security Rules for the Customer Management App.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for customer data, with an exception for a specific admin user (identified by UID corresponding to phone number 770326828) who has full read access to all customer data for management purposes.
+ * This ruleset enforces a strict user-ownership model for customer data, with an exception for a specific admin user (identified by UID corresponding to phone number 770326828) who has full read and write access to all customer data for management purposes.
  *
  * Data Structure:
  * - /customers/{customerId}: Stores public and private data for each customer.
@@ -12,6 +12,7 @@
  * Key Security Decisions:
  * - Customers can only access their own data (documents and subcollections).
  * - The admin user can read any customer's data and list all customers.
+ * - The admin user can update any customer's data.
  * - The `id` field within a customer document must match the `customerId` in the path to ensure data consistency.
  * - Users can create their own documents and subcollection documents.
  */
@@ -46,12 +47,14 @@ service cloud.firestore {
       allow delete: if isExistingOwner(customerId);
 
       match /operations/{operationId} {
-        allow read, list, create: if isOwner(customerId);
+        allow read, list: if isOwner(customerId) || isAdmin();
+        allow create: if isOwner(customerId) || isAdmin();
       }
       
       match /notifications/{notificationId} {
-        allow read, list, create: if isOwner(customerId);
-        allow update: if isOwner(customerId); // Allow user to mark notifications as read
+        allow read, list: if isOwner(customerId) || isAdmin();
+        allow create: if isOwner(customerId) || isAdmin();
+        allow update: if isOwner(customerId) || isAdmin(); // Allow user/admin to mark notifications as read
       }
     }
   }
