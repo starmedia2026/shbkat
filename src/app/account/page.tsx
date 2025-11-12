@@ -9,6 +9,9 @@ import {
   Shield,
   Sun,
   KeyRound,
+  User,
+  Phone,
+  MapPin,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -26,6 +29,25 @@ export default function AccountPage() {
       </header>
 
       <main className="p-4 space-y-6">
+        <Card className="w-full shadow-lg rounded-2xl bg-primary text-primary-foreground">
+          <CardContent className="p-5 flex items-start space-x-4 space-x-reverse">
+            <div className="mt-1">
+              <User className="h-10 w-10" />
+            </div>
+            <div className="flex-grow">
+              <h2 className="text-lg font-bold">محمد راضي ربيع باشادي</h2>
+              <div className="flex items-center space-x-2 space-x-reverse mt-2 text-sm text-primary-foreground/90">
+                <Phone className="h-4 w-4" />
+                <span dir="ltr">770326828</span>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse mt-1 text-sm text-primary-foreground/90">
+                <MapPin className="h-4 w-4" />
+                <span>حضرموت - شبام</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-4">
             <ul className="divide-y divide-border">
