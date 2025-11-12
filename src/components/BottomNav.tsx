@@ -10,7 +10,7 @@ import { useMemo } from "react";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { isAdmin, isLoading } = useAdmin();
+  const { isAdmin } = useAdmin();
 
   // Hide BottomNav on login, signup, and forgot-password pages
   if (["/", "/signup", "/forgot-password"].includes(pathname)) {
@@ -25,12 +25,13 @@ export function BottomNav() {
   const adminNavItem = { href: "/account/user-management", icon: Users, label: "المستخدمين" };
 
   const navItems = useMemo(() => {
-    // Show admin item only if not loading and user is admin
-    if (!isLoading && isAdmin) {
+    // Show admin item only if user is explicitly an admin.
+    // It won't show during loading because isAdmin will be null.
+    if (isAdmin === true) {
       return [baseNavItems[0], adminNavItem, baseNavItems[1]];
     }
     return baseNavItems;
-  }, [isAdmin, isLoading]);
+  }, [isAdmin]);
 
 
   return (

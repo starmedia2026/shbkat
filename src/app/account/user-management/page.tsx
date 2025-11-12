@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -16,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection, useFirestore, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
 import { collection, doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
@@ -33,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 
 interface Customer {
@@ -65,12 +65,13 @@ export default function UserManagementPage() {
   }, [customers, searchTerm]);
 
   useEffect(() => {
-    if (!isLoading && !isAdmin) {
+    // Only redirect if loading is finished and user is not an admin.
+    if (!isLoading && isAdmin === false) {
       router.replace('/account');
     }
   }, [isLoading, isAdmin, router]);
 
-  if (isLoading) {
+  if (isLoading || isAdmin === null) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <p>جاري التحميل والتحقق...</p>
@@ -78,8 +79,9 @@ export default function UserManagementPage() {
     );
   }
 
-  if (!isAdmin) {
-    // Render nothing while redirecting
+  // If loading is done and the user is not an admin, they will be redirected.
+  // Render null to avoid showing any content during the brief moment before redirection.
+  if (isAdmin === false) {
     return null;
   }
 
