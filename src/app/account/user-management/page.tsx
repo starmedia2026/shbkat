@@ -65,12 +65,13 @@ export default function UserManagementPage() {
   }, [customers, searchTerm]);
 
   useEffect(() => {
-    // Only redirect if loading is finished and user is not an admin.
+    // Only redirect if loading is finished and user is confirmed not to be an admin.
     if (!isLoading && isAdmin === false) {
       router.replace('/account');
     }
   }, [isLoading, isAdmin, router]);
 
+  // Render a stable loading state until admin status is confirmed.
   if (isLoading || isAdmin === null) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -80,7 +81,7 @@ export default function UserManagementPage() {
   }
 
   // If loading is done and the user is not an admin, they will be redirected.
-  // Render null to avoid showing any content during the brief moment before redirection.
+  // Render null to avoid showing content momentarily before redirection.
   if (isAdmin === false) {
     return null;
   }
@@ -147,6 +148,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
         }
 
         const topUpAmount = Number(amount);
+        if (!firestore) return;
         const customerDocRef = doc(firestore, "customers", customer.id);
         const operationDocRef = doc(collection(firestore, `customers/${customer.id}/operations`));
         const notificationDocRef = doc(collection(firestore, `customers/${customer.id}/notifications`));
