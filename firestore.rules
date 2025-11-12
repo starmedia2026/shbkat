@@ -1,0 +1,48 @@
+/**
+ * @fileoverview Firestore Security Rules for the Customer Management App.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for customer data. Each customer document is secured to allow only the customer themselves to read and write their own data.
+ *
+ * Data Structure:
+ * All customer data is stored under the `/customers/{customerId}` path, where `{customerId}` is the unique identifier for the customer.
+ *
+ * Key Security Decisions:
+ * - Customers can only access their own data. Listing all customers is disallowed.
+ * - The `id` field within the document must match the `customerId` in the path to ensure data consistency and prevent unauthorized access. This `id` field is immutable after creation.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Secures customer data, allowing only the customer to read and modify their own document.
+     * @path /customers/{customerId}
+     * @allow (create) - Authenticated user with UID 'user_abc' can create a customer document where the 'id' field matches 'user_abc'.
+     * @allow (get, update, delete) - Authenticated user with UID 'user_abc' can get, update, or delete the customer document where the document ID matches 'user_abc'.
+     * @deny (create) - Authenticated user with UID 'user_xyz' cannot create a customer document where the 'id' field is 'user_abc'.
+     * @deny (get, update, delete) - Authenticated user with UID 'user_xyz' cannot get, update, or delete the customer document where the document ID is 'user_abc'.
+     * @principle Enforces document ownership and validates relational integrity.
+     */
+    match /customers/{customerId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(customerId) {
+        return request.auth.uid == customerId;
+      }
+
+      function isExistingOwner(customerId) {
+        return isOwner(customerId) && resource != null;
+      }
+
+      allow get: if true;
+      allow list: if false;
+
+      allow create: if isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId;
+      allow update: if isExistingOwner(customerId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(customerId);
+    }
+  }
+}
