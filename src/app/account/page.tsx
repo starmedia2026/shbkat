@@ -49,9 +49,9 @@ export default function AccountPage() {
         </Card>
 
         <Card className="w-full shadow-lg rounded-xl">
-          <CardContent className="p-4">
+          <CardContent className="p-0">
             <ul className="divide-y divide-border">
-              <li className="flex items-center justify-between py-4">
+              <li className="flex items-center justify-between py-4 px-4">
                 <div className="flex items-center space-x-4 space-x-reverse">
                   {darkMode ? <Moon /> : <Sun />}
                   <span>الوضع الحالي</span>
@@ -82,7 +82,7 @@ export default function AccountPage() {
                 label="مشاركة التطبيق"
                 href="/share"
               />
-              <li className="flex items-center justify-between py-4 cursor-pointer text-red-500">
+              <li className="flex items-center justify-between py-4 px-4 cursor-pointer text-red-500">
                 <div className="flex items-center space-x-4 space-x-reverse">
                   <LogOut />
                   <span>تسجيل الخروج</span>
@@ -97,16 +97,27 @@ export default function AccountPage() {
   );
 }
 
-function AccountItem({ icon: Icon, label, href }: { icon: React.ElementType, label: string, href: string }) {
+function AccountItem({
+  icon: Icon,
+  label,
+  href,
+}: {
+  icon: React.ElementType;
+  label: string;
+  href: string;
+}) {
   return (
-    <Link href={href} passHref>
-      <li className="flex items-center justify-between py-4 cursor-pointer">
+    <li>
+      <Link
+        href={href}
+        className="flex items-center justify-between py-4 px-4 cursor-pointer"
+      >
         <div className="flex items-center space-x-4 space-x-reverse">
           <Icon />
           <span>{label}</span>
         </div>
         <ChevronLeft />
-      </li>
-    </Link>
+      </Link>
+    </li>
   );
 }
