@@ -104,14 +104,11 @@ export default function UserManagementPage() {
 
   const isLoading = isUserLoading || isAdminCustomerLoading;
   
-  const isAuthorized = !isLoading && user && adminCustomer?.phoneNumber === "770326828";
-  const shouldRedirect = !isLoading && (!user || adminCustomer?.phoneNumber !== "770326828");
-
   useEffect(() => {
-    if (shouldRedirect) {
+    if (!isLoading && (!user || adminCustomer?.phoneNumber !== "770326828")) {
       router.replace("/account");
     }
-  }, [shouldRedirect, router]);
+  }, [isLoading, user, adminCustomer, router]);
 
 
   if (isLoading) {
@@ -122,35 +119,38 @@ export default function UserManagementPage() {
     );
   }
 
-  if (shouldRedirect) {
-     return (
-      <div className="flex items-center justify-center h-screen">
-        <p>إعادة توجيه...</p>
+  // This will only render if the user is authorized and loading is complete.
+  if (user && adminCustomer?.phoneNumber === "770326828") {
+    return (
+      <div className="bg-background text-foreground min-h-screen">
+        <header className="p-4 flex items-center justify-between relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-4"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-lg font-bold text-center flex-grow">
+            إدارة المستخدمين
+          </h1>
+        </header>
+        <main className="p-4 space-y-6">
+          <UserManagementContent />
+        </main>
       </div>
     );
   }
 
+  // Fallback for the redirect, although useEffect should handle it.
   return (
-    <div className="bg-background text-foreground min-h-screen">
-      <header className="p-4 flex items-center justify-between relative">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute left-4"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="h-6 w-6" />
-        </Button>
-        <h1 className="text-lg font-bold text-center flex-grow">
-          إدارة المستخدمين
-        </h1>
-      </header>
-      <main className="p-4 space-y-6">
-        {isAuthorized ? <UserManagementContent /> : <p>ليس لديك صلاحية الوصول لهذه الصفحة.</p>}
-      </main>
+    <div className="flex items-center justify-center h-screen">
+      <p>إعادة توجيه...</p>
     </div>
   );
 }
+
 
 function CustomerCard({ customer }: { customer: Customer }) {
     const firestore = useFirestore();
