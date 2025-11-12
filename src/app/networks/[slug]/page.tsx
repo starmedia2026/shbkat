@@ -52,6 +52,7 @@ export default function NetworkDetailPage() {
         <h1 className="text-xl font-bold text-center flex-grow">
           {network.name}
         </h1>
+        <div className="w-10"></div>
       </header>
       <main className="p-4 space-y-4">
         {network.categories.map((category) => (
@@ -63,7 +64,7 @@ export default function NetworkDetailPage() {
               <div>
                 <p className="font-semibold">{category.name}</p>
                 <p className="text-sm text-muted-foreground" dir="ltr">
-                  {category.price.toLocaleString()} ريال
+                  {category.price.toLocaleString()} YER
                 </p>
               </div>
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-6 rounded-lg">
@@ -82,7 +83,7 @@ function BackButton() {
     return (
         <button
             onClick={() => router.back()}
-            className="absolute left-4 p-2"
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-2"
         >
             <ArrowLeft className="h-6 w-6" />
         </button>

@@ -1,18 +1,29 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ChevronLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, Heart } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import React from "react";
+import { Button as UIButton } from "@/components/ui/button";
 
 const networks = [
-  { id: "behim", name: "شبكة بيحم", logo: "/behim-logo.png" },
-  { id: "hadhramout", name: "شبكة حضرموت", logo: "/hadhramout-logo.png" },
-  { id: "aden-net", name: "شبكة عدن نت", logo: "/aden-net-logo.png" },
+  { id: "behim", name: "شبكة بيحم", logo: "/behim-logo.png", isFavorite: true },
+  { id: "hadhramout", name: "شبكة حضرموت", logo: "/hadhramout-logo.png", isFavorite: false },
+  { id: "aden-net", name: "شبكة عدن نت", logo: "/aden-net-logo.png", isFavorite: false },
 ];
 
 export default function NetworksPage() {
   const router = useRouter();
+  const [favoriteNetworks, setFavoriteNetworks] = React.useState(networks.filter(n => n.isFavorite).map(n => n.id));
+
+  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFavoriteNetworks(prev => 
+      prev.includes(id) ? prev.filter(favId => favId !== id) : [...prev, id]
+    );
+  };
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -39,7 +50,12 @@ export default function NetworksPage() {
                   </div>
                   <span className="font-semibold">{network.name}</span>
                 </div>
-                <ChevronLeft />
+                <div className="flex items-center space-x-2">
+                   <UIButton variant="ghost" size="icon" onClick={(e) => toggleFavorite(network.id, e)}>
+                      <Heart className={favoriteNetworks.includes(network.id) ? "text-red-500 fill-current" : "text-muted-foreground"} />
+                   </UIButton>
+                   <ChevronLeft />
+                </div>
               </CardContent>
             </Card>
           </Link>

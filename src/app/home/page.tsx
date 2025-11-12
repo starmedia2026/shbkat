@@ -43,7 +43,7 @@ export default function HomePage() {
             <div>
               <p className="text-sm text-primary-foreground/80">الرصيد الحالي</p>
               <p className="text-2xl font-bold tracking-wider" dir="ltr">
-                {balanceVisible ? "15,000 ريال" : "********"}
+                {balanceVisible ? "15,000 YER" : "********"}
               </p>
             </div>
             <Button
