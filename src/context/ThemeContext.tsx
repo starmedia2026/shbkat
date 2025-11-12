@@ -4,13 +4,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 interface ThemeContextType {
   darkMode: boolean;
-  toggleDarkMode: () => void;
+  setTheme: (theme: 'dark' | 'light') => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Initialize state based on the class already set on the documentElement
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return document.documentElement.classList.contains('dark');
@@ -18,8 +17,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return false;
   });
 
-  // This effect synchronizes the component state with the class on the <html> tag
-  // when the component mounts. It's a safety measure.
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
     if (isDarkMode !== darkMode) {
@@ -27,22 +24,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [darkMode]);
 
-  const toggleDarkMode = useCallback(() => {
-    setDarkMode(prevMode => {
-      const newMode = !prevMode;
-      if (newMode) {
-        document.documentElement.classList.add("dark");
-        localStorage.setItem("darkMode", "true");
-      } else {
-        document.documentElement.classList.remove("dark");
-        localStorage.setItem("darkMode", "false");
-      }
-      return newMode;
-    });
+  const setTheme = useCallback((theme: 'dark' | 'light') => {
+    const isDark = theme === 'dark';
+    setDarkMode(isDark);
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("darkMode", "true");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("darkMode", "false");
+    }
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ darkMode, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

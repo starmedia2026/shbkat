@@ -12,9 +12,10 @@ import {
   User,
   Phone,
   MapPin,
+  Laptop,
+  Smartphone
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import Link from "next/link";
 import React from "react";
 import { useTheme } from "@/context/ThemeContext";
@@ -25,6 +26,7 @@ import { signOut } from "firebase/auth";
 import { useAuth } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const locationMap: { [key: string]: string } = {
   shibam: "شبام",
@@ -37,7 +39,7 @@ const locationMap: { [key: string]: string } = {
 };
 
 export default function AccountPage() {
-  const { darkMode, toggleDarkMode } = useTheme();
+  const { darkMode, setTheme } = useTheme();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
@@ -75,6 +77,15 @@ export default function AccountPage() {
     return locationMap[locationKey] || locationKey;
   }
 
+  const formatDisplayName = (fullName?: string): string => {
+    if (!fullName) return "";
+    const nameParts = fullName.trim().split(" ");
+    if (nameParts.length > 1) {
+      return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
+    }
+    return fullName;
+  };
+
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
       <header className="p-4 flex items-center justify-center relative">
@@ -110,19 +121,36 @@ export default function AccountPage() {
         </Card>
 
         <Card className="w-full shadow-lg rounded-xl">
+          <CardHeader>
+            <h3 className="font-semibold text-center text-sm text-muted-foreground">الوضع المفضل</h3>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+             <div className="grid grid-cols-2 gap-4">
+                <div 
+                  onClick={() => setTheme('light')}
+                  className={cn(
+                    "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
+                    !darkMode ? "bg-primary/10 border-primary" : "border-transparent bg-muted/50 hover:bg-muted"
+                  )}>
+                   <Sun className="mx-auto h-6 w-6 mb-2"/>
+                   <span className="text-sm font-semibold">فاتح</span>
+                </div>
+                <div 
+                  onClick={() => setTheme('dark')}
+                  className={cn(
+                    "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
+                    darkMode ? "bg-primary/10 border-primary" : "border-transparent bg-muted/50 hover:bg-muted"
+                  )}>
+                   <Moon className="mx-auto h-6 w-6 mb-2"/>
+                   <span className="text-sm font-semibold">داكن</span>
+                </div>
+             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-0">
             <ul className="divide-y divide-border text-sm">
-              <li className="flex items-center justify-between py-3 px-4">
-                <div className="flex items-center space-x-4 space-x-reverse">
-                  {darkMode ? <Moon /> : <Sun />}
-                  <span>الوضع الحالي</span>
-                </div>
-                <Switch
-                  checked={darkMode}
-                  onCheckedChange={toggleDarkMode}
-                  aria-label="Toggle dark mode"
-                />
-              </li>
               <AccountItem
                 icon={Shield}
                 label="الشروط والأحكام"
