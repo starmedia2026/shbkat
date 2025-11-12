@@ -15,16 +15,34 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const customerDocRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, "customers", user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
+
+  const isLoading = isUserLoading || isCustomerLoading;
 
   return (
     <div className="bg-background text-foreground min-h-screen pb-24">
       <header className="p-6 flex justify-between items-center">
         <div className="text-right">
           <h2 className="text-base text-muted-foreground">مرحباً بك</h2>
-          <h1 className="text-lg font-bold">محمد باشادي</h1>
+          {isLoading ? (
+            <Skeleton className="h-7 w-40 mt-1" />
+          ) : (
+            <h1 className="text-lg font-bold">{customer?.name || "مستخدم جديد"}</h1>
+          )}
         </div>
         <div className="relative">
           <Button variant="ghost" size="icon">
@@ -42,9 +60,15 @@ export default function HomePage() {
           <CardContent className="p-5 flex justify-between items-center">
             <div>
               <p className="text-xs text-primary-foreground/80">الرصيد الحالي</p>
-              <p className="text-xl font-bold tracking-wider" dir="ltr">
-                {balanceVisible ? "15,000 YER" : "********"}
-              </p>
+              {isLoading ? (
+                 <Skeleton className="h-7 w-32 mt-1 bg-white/30" />
+              ) : (
+                <p className="text-xl font-bold tracking-wider" dir="ltr">
+                  {balanceVisible
+                    ? `${(customer?.balance || 0).toLocaleString()} YER`
+                    : "********"}
+                </p>
+              )}
             </div>
             <Button
               variant="ghost"

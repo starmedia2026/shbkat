@@ -5,13 +5,25 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 export default function TopUpPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const accountNumber = "123456789";
-  const accountName = "محمد باشادي";
+  
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const customerDocRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, "customers", user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
+  const isLoading = isUserLoading || isCustomerLoading;
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -34,16 +46,31 @@ export default function TopUpPage() {
             <CardTitle className="text-center text-lg">بنك الكريمي</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <InfoRow 
-              label="اسم الحساب" 
-              value={accountName} 
-              onCopy={() => copyToClipboard(accountName, "اسم الحساب")} 
-            />
-            <InfoRow 
-              label="رقم الحساب" 
-              value={accountNumber} 
-              onCopy={() => copyToClipboard(accountNumber, "رقم الحساب")} 
-            />
+             {isLoading ? (
+              <>
+                <div className="space-y-2">
+                   <Skeleton className="h-4 w-1/4" />
+                   <Skeleton className="h-6 w-3/4" />
+                </div>
+                 <div className="space-y-2">
+                   <Skeleton className="h-4 w-1/4" />
+                   <Skeleton className="h-6 w-1/2" />
+                </div>
+              </>
+            ) : (
+               <>
+                <InfoRow 
+                  label="اسم الحساب" 
+                  value={customer?.name || ''} 
+                  onCopy={() => copyToClipboard(customer?.name || '', "اسم الحساب")} 
+                />
+                <InfoRow 
+                  label="رقم الحساب" 
+                  value={customer?.accountNumber || ''} 
+                  onCopy={() => copyToClipboard(customer?.accountNumber || '', "رقم الحساب")} 
+                />
+               </>
+            )}
              <p className="text-center text-muted-foreground pt-4 text-xs">
               يمكنك التحويل إلى الحساب أعلاه عبر تطبيق بنك الكريمي ثم إرسال إشعار الدفع.
             </p>
