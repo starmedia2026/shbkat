@@ -15,7 +15,7 @@ import {
   Laptop,
   Smartphone
 } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import React from "react";
 import { useTheme } from "@/context/ThemeContext";
@@ -77,15 +77,6 @@ export default function AccountPage() {
     return locationMap[locationKey] || locationKey;
   }
 
-  const formatDisplayName = (fullName?: string): string => {
-    if (!fullName) return "";
-    const nameParts = fullName.trim().split(" ");
-    if (nameParts.length > 1) {
-      return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
-    }
-    return fullName;
-  };
-
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
       <header className="p-4 flex items-center justify-center relative">
@@ -121,36 +112,34 @@ export default function AccountPage() {
         </Card>
 
         <Card className="w-full shadow-lg rounded-xl">
-          <CardHeader>
-            <h3 className="font-semibold text-center text-sm text-muted-foreground">الوضع المفضل</h3>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-             <div className="grid grid-cols-2 gap-4">
-                <div 
-                  onClick={() => setTheme('light')}
-                  className={cn(
-                    "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
-                    !darkMode ? "bg-primary/10 border-primary" : "border-transparent bg-muted/50 hover:bg-muted"
-                  )}>
-                   <Sun className="mx-auto h-6 w-6 mb-2"/>
-                   <span className="text-sm font-semibold">فاتح</span>
+            <CardContent className="p-4 pt-0">
+                <h3 className="font-semibold text-center text-sm text-muted-foreground my-4">الوضع المفضل</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div 
+                    onClick={() => setTheme('light')}
+                    className={cn(
+                        "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
+                        !darkMode ? "bg-primary/10 border-primary" : "border-transparent bg-muted/50 hover:bg-muted"
+                    )}>
+                    <Sun className="mx-auto h-6 w-6 mb-2"/>
+                    <span className="text-sm font-semibold">فاتح</span>
+                    </div>
+                    <div 
+                    onClick={() => setTheme('dark')}
+                    className={cn(
+                        "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
+                        darkMode ? "bg-primary/10 border-primary" : "border-transparent bg-muted/50 hover:bg-muted"
+                    )}>
+                    <Moon className="mx-auto h-6 w-6 mb-2"/>
+                    <span className="text-sm font-semibold">داكن</span>
+                    </div>
                 </div>
-                <div 
-                  onClick={() => setTheme('dark')}
-                  className={cn(
-                    "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
-                    darkMode ? "bg-primary/10 border-primary" : "border-transparent bg-muted/50 hover:bg-muted"
-                  )}>
-                   <Moon className="mx-auto h-6 w-6 mb-2"/>
-                   <span className="text-sm font-semibold">داكن</span>
-                </div>
-             </div>
-          </CardContent>
+            </CardContent>
         </Card>
 
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-0">
-            <ul className="divide-y divide-border text-sm">
+            <ul className="divide-y divide-border">
               <AccountItem
                 icon={Shield}
                 label="الشروط والأحكام"
@@ -171,16 +160,22 @@ export default function AccountPage() {
                 label="مشاركة التطبيق"
                 href="/share"
               />
-              <li onClick={handleLogout} className="flex items-center justify-between py-3 px-4 cursor-pointer text-red-500">
-                <div className="flex items-center space-x-4 space-x-reverse">
-                  <LogOut />
-                  <span>تسجيل الخروج</span>
-                </div>
-                <ChevronLeft />
-              </li>
             </ul>
           </CardContent>
         </Card>
+        
+        <Card className="w-full shadow-lg rounded-xl bg-card">
+           <CardContent className="p-0">
+              <div onClick={handleLogout} className="flex items-center justify-between p-4 cursor-pointer text-red-500">
+                <div className="flex items-center space-x-4 space-x-reverse font-semibold">
+                  <LogOut className="h-6 w-6" />
+                  <span>تسجيل الخروج</span>
+                </div>
+                <ChevronLeft className="h-6 w-6" />
+              </div>
+           </CardContent>
+        </Card>
+
       </main>
     </div>
   );
@@ -199,13 +194,13 @@ function AccountItem({
     <li>
       <Link
         href={href}
-        className="flex items-center justify-between py-3 px-4 cursor-pointer"
+        className="flex items-center justify-between py-4 px-4 cursor-pointer"
       >
-        <div className="flex items-center space-x-4 space-x-reverse">
-          <Icon />
+        <div className="flex items-center space-x-4 space-x-reverse text-sm font-medium">
+          <Icon className="h-5 w-5" />
           <span>{label}</span>
         </div>
-        <ChevronLeft />
+        <ChevronLeft className="h-5 w-5" />
       </Link>
     </li>
   );
