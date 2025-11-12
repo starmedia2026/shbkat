@@ -203,16 +203,16 @@ export default function AccountPage() {
               </CardContent>
             </Card>
           </AlertDialogTrigger>
-          <AlertDialogContent>
+          <AlertDialogContent className="rounded-2xl">
             <AlertDialogHeader>
               <AlertDialogTitle>هل أنت متأكد من تسجيل الخروج؟</AlertDialogTitle>
               <AlertDialogDescription>
                 سيؤدي هذا الإجراء إلى تسجيل خروجك من التطبيق. ستحتاج إلى تسجيل الدخول مرة أخرى للوصول إلى حسابك.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter className="flex-row !justify-center space-x-2 space-x-reverse">
-              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLogout}>تأكيد</AlertDialogAction>
+            <AlertDialogFooter className="flex-col space-y-2">
+              <AlertDialogAction onClick={handleLogout} className="w-full">تأكيد</AlertDialogAction>
+              <AlertDialogCancel className="w-full mt-0">إلغاء</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
