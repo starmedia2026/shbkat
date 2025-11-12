@@ -62,7 +62,8 @@ export default function NetworkManagementPage() {
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
 
   useEffect(() => {
-    // Only redirect if loading is finished and user is confirmed not to be an admin.
+    // Wait until loading is finished and then check the admin status.
+    // Redirect only if loading is complete and the user is explicitly not an admin.
     if (!isLoading && isAdmin === false) {
       router.replace('/account');
     }
@@ -140,6 +141,7 @@ export default function NetworkManagementPage() {
   };
 
   // Render a stable loading state until admin status is confirmed.
+  // This prevents the page from flashing content or redirecting prematurely.
   if (isLoading || isAdmin === null) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -148,8 +150,8 @@ export default function NetworkManagementPage() {
     );
   }
 
-  // If loading is done and the user is not an admin, they will be redirected.
-  // Render null to avoid showing content momentarily before redirection.
+  // If loading is done and the user is not an admin, the useEffect will handle the redirect.
+  // Render nothing here to avoid showing content for a split second before redirection.
   if (isAdmin === false) {
     return null;
   }
