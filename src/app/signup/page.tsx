@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Network } from "lucide-react";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
@@ -24,12 +24,16 @@ export default function LoginPage() {
         </div>
         <Card className="w-full shadow-2xl">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>
+            <CardTitle className="text-2xl">إنشاء حساب جديد</CardTitle>
             <CardDescription>
-              أدخل بريدك الإلكتروني وكلمة المرور للوصول إلى حسابك
+              أدخل معلوماتك لإنشاء حساب جديد
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
+            <div className="grid gap-2 text-right">
+              <Label htmlFor="name">الاسم</Label>
+              <Input id="name" placeholder="الاسم الكامل" required />
+            </div>
             <div className="grid gap-2 text-right">
               <Label htmlFor="email">البريد الإلكتروني</Label>
               <Input
@@ -40,29 +44,25 @@ export default function LoginPage() {
               />
             </div>
             <div className="grid gap-2 text-right">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">كلمة المرور</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-primary/80 hover:text-primary hover:underline"
-                >
-                  نسيت كلمة المرور؟
-                </Link>
-              </div>
+              <Label htmlFor="password">كلمة المرور</Label>
               <Input id="password" type="password" required />
+            </div>
+            <div className="grid gap-2 text-right">
+              <Label htmlFor="confirm-password">تأكيد كلمة المرور</Label>
+              <Input id="confirm-password" type="password" required />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-              تسجيل الدخول
+              إنشاء حساب
             </Button>
             <div className="text-sm text-muted-foreground">
-              ليس لديك حساب؟{" "}
+              لديك حساب بالفعل؟{" "}
               <Link
-                href="/signup"
+                href="/"
                 className="font-medium text-primary hover:underline"
               >
-                إنشاء حساب
+                تسجيل الدخول
               </Link>
             </div>
           </CardFooter>

@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Network } from "lucide-react";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
@@ -24,9 +24,10 @@ export default function LoginPage() {
         </div>
         <Card className="w-full shadow-2xl">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>
+            <CardTitle className="text-2xl">نسيت كلمة المرور؟</CardTitle>
             <CardDescription>
-              أدخل بريدك الإلكتروني وكلمة المرور للوصول إلى حسابك
+              أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور
+              الخاصة بك
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -39,30 +40,17 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <div className="grid gap-2 text-right">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">كلمة المرور</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-primary/80 hover:text-primary hover:underline"
-                >
-                  نسيت كلمة المرور؟
-                </Link>
-              </div>
-              <Input id="password" type="password" required />
-            </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-              تسجيل الدخول
+              إرسال رابط إعادة التعيين
             </Button>
             <div className="text-sm text-muted-foreground">
-              ليس لديك حساب؟{" "}
               <Link
-                href="/signup"
+                href="/"
                 className="font-medium text-primary hover:underline"
               >
-                إنشاء حساب
+                العودة إلى تسجيل الدخول
               </Link>
             </div>
           </CardFooter>
