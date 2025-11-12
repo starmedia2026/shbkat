@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
 import { collection, doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -135,6 +135,8 @@ function CustomerCard({ customer }: { customer: Customer }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [amount, setAmount] = useState("");
+    const audioRef = useRef<HTMLAudioElement>(null);
+
 
     const handleTopUp = () => {
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
@@ -179,6 +181,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
                 title: "نجاح",
                 description: `تم تغذية حساب ${customer.name} بمبلغ ${amount} ريال. الرصيد الجديد: ${newBalance.toLocaleString()}`,
             });
+            audioRef.current?.play();
             setAmount(""); // Clear input
         }).catch((error) => {
             const contextualError = new FirestorePermissionError({
@@ -202,6 +205,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
 
     return (
         <Card className="w-full shadow-md rounded-2xl bg-card/50">
+            <audio ref={audioRef} src="https://firebasestorage.googleapis.com/v0/b/studio-9989987135-55b79.appspot.com/o/assets%2Fnotification.mp3?alt=media&token=8533685e-f446-4c54-949e-7164bf35e1b4" preload="auto" className="hidden"></audio>
             <CardContent className="p-4">
                 <div className="flex justify-between items-start">
                     <div className="flex items-center space-x-4 space-x-reverse">
