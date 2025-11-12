@@ -69,17 +69,17 @@ export default function HomePage() {
 
       <main className="p-4 space-y-6">
         <Card className="w-full shadow-lg rounded-2xl bg-primary text-primary-foreground">
-          <CardContent className="p-5 flex justify-between items-center">
+          <CardContent className="p-6 flex justify-between items-center">
             <div>
-              <p className="text-xs text-primary-foreground/80">الرصيد الحالي</p>
+              <p className="text-sm text-primary-foreground/80">الرصيد الحالي</p>
               {isLoading ? (
-                 <Skeleton className="h-7 w-32 mt-1 bg-white/30" />
+                 <Skeleton className="h-9 w-36 mt-2 bg-white/30" />
               ) : (
-                <div className="text-xl font-bold tracking-wider" dir="ltr">
+                <div className="text-3xl font-bold tracking-wider mt-1" dir="ltr">
                   {balanceVisible ? (
-                    <span className="flex items-baseline gap-1.5">
-                       <span className="text-xs font-normal">ريال يمني</span>
+                    <span className="flex items-baseline gap-2">
                       <span>{(customer?.balance || 0).toLocaleString()}</span>
+                       <span className="text-sm font-normal">ريال يمني</span>
                     </span>
                   ) : (
                     "********"
@@ -91,7 +91,7 @@ export default function HomePage() {
               variant="ghost"
               size="icon"
               onClick={() => setBalanceVisible(!balanceVisible)}
-              className="text-primary-foreground hover:bg-white/20 hover:text-primary-foreground"
+              className="text-primary-foreground hover:bg-white/20 hover:text-primary-foreground self-start"
             >
               {balanceVisible ? (
                 <Eye className="h-6 w-6" />
