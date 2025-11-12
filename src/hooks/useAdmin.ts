@@ -5,6 +5,8 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useMemo } from "react";
 
+const ADMIN_PHONE_NUMBERS = ["770326828", "779838290"];
+
 /**
  * Custom hook to determine if the current user is an admin.
  * @returns An object containing:
@@ -28,11 +30,11 @@ export function useAdmin() {
     if (isLoading) {
       return null; // Return null while loading to indicate an indeterminate state
     }
-    if (!customer) {
-      return false; // Not an admin if there's no customer data
+    if (!customer?.phoneNumber) {
+      return false; // Not an admin if there's no customer data or phone number
     }
-    // Check if the user is the admin based on the specific phone number
-    return customer.phoneNumber === "770326828";
+    // Check if the user's phone number is in the list of admin numbers
+    return ADMIN_PHONE_NUMBERS.includes(customer.phoneNumber);
   }, [customer, isLoading]);
 
   return {

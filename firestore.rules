@@ -3,7 +3,7 @@
  * @fileoverview Firestore Security Rules for the Customer Management App.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for customer data, with an exception for a specific admin user (identified by phone number "770326828") who has full read and write access to all customer data for management purposes.
+ * This ruleset enforces a strict user-ownership model for customer data, with an exception for specific admin users (identified by a list of phone numbers) who have full read and write access to all customer data for management purposes.
  *
  * Data Structure:
  * - /customers/{customerId}: Stores public and private data for each customer.
@@ -12,8 +12,8 @@
  *
  * Key Security Decisions:
  * - Customers can only access their own data (documents and subcollections).
- * - The admin user can read any customer's data and list all customers.
- * - The admin user can update any customer's data.
+ * - Admin users can read any customer's data and list all customers.
+ * - Admin users can update any customer's data.
  * - The `id` field within a customer document must match the `customerId` in the path to ensure data consistency.
  * - Users can create their own documents and subcollection documents.
  */
@@ -33,10 +33,10 @@ service cloud.firestore {
       return isOwner(customerId) && resource != null;
     }
 
-    // Admin is identified by their specific phone number stored in their customer document
+    // Admins are identified by a list of specific phone numbers stored in their customer document
     function isAdmin() {
        return exists(/databases/$(database)/documents/customers/$(request.auth.uid)) && 
-              get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
+              get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber in ["770326828", "779838290"];
     }
 
     match /customers/{customerId} {
