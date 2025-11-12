@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo, Suspense } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,57 +42,27 @@ interface Customer {
     balance: number;
 }
 
-function UserManagementContent() {
-    const firestore = useFirestore();
-    const [searchTerm, setSearchTerm] = useState("");
-    
-    const customersCollectionRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return collection(firestore, "customers");
-    }, [firestore]);
-    
-    const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(customersCollectionRef);
-    
-    const filteredCustomers = useMemo(() => {
-        if (!customers) return [];
-        return customers.filter(
-        (customer) =>
-            customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            customer.phoneNumber.includes(searchTerm)
-        );
-    }, [customers, searchTerm]);
-
-    return (
-        <div className="space-y-6">
-            <div className="relative">
-                <Input
-                    type="search"
-                    placeholder="البحث بالاسم أو رقم الهاتف..."
-                    className="w-full pr-10"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            </div>
-
-            {areCustomersLoading ? (
-                <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {filteredCustomers.map((customer) => (
-                        <CustomerCard key={customer.id} customer={customer} />
-                    ))}
-                </div>
-            )}
-        </div>
-    )
-}
-
-function AdminPageContainer() {
+export default function UserManagementPage() {
   const router = useRouter();
   const { isAdmin, isLoading } = useAdmin();
+  const firestore = useFirestore();
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  const customersCollectionRef = useMemoFirebase(() => {
+      if (!firestore) return null;
+      return collection(firestore, "customers");
+  }, [firestore]);
+  
+  const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(customersCollectionRef);
+  
+  const filteredCustomers = useMemo(() => {
+      if (!customers) return [];
+      return customers.filter(
+      (customer) =>
+          customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          customer.phoneNumber.includes(searchTerm)
+      );
+  }, [customers, searchTerm]);
 
   useEffect(() => {
     if (!isLoading && !isAdmin) {
@@ -102,14 +72,18 @@ function AdminPageContainer() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-background">
         <p>جاري التحميل والتحقق...</p>
       </div>
     );
   }
 
-  if (isAdmin) {
-    return (
+  if (!isAdmin) {
+    // Render nothing while redirecting
+    return null;
+  }
+
+  return (
       <div className="bg-background text-foreground min-h-screen">
         <header className="p-4 flex items-center justify-between relative">
           <Button
@@ -125,23 +99,33 @@ function AdminPageContainer() {
           </h1>
         </header>
         <main className="p-4">
-          <UserManagementContent />
+             <div className="space-y-6">
+                <div className="relative">
+                    <Input
+                        type="search"
+                        placeholder="البحث بالاسم أو رقم الهاتف..."
+                        className="w-full pr-10"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                </div>
+
+                {areCustomersLoading ? (
+                    <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {filteredCustomers.map((customer) => (
+                            <CustomerCard key={customer.id} customer={customer} />
+                        ))}
+                    </div>
+                )}
+            </div>
         </main>
       </div>
-    );
-  }
-  
-  // Render nothing while redirecting or if not admin
-  return null;
-}
-
-
-export default function UserManagementPage() {
-    return (
-        <Suspense fallback={<div className="flex items-center justify-center h-screen"><p>جاري التحميل...</p></div>}>
-            <AdminPageContainer />
-        </Suspense>
-    );
+  );
 }
 
 
