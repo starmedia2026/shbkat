@@ -1,47 +1,33 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Phone, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+// WhatsApp icon component for the button
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    {...props}
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 48 48"
-    width="48px"
-    height="48px"
-  >
-    <path
-      fill="#fff"
-      d="M4.868,43.132l2.357-8.626C5.43,31.233,4.482,27.75,4.482,24.085C4.482,13.5,13.068,4.915,23.654,4.915c10.586,0,19.172,8.585,19.172,19.17c0,10.586-8.586,19.172-19.172,19.172c-3.41,0-6.61-0.899-9.358-2.527L4.868,43.132z"
-    />
-    <path
-      fill="#fff"
-      stroke="#4caf50"
-      strokeWidth="1"
-      strokeMiterlimit="10"
-      d="M4.868,43.132l2.357-8.626C5.43,31.233,4.482,27.75,4.482,24.085C4.482,13.5,13.068,4.915,23.654,4.915c10.586,0,19.172,8.585,19.172,19.17c0,10.586-8.586,19.172-19.172,19.172c-3.41,0-6.61-0.899-9.358-2.527L4.868,43.132z"
-    />
-    <path
-      fill="#4caf50"
-      d="M23.654,9.915c-7.813,0-14.172,6.359-14.172,14.17c0,3.156,1.042,6.082,2.835,8.444l-1.66,6.082l6.236-1.623c2.28,1.59,5.019,2.492,7.948,2.492c7.813,0,14.172-6.359,14.172-14.17c0-7.813-6.359-14.17-14.172-14.17z"
-    />
-    <path
-      fill="#fff"
-      d="M18.887,13.521l-1.126,0.088c-0.563,0.044-0.97,0.221-1.332,0.704c-0.383,0.484-1.332,1.289-1.5,3.056c-0.168,1.767,0.31,3.48,0.748,4.156c0.563,0.88,1.244,1.81,2.835,3.313c2.056,1.944,3.524,2.578,5.115,3.313c1.722,0.835,2.492,0.924,3.223,0.792c0.773-0.132,1.988-0.835,2.35-1.588c0.362-0.752,0.362-1.376,0.249-1.588c-0.112-0.211-0.44-0.344-0.927-0.575c-0.487-0.242-2.835-1.387-3.266-1.544c-0.431-0.157-0.748-0.221-1.065,0.221c-0.317,0.453-1.244,1.544-1.522,1.86c-0.278,0.317-0.563,0.362-1.049,0.132c-0.487-0.221-2.056-0.752-3.91-2.404c-1.442-1.289-2.394-2.868-2.672-3.355c-0.278-0.484-0.022-0.729,0.2-0.97c0.21-0.231,0.469-0.586,0.704-0.88c0.234-0.295,0.317-0.484,0.487-0.812c0.168-0.328,0.088-0.613-0.044-0.835c-0.132-0.221-1.065-2.556-1.459-3.48z"
-    />
-  </svg>
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 48 48"
+      fill="currentColor"
+    >
+        <path d="M3.6,37.8L2.4,44.4l6.9-1.8c2.1,1.3,4.5,2,7,2c8.3,0,15-6.7,15-15s-6.7-15-15-15c-8.3,0-15,6.7-15,15 c0,2.8,0.8,5.5,2.2,7.8L3.6,37.8z M11.1,32.4c-0.3-0.5-1.8-2.5-3.1-2.9c-1.3-0.4-2.7,0.4-3.1,0.8c-0.4,0.4-1.2,1-1.5,2.2 c-0.3,1.2,0,3,0.8,4.1c0.8,1.1,1.9,2.4,3.5,4c2,2,3.9,3.2,5.7,4.3c2.4,1.4,3.9,1.3,5.1,0.9c1.2-0.4,2.8-2.2,3.2-2.9 c0.4-0.7,0.4-1.4,0.3-1.6c-0.1-0.2-0.4-0.4-0.8-0.6c-0.5-0.2-2.8-1.4-3.3-1.6c-0.5-0.2-0.8-0.3-1.2,0.3c-0.3,0.6-1.2,1.5-1.5,1.8 c-0.3,0.3-0.6,0.3-1,0.1c-0.4-0.2-1.8-0.7-3.4-2.1c-1.3-1.1-2.2-2.5-2.5-2.9c-0.3-0.5-0.1-0.7,0.2-1c0.2-0.2,0.5-0.6,0.7-0.8 c0.2-0.2,0.3-0.5,0.5-0.8c0.2-0.3,0.1-0.6,0-0.8C14.2,22.1,12,17,11.5,16.1C11.1,15.2,10.8,15.3,10.5,15.3L11.1,32.4z"/>
+    </svg>
 );
+
 
 export default function ContactPage() {
   const router = useRouter();
   const phoneNumber = "770326828";
-  const message = encodeURIComponent("مرحباً، أود التواصل معكم.");
+  const whatsappMessage = encodeURIComponent("مرحباً، أود التواصل معكم.");
 
   const handleWhatsAppRedirect = () => {
-    window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+    window.open(`https://wa.me/${phoneNumber}?text=${whatsappMessage}`, "_blank");
+  };
+    
+  const handleCallRedirect = () => {
+    window.open(`tel:${phoneNumber}`);
   };
 
   return (
@@ -51,24 +37,33 @@ export default function ContactPage() {
         <h1 className="text-lg font-bold text-center flex-grow">تواصل معنا</h1>
         <div className="w-10"></div>
       </header>
-      <main className="p-4 flex flex-col items-center justify-center text-center flex-grow space-y-8 mt-20">
-        <p className="text-muted-foreground text-sm">
-          للمساعدة أو الاستفسار، يمكنك التواصل معنا مباشرة عبر واتساب.
+      <main className="p-4 flex flex-col items-center justify-center text-center flex-grow space-y-8 mt-16">
+        <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+          للمساعدة أو الاستفسار، يمكنك التواصل معنا مباشرة عبر واتساب أو الاتصال.
         </p>
-        <Card
-          onClick={handleWhatsAppRedirect}
-          className="w-full max-w-sm shadow-lg rounded-2xl hover:shadow-xl transition-shadow cursor-pointer bg-card/50 hover:bg-card"
-        >
-          <CardContent className="p-6 flex flex-col items-center justify-center space-y-4">
-            <WhatsAppIcon className="h-24 w-24" />
-            <div className="text-center">
-              <p className="font-bold text-lg">واتساب</p>
-              <p className="font-mono text-xl tracking-widest text-primary font-semibold mt-1">
-                {phoneNumber}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="w-full max-w-sm space-y-4">
+            <Button 
+                onClick={handleCallRedirect}
+                className="w-full py-7 text-base font-bold flex items-center justify-center gap-3 bg-card border-2 border-transparent hover:border-primary hover:bg-primary/10 hover:text-primary transition-all text-foreground"
+                variant="outline"
+                size="lg"
+            >
+                <Phone className="h-6 w-6"/>
+                اتصال
+            </Button>
+            <Button 
+                onClick={handleWhatsAppRedirect}
+                className="w-full py-7 text-base font-bold flex items-center justify-center gap-3 bg-card border-2 border-transparent hover:border-primary hover:bg-primary/10 hover:text-primary transition-all text-foreground"
+                variant="outline"
+                size="lg"
+            >
+                <WhatsAppIcon className="h-6 w-6"/>
+                واتساب
+            </Button>
+        </div>
+        <p className="font-mono text-xl tracking-widest text-primary font-semibold mt-4">
+            {phoneNumber}
+        </p>
       </main>
     </div>
   );
