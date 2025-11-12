@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [hasNotifications, setHasNotifications] = useState(false); // New state for notifications
+  const [hasNotifications, setHasNotifications] = useState(false);
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
@@ -54,17 +54,17 @@ export default function HomePage() {
             <h1 className="text-lg font-bold">{formatDisplayName(customer?.name)}</h1>
           )}
         </div>
-        <div className="relative">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-6 w-6 text-primary" />
-            {hasNotifications && (
-              <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-              </span>
-            )}
-          </Button>
-        </div>
+        {hasNotifications && (
+            <div className="relative">
+                <Button variant="ghost" size="icon">
+                    <Bell className="h-6 w-6 text-primary" />
+                    <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                </Button>
+            </div>
+        )}
       </header>
 
       <main className="p-4 space-y-6">
@@ -75,11 +75,16 @@ export default function HomePage() {
               {isLoading ? (
                  <Skeleton className="h-7 w-32 mt-1 bg-white/30" />
               ) : (
-                <p className="text-xl font-bold tracking-wider" dir="ltr">
-                  {balanceVisible
-                    ? `${(customer?.balance || 0).toLocaleString()} ريال يمني`
-                    : "********"}
-                </p>
+                <div className="text-xl font-bold tracking-wider" dir="ltr">
+                  {balanceVisible ? (
+                    <span className="flex items-baseline gap-1.5">
+                      <span>{(customer?.balance || 0).toLocaleString()}</span>
+                      <span className="text-xs font-normal">ريال يمني</span>
+                    </span>
+                  ) : (
+                    "********"
+                  )}
+                </div>
               )}
             </div>
             <Button

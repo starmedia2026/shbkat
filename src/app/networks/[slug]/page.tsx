@@ -9,24 +9,24 @@ const networkData: { [key: string]: { name: string; categories: any[] } } = {
   behim: {
     name: "شبكة بيحم",
     categories: [
-      { id: "100", name: "فئة 100", price: 100 },
-      { id: "200", name: "فئة 200", price: 200 },
-      { id: "500", name: "فئة 500", price: 500 },
-      { id: "1000", name: "فئة 1000", price: 1000 },
+      { id: "100", name: "فئة 100", price: 100, validity: "أسبوع", capacity: "1 GB" },
+      { id: "200", name: "فئة 200", price: 200, validity: "شهر", capacity: "2 GB" },
+      { id: "500", name: "فئة 500", price: 500, validity: "شهر", capacity: "5 GB" },
+      { id: "1000", name: "فئة 1000", price: 1000, validity: "شهرين", capacity: "10 GB" },
     ],
   },
   hadhramout: {
     name: "شبكة حضرموت",
     categories: [
-      { id: "150", name: "باقة 150", price: 150 },
-      { id: "300", name: "باقة 300", price: 300 },
+      { id: "150", name: "باقة 150", price: 150, validity: "يومين", capacity: "500 MB" },
+      { id: "300", name: "باقة 300", price: 300, validity: "أسبوع", capacity: "1.5 GB" },
     ],
   },
     "aden-net": {
     name: "شبكة عدن نت",
     categories: [
-        { id: "1gb", name: "باقة 1 جيجا", price: 1200 },
-        { id: "5gb", name: "باقة 5 جيجا", price: 5000 },
+        { id: "1gb", name: "باقة 1 جيجا", price: 1200, validity: "شهر", capacity: "1 GB" },
+        { id: "5gb", name: "باقة 5 جيجا", price: 5000, validity: "شهر", capacity: "5 GB" },
     ],
     },
 };
@@ -63,9 +63,11 @@ export default function NetworkDetailPage() {
             <CardContent className="p-4 flex items-center justify-between">
               <div>
                 <p className="font-semibold text-sm">{category.name}</p>
-                <p className="text-xs text-muted-foreground" dir="ltr">
-                  {category.price.toLocaleString()} YER
-                </p>
+                <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                  <p dir="ltr" className="text-right">السعر: {category.price.toLocaleString()} ريال يمني</p>
+                  <p>الصلاحية: {category.validity}</p>
+                  <p>السعة: {category.capacity}</p>
+                </div>
               </div>
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-5 rounded-lg text-sm">
                 شراء
