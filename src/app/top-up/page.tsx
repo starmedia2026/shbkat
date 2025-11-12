@@ -25,13 +25,13 @@ export default function TopUpPage() {
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative">
         <BackButton/>
-        <h1 className="text-xl font-bold text-center flex-grow">غذي حسابك</h1>
+        <h1 className="text-lg font-bold text-center flex-grow">غذي حسابك</h1>
         <div className="w-10"></div>
       </header>
       <main className="p-4 space-y-6">
         <Card className="w-full shadow-lg rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-center">بنك الكريمي</CardTitle>
+            <CardTitle className="text-center text-lg">بنك الكريمي</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <InfoRow 
@@ -44,7 +44,7 @@ export default function TopUpPage() {
               value={accountNumber} 
               onCopy={() => copyToClipboard(accountNumber, "رقم الحساب")} 
             />
-             <p className="text-center text-muted-foreground pt-4">
+             <p className="text-center text-muted-foreground pt-4 text-xs">
               يمكنك التحويل إلى الحساب أعلاه عبر تطبيق بنك الكريمي ثم إرسال إشعار الدفع.
             </p>
           </CardContent>
@@ -58,11 +58,11 @@ function InfoRow({ label, value, onCopy }: { label: string; value: string; onCop
   return (
     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
       <div className="text-right">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="font-semibold text-lg">{value}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="font-semibold text-base">{value}</p>
       </div>
       <Button variant="ghost" size="icon" onClick={onCopy}>
-        <Copy className="h-5 w-5" />
+        <Copy className="h-4 w-4" />
       </Button>
     </div>
   );

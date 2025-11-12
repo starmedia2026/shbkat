@@ -36,7 +36,7 @@ export default function NetworksPage() {
         >
           <ArrowLeft className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl font-bold text-center flex-grow">الشبكات</h1>
+        <h1 className="text-lg font-bold text-center flex-grow">الشبكات</h1>
       </header>
       <main className="p-4 space-y-4">
         {networks.map((network) => (
@@ -45,10 +45,10 @@ export default function NetworksPage() {
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center space-x-4 space-x-reverse">
                   {/* Placeholder for logo */}
-                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center font-bold text-lg">
+                  <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center font-bold text-base">
                     {network.name.charAt(0)}
                   </div>
-                  <span className="font-semibold">{network.name}</span>
+                  <span className="font-semibold text-sm">{network.name}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                    <UIButton variant="ghost" size="icon" onClick={(e) => toggleFavorite(network.id, e)}>

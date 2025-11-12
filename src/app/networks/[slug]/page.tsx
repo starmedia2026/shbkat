@@ -49,7 +49,7 @@ export default function NetworkDetailPage() {
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative">
         <BackButton />
-        <h1 className="text-xl font-bold text-center flex-grow">
+        <h1 className="text-lg font-bold text-center flex-grow">
           {network.name}
         </h1>
         <div className="w-10"></div>
@@ -62,12 +62,12 @@ export default function NetworkDetailPage() {
           >
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="font-semibold">{category.name}</p>
-                <p className="text-sm text-muted-foreground" dir="ltr">
+                <p className="font-semibold text-sm">{category.name}</p>
+                <p className="text-xs text-muted-foreground" dir="ltr">
                   {category.price.toLocaleString()} YER
                 </p>
               </div>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-6 rounded-lg">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-5 rounded-lg text-sm">
                 شراء
               </Button>
             </CardContent>

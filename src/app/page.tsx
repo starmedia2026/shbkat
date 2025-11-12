@@ -18,14 +18,14 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-8 flex items-center gap-3">
-          <Network className="h-12 w-12 text-primary" />
-          <h1 className="text-5xl font-bold tracking-tight text-primary">
+          <Network className="h-10 w-10 text-primary" />
+          <h1 className="text-4xl font-bold tracking-tight text-primary">
             شبكات
           </h1>
         </div>
         <Card className="w-full shadow-2xl rounded-2xl">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>
+            <CardTitle className="text-xl">تسجيل الدخول</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 p-6">
             <div className="grid gap-2 text-right">
@@ -48,7 +48,7 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <div className="text-left text-sm">
+            <div className="text-left text-xs">
                 <Link
                   href="/forgot-password"
                   className="font-medium text-primary hover:underline"
@@ -58,10 +58,10 @@ export default function LoginPage() {
               </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4 p-6 pt-0">
-            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-lg as-child">
+            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base as-child">
               <Link href="/home">دخول</Link>
             </Button>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               ليس لديك حساب؟{" "}
               <Link
                 href="/signup"

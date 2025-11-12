@@ -25,23 +25,23 @@ export default function AccountPage() {
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
       <header className="p-4 flex items-center justify-center relative">
-        <h1 className="text-xl font-bold">حسابي</h1>
+        <h1 className="text-lg font-bold">حسابي</h1>
       </header>
 
       <main className="p-4 space-y-6">
         <Card className="w-full shadow-lg rounded-2xl bg-primary text-primary-foreground">
           <CardContent className="p-5 flex items-start space-x-4 space-x-reverse">
             <div className="mt-1">
-              <User className="h-10 w-10" />
+              <User className="h-8 w-8" />
             </div>
             <div className="flex-grow">
-              <h2 className="text-lg font-bold">محمد راضي ربيع باشادي</h2>
-              <div className="flex items-center space-x-2 space-x-reverse mt-2 text-sm text-primary-foreground/90">
-                <Phone className="h-4 w-4" />
+              <h2 className="text-base font-bold">محمد راضي ربيع باشادي</h2>
+              <div className="flex items-center space-x-2 space-x-reverse mt-2 text-xs text-primary-foreground/90">
+                <Phone className="h-3 w-3" />
                 <span dir="ltr">770326828</span>
               </div>
-              <div className="flex items-center space-x-2 space-x-reverse mt-1 text-sm text-primary-foreground/90">
-                <MapPin className="h-4 w-4" />
+              <div className="flex items-center space-x-2 space-x-reverse mt-1 text-xs text-primary-foreground/90">
+                <MapPin className="h-3 w-3" />
                 <span>حضرموت - شبام</span>
               </div>
             </div>
@@ -50,8 +50,8 @@ export default function AccountPage() {
 
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-0">
-            <ul className="divide-y divide-border">
-              <li className="flex items-center justify-between py-4 px-4">
+            <ul className="divide-y divide-border text-sm">
+              <li className="flex items-center justify-between py-3 px-4">
                 <div className="flex items-center space-x-4 space-x-reverse">
                   {darkMode ? <Moon /> : <Sun />}
                   <span>الوضع الحالي</span>
@@ -82,7 +82,7 @@ export default function AccountPage() {
                 label="مشاركة التطبيق"
                 href="/share"
               />
-              <li className="flex items-center justify-between py-4 px-4 cursor-pointer text-red-500">
+              <li className="flex items-center justify-between py-3 px-4 cursor-pointer text-red-500">
                 <div className="flex items-center space-x-4 space-x-reverse">
                   <LogOut />
                   <span>تسجيل الخروج</span>
@@ -110,7 +110,7 @@ function AccountItem({
     <li>
       <Link
         href={href}
-        className="flex items-center justify-between py-4 px-4 cursor-pointer"
+        className="flex items-center justify-between py-3 px-4 cursor-pointer"
       >
         <div className="flex items-center space-x-4 space-x-reverse">
           <Icon />

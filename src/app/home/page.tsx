@@ -23,8 +23,8 @@ export default function HomePage() {
     <div className="bg-background text-foreground min-h-screen pb-24">
       <header className="p-6 flex justify-between items-center">
         <div className="text-right">
-          <h2 className="text-lg text-muted-foreground">مرحباً بك</h2>
-          <h1 className="text-xl font-bold">محمد باشادي</h1>
+          <h2 className="text-base text-muted-foreground">مرحباً بك</h2>
+          <h1 className="text-lg font-bold">محمد باشادي</h1>
         </div>
         <div className="relative">
           <Button variant="ghost" size="icon">
@@ -41,8 +41,8 @@ export default function HomePage() {
         <Card className="w-full shadow-lg rounded-2xl bg-primary text-primary-foreground">
           <CardContent className="p-5 flex justify-between items-center">
             <div>
-              <p className="text-sm text-primary-foreground/80">الرصيد الحالي</p>
-              <p className="text-2xl font-bold tracking-wider" dir="ltr">
+              <p className="text-xs text-primary-foreground/80">الرصيد الحالي</p>
+              <p className="text-xl font-bold tracking-wider" dir="ltr">
                 {balanceVisible ? "15,000 YER" : "********"}
               </p>
             </div>
@@ -78,9 +78,9 @@ function ServiceButton({ icon: Icon, label, href, iconClassName }: { icon: React
   return (
     <Link href={href} className="block">
       <Card className="shadow-md rounded-2xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card/50 hover:bg-card">
-        <CardContent className="p-4 flex flex-col items-center justify-center space-y-2 h-32">
-          <Icon className={`h-8 w-8 ${iconClassName}`} />
-          <p className="text-sm font-semibold">{label}</p>
+        <CardContent className="p-4 flex flex-col items-center justify-center space-y-2 h-28">
+          <Icon className={`h-7 w-7 ${iconClassName}`} />
+          <p className="text-xs font-semibold">{label}</p>
         </CardContent>
       </Card>
     </Link>

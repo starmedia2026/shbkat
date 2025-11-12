@@ -25,23 +25,23 @@ export default function OperationsPage() {
         >
           <ArrowLeft className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl font-bold text-center flex-grow">العمليات</h1>
+        <h1 className="text-lg font-bold text-center flex-grow">العمليات</h1>
       </header>
       <main className="p-4 space-y-4">
         {operations.map((op) => (
           <Card key={op.id} className="w-full shadow-md rounded-2xl bg-card/50">
             <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center space-x-4 space-x-reverse">
+              <div className="flex items-center space-x-3 space-x-reverse">
                 <div className={`p-2 rounded-full bg-muted ${op.color}`}>
-                  <op.icon className="h-6 w-6" />
+                  <op.icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="font-semibold">{op.type}</p>
-                  <p className="text-sm text-muted-foreground">{op.network}</p>
+                  <p className="font-semibold text-sm">{op.type}</p>
+                  <p className="text-xs text-muted-foreground">{op.network}</p>
                 </div>
               </div>
               <div className="text-left">
-                <p className={`font-bold ${op.amount > 0 ? 'text-green-500' : 'text-red-500'}`} dir="ltr">
+                <p className={`font-bold text-sm ${op.amount > 0 ? 'text-green-500' : 'text-red-500'}`} dir="ltr">
                   {op.amount.toLocaleString()} YER
                 </p>
                 <p className="text-xs text-muted-foreground">{op.date}</p>
@@ -54,8 +54,9 @@ export default function OperationsPage() {
   );
 }
 
+// Simple Button to avoid importing the whole button component just for a back button
 const Button = ({ onClick, children, className, ...props }: any) => (
-  <button onClick={onClick} className={className} {...props}>
-    {children}
-  </button>
-);
+    <button onClick={onClick} className={className} {...props}>
+      {children}
+    </button>
+  );
