@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock, Package, Calendar, Tag } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 
 const networkData: { [key: string]: { name: string; categories: any[] } } = {
@@ -58,20 +58,40 @@ export default function NetworkDetailPage() {
         {network.categories.map((category) => (
           <Card
             key={category.id}
-            className="w-full shadow-md rounded-2xl bg-card/50"
+            className="w-full shadow-md rounded-2xl bg-card/50 overflow-hidden"
           >
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-sm">{category.name}</p>
-                <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                  <p dir="ltr" className="text-right">السعر: {category.price.toLocaleString()} ريال يمني</p>
-                  <p>الصلاحية: {category.validity}</p>
-                  <p>السعة: {category.capacity}</p>
-                </div>
+            <CardContent className="p-0 flex">
+              <div className="bg-primary/10 p-4 flex flex-col justify-center items-center">
+                  <Tag className="h-6 w-6 text-primary mb-1"/>
+                  <span className="text-primary font-bold text-lg">
+                    {category.name.replace('فئة', '').replace('باقة', '').trim()}
+                  </span>
               </div>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-5 rounded-lg text-sm">
-                شراء
-              </Button>
+              <div className="flex-grow p-3 pr-4">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="font-semibold text-base">{category.name}</p>
+                        <p className="text-sm font-bold text-primary mt-1" dir="ltr">
+                            {category.price.toLocaleString()} ريال يمني
+                        </p>
+                    </div>
+                     <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-5 rounded-lg text-xs">
+                        شراء
+                    </Button>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-border/50 flex space-x-4 space-x-reverse text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>الصلاحية: {category.validity}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <Package className="h-3.5 w-3.5" />
+                        <span>السعة: {category.capacity}</span>
+                    </div>
+                </div>
+
+              </div>
             </CardContent>
           </Card>
         ))}
