@@ -70,15 +70,6 @@ export default function AccountPage() {
     }
   };
 
-  const formatDisplayName = (fullName?: string): string => {
-    if (!fullName) return "";
-    const nameParts = fullName.trim().split(" ");
-    if (nameParts.length > 1) {
-      return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
-    }
-    return fullName;
-  };
-  
   const getArabicLocation = (locationKey?: string): string => {
     if (!locationKey) return "";
     return locationMap[locationKey] || locationKey;
@@ -104,7 +95,7 @@ export default function AccountPage() {
                </div>
              ) : (
               <div className="flex-grow">
-                <h2 className="text-base font-bold">{formatDisplayName(customer?.name)}</h2>
+                <h2 className="text-base font-bold">{customer?.name}</h2>
                 <div className="flex items-center space-x-2 space-x-reverse mt-2 text-xs text-primary-foreground/90">
                   <Phone className="h-3 w-3" />
                   <span dir="ltr">{customer?.phoneNumber}</span>
