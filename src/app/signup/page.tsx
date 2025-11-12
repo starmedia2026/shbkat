@@ -9,7 +9,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Network } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
 
 export default function SignupPage() {
@@ -17,8 +23,7 @@ export default function SignupPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-8 flex items-center gap-3">
-          <Network className="h-12 w-12 text-primary" />
-          <h1 className="text-5xl font-bold tracking-tight text-primary">
+          <h1 className="text-4xl font-bold tracking-tight text-primary">
             شبكات
           </h1>
         </div>
@@ -35,12 +40,13 @@ export default function SignupPage() {
               <Input id="name" placeholder="الاسم الكامل" required />
             </div>
             <div className="grid gap-2 text-right">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Label htmlFor="phone">رقم الهاتف</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
+                id="phone"
+                type="tel"
+                placeholder="77xxxxxxxx"
                 required
+                dir="ltr"
               />
             </div>
             <div className="grid gap-2 text-right">
@@ -50,6 +56,23 @@ export default function SignupPage() {
             <div className="grid gap-2 text-right">
               <Label htmlFor="confirm-password">تأكيد كلمة المرور</Label>
               <Input id="confirm-password" type="password" required />
+            </div>
+            <div className="grid gap-2 text-right">
+              <Label htmlFor="location">الموقع</Label>
+              <Select dir="rtl">
+                <SelectTrigger id="location">
+                  <SelectValue placeholder="اختر موقعك" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="shibam">شبام</SelectItem>
+                  <SelectItem value="sayun">سيئون</SelectItem>
+                  <SelectItem value="alqatn">القطن</SelectItem>
+                  <SelectItem value="alhawta">الحوطة</SelectItem>
+                  <SelectItem value="tarim">تريم</SelectItem>
+                  <SelectItem value="alghurfa">الغرفة</SelectItem>
+                  <SelectItem value="alaqad">العقاد</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
