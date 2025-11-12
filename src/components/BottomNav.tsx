@@ -17,18 +17,16 @@ export function BottomNav() {
     return null;
   }
 
-  const baseNavItems = [
-    { href: "/home", icon: Home, label: "الرئيسية" },
-    { href: "/account", icon: User, label: "حسابي" },
-  ];
-  
-  const adminNavItem = { href: "/account/user-management", icon: Users, label: "المستخدمين" };
-
   const navItems = useMemo(() => {
-    // Always show admin item for now as per user request to debug flicker
-    // In production, this should be gated by `isAdmin`
-    return [baseNavItems[0], adminNavItem, baseNavItems[1]];
-  }, []);
+    const items = [
+      { href: "/home", icon: Home, label: "الرئيسية" },
+    ];
+    if (isAdmin) {
+      items.push({ href: "/account/user-management", icon: Users, label: "المستخدمين" });
+    }
+    items.push({ href: "/account", icon: User, label: "حسابي" });
+    return items;
+  }, [isAdmin]);
 
 
   return (
@@ -60,5 +58,3 @@ export function BottomNav() {
     </nav>
   );
 }
-
-    

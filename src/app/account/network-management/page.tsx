@@ -34,6 +34,7 @@ import {
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface Category {
   id: string;
@@ -50,6 +51,44 @@ interface Network {
 }
 
 export default function NetworkManagementPage() {
+  const router = useRouter();
+  const { isAdmin, isLoading } = useAdmin();
+
+  useEffect(() => {
+    // If loading is finished and the user is not an admin, redirect them.
+    if (!isLoading && !isAdmin) {
+      router.push('/account');
+    }
+  }, [isAdmin, isLoading, router]);
+
+  if (isLoading || !isAdmin) {
+    return (
+        <div className="flex flex-col min-h-screen">
+             <header className="p-4 flex items-center justify-between relative border-b">
+                <Button
+                variant="ghost"
+                size="icon"
+                className="absolute left-4"
+                onClick={() => router.back()}
+                >
+                <ArrowLeft className="h-6 w-6" />
+                </Button>
+                <h1 className="text-lg font-bold text-center flex-grow">
+                إدارة الشبكات
+                </h1>
+            </header>
+            <div className="flex-grow flex items-center justify-center">
+                <p>جاري التحميل والتحقق...</p>
+            </div>
+      </div>
+    );
+  }
+
+  return <NetworkManagementContent />;
+}
+
+
+function NetworkManagementContent() {
   const router = useRouter();
   const { toast } = useToast();
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
@@ -293,5 +332,3 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
-
-    

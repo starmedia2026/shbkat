@@ -173,16 +173,20 @@ export default function AccountPage() {
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
-              <AccountItem
-                icon={Users}
-                label="إدارة المستخدمين"
-                href="/account/user-management"
-              />
-              <AccountItem
-                icon={Wifi}
-                label="إدارة الشبكات"
-                href="/account/network-management"
-              />
+              {isAdmin && (
+                <>
+                  <AccountItem
+                    icon={Users}
+                    label="إدارة المستخدمين"
+                    href="/account/user-management"
+                  />
+                  <AccountItem
+                    icon={Wifi}
+                    label="إدارة الشبكات"
+                    href="/account/network-management"
+                  />
+                </>
+              )}
               <AccountItem
                 icon={Shield}
                 label="الشروط والأحكام"
@@ -260,5 +264,3 @@ function AccountItem({
     </li>
   );
 }
-
-    
