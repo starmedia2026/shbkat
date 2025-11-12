@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [hasNotifications, setHasNotifications] = useState(false);
+  const [hasNotifications, setHasNotifications] = useState(true);
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
@@ -119,9 +119,9 @@ function ServiceButton({ icon: Icon, label, href, iconClassName }: { icon: React
   return (
     <Link href={href} className="block">
       <Card className="shadow-md rounded-2xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card/50 hover:bg-card">
-        <CardContent className="p-4 flex flex-col items-center justify-center space-y-3 h-32">
-          <Icon className={`h-8 w-8 ${iconClassName}`} />
-          <p className="text-sm font-semibold">{label}</p>
+        <CardContent className="p-4 flex flex-col items-center justify-center space-y-3 h-36">
+          <Icon className={`h-10 w-10 ${iconClassName}`} />
+          <p className="text-base font-semibold">{label}</p>
         </CardContent>
       </Card>
     </Link>
