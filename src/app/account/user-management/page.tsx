@@ -42,12 +42,59 @@ interface Customer {
     balance: number;
 }
 
+function UserManagementContent() {
+    const firestore = useFirestore();
+    const [searchTerm, setSearchTerm] = useState("");
+    
+    const customersCollectionRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, "customers");
+    }, [firestore]);
+    
+    const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(customersCollectionRef);
+    
+    const filteredCustomers = useMemo(() => {
+        if (!customers) return [];
+        return customers.filter(
+        (customer) =>
+            customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            customer.phoneNumber.includes(searchTerm)
+        );
+    }, [customers, searchTerm]);
+
+    return (
+        <>
+            <div className="relative">
+                <Input
+                    type="search"
+                    placeholder="البحث بالاسم أو رقم الهاتف..."
+                    className="w-full pr-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            </div>
+
+            {areCustomersLoading ? (
+                <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {filteredCustomers.map((customer) => (
+                        <CustomerCard key={customer.id} customer={customer} />
+                    ))}
+                </div>
+            )}
+        </>
+    )
+}
+
 export default function UserManagementPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [authChecked, setAuthChecked] = useState(false);
 
   const adminUserDocRef = useMemoFirebase(() => {
@@ -57,44 +104,27 @@ export default function UserManagementPage() {
   
   const { data: adminCustomer, isLoading: isAdminCustomerLoading } = useDoc<Customer>(adminUserDocRef);
 
-  const customersCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
-    return collection(firestore, "customers");
-  }, [firestore, isAdmin]);
-  
-  const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(customersCollectionRef);
-  
-  const isLoading = isUserLoading || isAdminCustomerLoading || (isAdmin && areCustomersLoading);
-
   useEffect(() => {
     if (isUserLoading || isAdminCustomerLoading) {
-      return; // Wait for user and admin data to load
+      return; 
     }
 
     if (!user) {
-      router.push("/account"); // No user logged in
+      router.push("/"); 
       return;
     }
     
     if (adminCustomer?.phoneNumber === "770326828") {
       setIsAdmin(true);
     } else {
-      router.push("/account"); // Not the admin
+      router.push("/account");
     }
     setAuthChecked(true);
 
   }, [user, isUserLoading, adminCustomer, isAdminCustomerLoading, router]);
   
-  const filteredCustomers = useMemo(() => {
-    if (!customers) return [];
-    return customers.filter(
-      (customer) =>
-        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.phoneNumber.includes(searchTerm)
-    );
-  }, [customers, searchTerm]);
 
-  if (!authChecked || !isAdmin) {
+  if (!authChecked || isUserLoading || isAdminCustomerLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p>جاري التحميل والتحقق...</p>
@@ -118,29 +148,7 @@ export default function UserManagementPage() {
         </h1>
       </header>
       <main className="p-4 space-y-6">
-        <div className="relative">
-          <Input
-            type="search"
-            placeholder="البحث بالاسم أو رقم الهاتف..."
-            className="w-full pr-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        </div>
-
-        {isLoading ? (
-            <div className="space-y-4">
-                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
-            </div>
-        ) : (
-            <div className="space-y-4">
-                {filteredCustomers.map((customer) => (
-                    <CustomerCard key={customer.id} customer={customer} />
-                ))}
-            </div>
-        )}
-
+        {isAdmin ? <UserManagementContent /> : <p>ليس لديك صلاحية الوصول لهذه الصفحة.</p>}
       </main>
     </div>
   );
