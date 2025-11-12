@@ -4,11 +4,27 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { FirebaseClientProvider } from "@/firebase";
 
-
 export const metadata: Metadata = {
   title: "Shabakat",
   description: "تطبيق شبكات للتواصل والاتصال",
 };
+
+const ThemeScript = () => (
+  <script
+    dangerouslySetInnerHTML={{
+      __html: `
+        (function() {
+          try {
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+              document.documentElement.classList.add('dark');
+            }
+          } catch (e) {}
+        })();
+      `,
+    }}
+  />
+);
 
 export default function RootLayout({
   children,
@@ -16,8 +32,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
+        <ThemeScript />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
