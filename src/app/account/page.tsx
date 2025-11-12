@@ -38,6 +38,7 @@ import { useAuth } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const locationMap: { [key: string]: string } = {
   shibam: "شبام",
@@ -57,6 +58,8 @@ export default function AccountPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+
 
   useEffect(() => {
     setIsClient(true);
@@ -171,16 +174,20 @@ export default function AccountPage() {
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
-              <AccountItem
-                icon={Users}
-                label="إدارة المستخدمين"
-                href="/account/user-management"
-              />
-              <AccountItem
-                icon={Wifi}
-                label="إدارة الشبكات"
-                href="/account/network-management"
-              />
+              {isAdmin && (
+                <>
+                  <AccountItem
+                    icon={Users}
+                    label="إدارة المستخدمين"
+                    href="/account/user-management"
+                  />
+                  <AccountItem
+                    icon={Wifi}
+                    label="إدارة الشبكات"
+                    href="/account/network-management"
+                  />
+                </>
+              )}
               <AccountItem
                 icon={Shield}
                 label="الشروط والأحكام"

@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
 import { collection, doc, writeBatch } from "firebase/firestore";
 import { useRouter }from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { useAdmin } from "@/hooks/useAdmin";
 
 
 interface Customer {
@@ -42,6 +43,50 @@ interface Customer {
 }
 
 export default function UserManagementPage() {
+  const router = useRouter();
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+
+  useEffect(() => {
+    // Only redirect when loading is finished and the user is explicitly not an admin.
+    if (!isAdminLoading && !isAdmin) {
+      router.replace("/account");
+    }
+  }, [isAdmin, isAdminLoading, router]);
+
+  // Render a stable loading state until admin status is confirmed.
+  if (isAdminLoading || isAdmin === null) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="p-4 flex items-center justify-between relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-4"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-lg font-bold text-center flex-grow">
+            إدارة المستخدمين
+          </h1>
+        </header>
+        <main className="flex-grow flex items-center justify-center">
+            <p>جاري التحميل والتحقق...</p>
+        </main>
+      </div>
+    );
+  }
+
+  // Render the content only if the user is an admin.
+  if (isAdmin) {
+    return <UserManagementContent />;
+  }
+
+  // Fallback, though the useEffect should have redirected.
+  return null;
+}
+
+function UserManagementContent() {
   const router = useRouter();
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");

@@ -5,7 +5,6 @@ import {
   PlusCircle,
   Edit,
   Trash2,
-  Package,
   Save,
   X,
 } from "lucide-react";
@@ -19,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { networks as initialNetworks, saveNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -33,7 +32,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface Category {
   id: string;
@@ -50,6 +49,50 @@ interface Network {
 }
 
 export default function NetworkManagementPage() {
+  const router = useRouter();
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+
+  useEffect(() => {
+    // Only redirect when loading is finished and the user is explicitly not an admin.
+    if (!isAdminLoading && !isAdmin) {
+      router.replace("/account");
+    }
+  }, [isAdmin, isAdminLoading, router]);
+
+  // Render a stable loading state until admin status is confirmed.
+  if (isAdminLoading || isAdmin === null) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="p-4 flex items-center justify-between relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-4"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-lg font-bold text-center flex-grow">
+            إدارة الشبكات
+          </h1>
+        </header>
+        <main className="flex-grow flex items-center justify-center">
+            <p>جاري التحميل والتحقق...</p>
+        </main>
+      </div>
+    );
+  }
+
+  // Render the content only if the user is an admin.
+  if (isAdmin) {
+    return <NetworkManagementContent />;
+  }
+
+  // Fallback, though the useEffect should have redirected.
+  return null;
+}
+
+function NetworkManagementContent() {
   const router = useRouter();
   const { toast } = useToast();
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
