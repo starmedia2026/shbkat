@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [hasNotifications, setHasNotifications] = useState(false); // New state for notifications
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
@@ -33,6 +34,15 @@ export default function HomePage() {
 
   const isLoading = isUserLoading || isCustomerLoading;
 
+  const formatDisplayName = (fullName?: string): string => {
+    if (!fullName) return "مستخدم جديد";
+    const nameParts = fullName.trim().split(" ");
+    if (nameParts.length > 1) {
+      return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
+    }
+    return fullName;
+  };
+
   return (
     <div className="bg-background text-foreground min-h-screen pb-24">
       <header className="p-6 flex justify-between items-center">
@@ -41,16 +51,18 @@ export default function HomePage() {
           {isLoading ? (
             <Skeleton className="h-7 w-40 mt-1" />
           ) : (
-            <h1 className="text-lg font-bold">{customer?.name || "مستخدم جديد"}</h1>
+            <h1 className="text-lg font-bold">{formatDisplayName(customer?.name)}</h1>
           )}
         </div>
         <div className="relative">
           <Button variant="ghost" size="icon">
             <Bell className="h-6 w-6 text-primary" />
-            <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-            </span>
+            {hasNotifications && (
+              <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              </span>
+            )}
           </Button>
         </div>
       </header>
@@ -65,7 +77,7 @@ export default function HomePage() {
               ) : (
                 <p className="text-xl font-bold tracking-wider" dir="ltr">
                   {balanceVisible
-                    ? `${(customer?.balance || 0).toLocaleString()} YER`
+                    ? `${(customer?.balance || 0).toLocaleString()} ريال يمني`
                     : "********"}
                 </p>
               )}

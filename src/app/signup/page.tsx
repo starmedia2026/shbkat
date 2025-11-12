@@ -22,7 +22,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore } from "@/firebase";
-import { initiateEmailSignUp } from "@/firebase/non-blocking-login";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { doc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -47,11 +46,24 @@ export default function SignupPage() {
 
     if (password !== confirmPassword) {
       setError("كلمتا المرور غير متطابقتين");
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "كلمتا المرور غير متطابقتين",
+      });
+      return;
+    }
+    
+    if (!location) {
+      setError("الرجاء اختيار موقعك");
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "الرجاء اختيار موقعك",
+      });
       return;
     }
 
-    // Since Firebase Auth doesn't directly support phone number signup on web without ReCaptcha,
-    // we'll use email/password for now. Let's create a dummy email from the phone number.
     const email = `${phone}@shabakat.app`;
 
     try {
@@ -70,7 +82,6 @@ export default function SignupPage() {
         
         const userDocRef = doc(firestore, "customers", user.uid);
         
-        // This is a non-blocking write.
         setDocumentNonBlocking(userDocRef, customerData, { merge: false });
 
         toast({
@@ -82,7 +93,6 @@ export default function SignupPage() {
       }
     } catch (error: any) {
       console.error("Signup error:", error);
-      // Map Firebase auth errors to user-friendly messages
       let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "رقم الهاتف هذا مسجل بالفعل.";
@@ -144,7 +154,7 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2 text-right">
                 <Label htmlFor="location">الموقع</Label>
-                <Select dir="rtl" onValueChange={setLocation} value={location}>
+                <Select dir="rtl" onValueChange={setLocation} value={location} required>
                   <SelectTrigger id="location">
                     <SelectValue placeholder="اختر موقعك" />
                   </SelectTrigger>
