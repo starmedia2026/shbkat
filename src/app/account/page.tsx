@@ -7,26 +7,17 @@ import {
   Moon,
   Share2,
   Shield,
-  User,
   Sun,
   KeyRound,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import Link from "next/link";
 import React from "react";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function AccountPage() {
-  const [darkMode, setDarkMode] = React.useState(false);
-
-  React.useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [darkMode]);
+  const { darkMode, toggleDarkMode } = useTheme();
 
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
@@ -45,7 +36,7 @@ export default function AccountPage() {
                 </div>
                 <Switch
                   checked={darkMode}
-                  onCheckedChange={setDarkMode}
+                  onCheckedChange={toggleDarkMode}
                   aria-label="Toggle dark mode"
                 />
               </li>
