@@ -26,6 +26,7 @@ import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { doc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -34,6 +35,8 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [location, setLocation] = useState("");
   const [error, setError] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
   const router = useRouter();
   const auth = useAuth();
@@ -146,11 +149,41 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2 text-right">
                 <Label htmlFor="password">كلمة المرور</Label>
-                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                <div className="relative">
+                  <Input 
+                    id="password" 
+                    type={passwordVisible ? "text" : "password"} 
+                    required value={password} 
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pr-10" 
+                  />
+                   <button
+                    type="button"
+                    onClick={() => setPasswordVisible(!passwordVisible)}
+                    className="absolute inset-y-0 left-0 flex items-center px-3 text-muted-foreground"
+                  >
+                    {passwordVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
               <div className="grid gap-2 text-right">
                 <Label htmlFor="confirm-password">تأكيد كلمة المرور</Label>
-                <Input id="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                <div className="relative">
+                  <Input 
+                    id="confirm-password" 
+                    type={confirmPasswordVisible ? "text" : "password"} 
+                    required value={confirmPassword} 
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setConfirmPasswordVisible(!confirmPasswordVisible)}
+                    className="absolute inset-y-0 left-0 flex items-center px-3 text-muted-foreground"
+                  >
+                    {confirmPasswordVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
               <div className="grid gap-2 text-right">
                 <Label htmlFor="location">الموقع</Label>
