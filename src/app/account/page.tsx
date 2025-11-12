@@ -12,6 +12,7 @@ import {
   User,
   Phone,
   MapPin,
+  Users,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -22,7 +23,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
@@ -55,10 +55,19 @@ export default function AccountPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      user.getIdTokenResult().then((idTokenResult) => {
+        setIsAdmin(!!idTokenResult.claims.admin);
+      });
+    }
+  }, [user]);
 
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -169,6 +178,13 @@ export default function AccountPage() {
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
+               {isAdmin && (
+                <AccountItem
+                  icon={Users}
+                  label="إدارة المستخدمين"
+                  href="/account/user-management"
+                />
+               )}
               <AccountItem
                 icon={Shield}
                 label="الشروط والأحكام"
