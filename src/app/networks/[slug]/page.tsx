@@ -71,7 +71,7 @@ export default function NetworkDetailPage() {
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="font-semibold text-base">{category.name}</p>
-                        <p className="text-sm font-bold text-primary mt-1" dir="ltr">
+                        <p className="text-sm font-bold text-primary mt-1">
                             {category.price.toLocaleString()} ريال يمني
                         </p>
                     </div>
