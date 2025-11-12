@@ -12,9 +12,17 @@ import {
   User,
   Phone,
   MapPin,
-  Laptop,
-  Smartphone
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import React from "react";
@@ -46,13 +54,13 @@ export default function AccountPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, "customers", user.uid);
   }, [firestore, user?.uid]);
 
-  const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
+  const { data: customer, isLoading: isCustomerLoading } =
+    useDoc(customerDocRef);
   const isLoading = isUserLoading || isCustomerLoading;
 
   const handleLogout = async () => {
@@ -75,7 +83,7 @@ export default function AccountPage() {
   const getArabicLocation = (locationKey?: string): string => {
     if (!locationKey) return "";
     return locationMap[locationKey] || locationKey;
-  }
+  };
 
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
@@ -89,13 +97,13 @@ export default function AccountPage() {
             <div className="mt-1">
               <User className="h-8 w-8" />
             </div>
-             {isLoading ? (
-               <div className="flex-grow space-y-2">
-                 <Skeleton className="h-6 w-4/5 bg-white/30" />
-                 <Skeleton className="h-4 w-1/2 bg-white/30" />
-                 <Skeleton className="h-4 w-1/3 bg-white/30" />
-               </div>
-             ) : (
+            {isLoading ? (
+              <div className="flex-grow space-y-2">
+                <Skeleton className="h-6 w-4/5 bg-white/30" />
+                <Skeleton className="h-4 w-1/2 bg-white/30" />
+                <Skeleton className="h-4 w-1/3 bg-white/30" />
+              </div>
+            ) : (
               <div className="flex-grow">
                 <h2 className="text-base font-bold">{customer?.name}</h2>
                 <div className="flex items-center space-x-2 space-x-reverse mt-2 text-xs text-primary-foreground/90">
@@ -107,34 +115,42 @@ export default function AccountPage() {
                   <span>حضرموت - {getArabicLocation(customer?.location)}</span>
                 </div>
               </div>
-             )}
+            )}
           </CardContent>
         </Card>
 
         <Card className="w-full shadow-lg rounded-xl">
-            <CardContent className="p-4 pt-0">
-                <h3 className="font-semibold text-center text-sm text-muted-foreground my-4">الوضع المفضل</h3>
-                <div className="grid grid-cols-2 gap-4">
-                    <div 
-                    onClick={() => setTheme('light')}
-                    className={cn(
-                        "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
-                        !darkMode ? "bg-primary/10 border-primary" : "border-transparent bg-muted/50 hover:bg-muted"
-                    )}>
-                    <Sun className="mx-auto h-6 w-6 mb-2"/>
-                    <span className="text-sm font-semibold">فاتح</span>
-                    </div>
-                    <div 
-                    onClick={() => setTheme('dark')}
-                    className={cn(
-                        "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
-                        darkMode ? "bg-primary/10 border-primary" : "border-transparent bg-muted/50 hover:bg-muted"
-                    )}>
-                    <Moon className="mx-auto h-6 w-6 mb-2"/>
-                    <span className="text-sm font-semibold">داكن</span>
-                    </div>
-                </div>
-            </CardContent>
+          <CardContent className="p-4">
+            <h3 className="font-semibold text-center text-sm text-muted-foreground my-2">
+              الوضع المفضل
+            </h3>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div
+                onClick={() => setTheme("light")}
+                className={cn(
+                  "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
+                  !darkMode
+                    ? "bg-primary/10 border-primary"
+                    : "border-transparent bg-muted/50 hover:bg-muted"
+                )}
+              >
+                <Sun className="mx-auto h-6 w-6 mb-2" />
+                <span className="text-sm font-semibold">فاتح</span>
+              </div>
+              <div
+                onClick={() => setTheme("dark")}
+                className={cn(
+                  "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
+                  darkMode
+                    ? "bg-primary/10 border-primary"
+                    : "border-transparent bg-muted/50 hover:bg-muted"
+                )}
+              >
+                <Moon className="mx-auto h-6 w-6 mb-2" />
+                <span className="text-sm font-semibold">داكن</span>
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
         <Card className="w-full shadow-lg rounded-xl">
@@ -155,26 +171,38 @@ export default function AccountPage() {
                 label="المساعدة والدعم"
                 href="/support"
               />
-              <AccountItem
-                icon={Share2}
-                label="مشاركة التطبيق"
-                href="/share"
-              />
+              <AccountItem icon={Share2} label="مشاركة التطبيق" href="/share" />
             </ul>
           </CardContent>
         </Card>
-        
-        <Card className="w-full shadow-lg rounded-xl bg-card">
-           <CardContent className="p-0">
-              <div onClick={handleLogout} className="flex items-center justify-between p-4 cursor-pointer text-red-500">
-                <div className="flex items-center space-x-4 space-x-reverse font-semibold">
-                  <LogOut className="h-6 w-6" />
-                  <span>تسجيل الخروج</span>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Card className="w-full shadow-lg rounded-xl bg-card">
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between p-4 cursor-pointer text-red-500">
+                  <div className="flex items-center space-x-4 space-x-reverse font-semibold">
+                    <LogOut className="h-6 w-6" />
+                    <span>تسجيل الخروج</span>
+                  </div>
+                  <ChevronLeft className="h-6 w-6" />
                 </div>
-                <ChevronLeft className="h-6 w-6" />
-              </div>
-           </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>هل أنت متأكد من تسجيل الخروج؟</AlertDialogTitle>
+              <AlertDialogDescription>
+                سيؤدي هذا الإجراء إلى تسجيل خروجك من التطبيق. ستحتاج إلى تسجيل الدخول مرة أخرى للوصول إلى حسابك.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLogout}>تأكيد</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
       </main>
     </div>
