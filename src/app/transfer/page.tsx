@@ -128,6 +128,7 @@ export default function TransferPage() {
         const senderRef = doc(firestore, "customers", user.uid);
         const recipientRef = doc(firestore, "customers", recipient.id);
 
+        // These reads are part of the transaction
         const senderDoc = await transaction.get(senderRef);
         const recipientDoc = await transaction.get(recipientRef);
 
@@ -148,45 +149,42 @@ export default function TransferPage() {
 
         const now = new Date().toISOString();
 
-        // Create operations
-        const senderOperationRef = doc(collection(firestore, `customers/${user.uid}/operations`));
-        transaction.set(senderOperationRef, {
+        const senderOpData = {
             type: 'transfer_sent',
             amount: -transferAmount,
             date: now,
             description: `تحويل إلى ${recipient.name} (${recipient.phoneNumber})`,
             status: 'completed'
-        });
-
-        const recipientOperationRef = doc(collection(firestore, `customers/${recipient.id}/operations`));
-        transaction.set(recipientOperationRef, {
+        };
+        const recipientOpData = {
             type: 'transfer_received',
             amount: transferAmount,
             date: now,
             description: `استلام من ${sender.name} (${sender.phoneNumber})`,
             status: 'completed'
-        });
-        
-        // Create notifications
-        const senderNotificationRef = doc(collection(firestore, `customers/${user.uid}/notifications`));
-        transaction.set(senderNotificationRef, {
+        };
+        const senderNotifData = {
             type: 'transfer_sent',
             title: 'تم إرسال حوالة',
             body: `تم تحويل ${transferAmount.toLocaleString()} ريال إلى ${recipient.name}.`,
             amount: -transferAmount,
             date: now,
             read: false,
-        });
-
-        const recipientNotificationRef = doc(collection(firestore, `customers/${recipient.id}/notifications`));
-        transaction.set(recipientNotificationRef, {
+        };
+        const recipientNotifData = {
             type: 'transfer_received',
             title: 'تم استلام حوالة',
             body: `تم استلام ${transferAmount.toLocaleString()} ريال من ${sender.name}.`,
             amount: transferAmount,
             date: now,
-            read: false,
-        });
+read: false,
+        };
+        
+        // Operation and Notification writes
+        transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), senderOpData);
+        transaction.set(doc(collection(firestore, `customers/${recipient.id}/operations`)), recipientOpData);
+        transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), senderNotifData);
+        transaction.set(doc(collection(firestore, `customers/${recipient.id}/notifications`)), recipientNotifData);
     }).then(() => {
         toast({
             title: "نجاح",
@@ -197,8 +195,12 @@ export default function TransferPage() {
         setRecipient(null);
     }).catch((error: any) => {
         const contextualError = new FirestorePermissionError({
-            operation: 'write', // 'write' is a safe bet for transactions
-            path: 'transaction', // Path is not specific to one doc in a transaction
+            operation: 'write',
+            path: 'customers/(sender and recipient)',
+            requestResourceData: {
+                senderUpdate: { path: `customers/${user.uid}`, balance: sender.balance - transferAmount },
+                recipientUpdate: { path: `customers/${recipient.id}`, balance: recipient.balance + transferAmount }
+            }
         });
         errorEmitter.emit('permission-error', contextualError);
 
@@ -323,3 +325,5 @@ export default function TransferPage() {
     </div>
   );
 }
+
+    
