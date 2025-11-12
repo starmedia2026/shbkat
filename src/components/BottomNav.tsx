@@ -19,23 +19,24 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 z-50 rounded-2xl border border-border/20 bg-background/70 shadow-lg backdrop-blur-sm">
-      <div className="flex justify-around max-w-md mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 h-24 bg-transparent">
+      <div className="absolute inset-0 bg-background/70 backdrop-blur-sm"></div>
+      <div className="relative flex justify-around max-w-md mx-auto h-full">
         {navItems.map((item) => (
-          <Link href={item.href} key={item.href}>
+          <Link href={item.href} key={item.href} className="flex-1">
             <div
               className={cn(
-                "flex flex-col items-center justify-center p-2 text-muted-foreground w-24 h-16 transition-all duration-300",
+                "flex flex-col items-center justify-center h-full text-muted-foreground transition-all duration-300",
                 {
                   "text-primary font-bold": pathname.startsWith(item.href),
                 }
               )}
             >
               <div className={cn(
-                "p-3 rounded-full transition-all duration-300 w-16 flex items-center justify-center",
+                "p-3 rounded-full transition-all duration-300 w-16 h-16 flex items-center justify-center",
                 { "bg-primary/10": pathname.startsWith(item.href) }
               )}>
-                <item.icon className="h-6 w-6" />
+                <item.icon className="h-7 w-7" />
               </div>
               <span className="text-xs mt-1">{item.label}</span>
             </div>

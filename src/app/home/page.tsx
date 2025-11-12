@@ -42,8 +42,8 @@ export default function HomePage() {
           <CardContent className="p-5 flex justify-between items-center">
             <div>
               <p className="text-sm text-primary-foreground/80">الرصيد الحالي</p>
-              <p className="text-2xl font-bold tracking-wider">
-                {balanceVisible ? "١٥,٠٠٠ ريال" : "********"}
+              <p className="text-2xl font-bold tracking-wider" dir="ltr">
+                {balanceVisible ? "15,000 ريال" : "********"}
               </p>
             </div>
             <Button
@@ -61,7 +61,7 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="grid grid-cols-2 gap-4 text-center">
           <ServiceButton icon={Wifi} label="الشبكات" href="/networks" iconClassName="text-chart-1"/>
           <ServiceButton icon={History} label="العمليات" href="/operations" iconClassName="text-chart-2" />
           <ServiceButton icon={Heart} label="المفضلة" href="/favorites" iconClassName="text-chart-3" />
@@ -78,9 +78,9 @@ function ServiceButton({ icon: Icon, label, href, iconClassName }: { icon: React
   return (
     <Link href={href} className="block">
       <Card className="shadow-md rounded-2xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card/50 hover:bg-card">
-        <CardContent className="p-4 flex flex-col items-center justify-center space-y-2">
+        <CardContent className="p-4 flex flex-col items-center justify-center space-y-2 h-32">
           <Icon className={`h-8 w-8 ${iconClassName}`} />
-          <p className="text-xs font-semibold">{label}</p>
+          <p className="text-sm font-semibold">{label}</p>
         </CardContent>
       </Card>
     </Link>
