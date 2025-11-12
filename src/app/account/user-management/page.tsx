@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -5,7 +6,6 @@ import {
   Search,
   User,
   Phone,
-  Wallet,
   Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, Suspense } from "react";
@@ -32,6 +32,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAdmin } from "@/hooks/useAdmin";
 
 
 interface Customer {
@@ -91,30 +92,14 @@ function UserManagementContent() {
 
 function AdminPageContainer() {
   const router = useRouter();
-  const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
-
-  const customerDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'customers', user.uid);
-  }, [firestore, user?.uid]);
-
-  const { data: adminData, isLoading: isAdminDataLoading } = useDoc(customerDocRef);
-
-  // Combine all loading states
-  const isLoading = isUserLoading || isAdminDataLoading;
+  const { isAdmin, isLoading } = useAdmin();
 
   useEffect(() => {
-    // Only perform actions once everything has loaded
-    if (!isLoading) {
-      if (adminData?.phoneNumber !== '770326828') {
-        // If not an admin, redirect immediately
-        router.replace('/account');
-      }
+    if (!isLoading && !isAdmin) {
+      router.replace('/account');
     }
-  }, [isLoading, adminData, router]);
+  }, [isLoading, isAdmin, router]);
 
-  // While loading, show a full-screen loading indicator to prevent flashes
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -123,8 +108,7 @@ function AdminPageContainer() {
     );
   }
 
-  // Only render the content if the user is confirmed to be an admin
-  if (adminData?.phoneNumber === '770326828') {
+  if (isAdmin) {
     return (
       <div className="bg-background text-foreground min-h-screen">
         <header className="p-4 flex items-center justify-between relative">
@@ -146,8 +130,8 @@ function AdminPageContainer() {
       </div>
     );
   }
-
-  // Fallback, in case the useEffect redirect hasn't fired yet
+  
+  // Render nothing while redirecting or if not admin
   return null;
 }
 
