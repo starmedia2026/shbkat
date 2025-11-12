@@ -8,7 +8,11 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the customer."
+          "description": "Unique identifier for the customer, matches Firebase Auth UID."
+        },
+        "name": {
+          "type": "string",
+          "description": "The customer's full name."
         },
         "accountNumber": {
           "type": "string",
@@ -18,6 +22,10 @@
           "type": "string",
           "description": "The customer's phone number."
         },
+        "location": {
+          "type": "string",
+          "description": "The customer's location."
+        },
         "balance": {
           "type": "number",
           "description": "The customer's account balance.",
@@ -26,16 +34,17 @@
       },
       "required": [
         "id",
+        "name",
         "accountNumber",
         "phoneNumber",
+        "location",
         "balance"
       ]
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {

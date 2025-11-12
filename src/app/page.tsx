@@ -1,4 +1,5 @@
-"use client"
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,8 +12,48 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
+
 
 export default function LoginPage() {
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
+  const auth = useAuth();
+  const { toast } = useToast();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    const email = `${phone}@shabakat.app`;
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+       toast({
+          title: "تم تسجيل الدخول بنجاح!",
+        });
+      router.push("/home");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      let errorMessage = "فشل تسجيل الدخول. يرجى التحقق من رقم الهاتف أو كلمة المرور.";
+       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = "رقم الهاتف أو كلمة المرور غير صحيحة.";
+      }
+       setError(errorMessage);
+       toast({
+        variant: "destructive",
+        title: "خطأ في تسجيل الدخول",
+        description: errorMessage,
+      });
+    }
+  };
+
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
@@ -26,28 +67,33 @@ export default function LoginPage() {
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-xl">تسجيل الدخول</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 p-6">
-            <div className="grid gap-2 text-right">
-              <Label htmlFor="phone">رقم الهاتف</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="ادخل رقم هاتفك"
-                required
-                dir="ltr"
-                className="text-right"
-              />
-            </div>
-            <div className="grid gap-2 text-right">
-              <Label htmlFor="password">كلمة المرور</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="ادخل كلمة المرور"
-                required
-              />
-            </div>
-            <div className="text-left text-xs">
+          <form onSubmit={handleLogin}>
+            <CardContent className="grid gap-4 p-6">
+              <div className="grid gap-2 text-right">
+                <Label htmlFor="phone">رقم الهاتف</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="ادخل رقم هاتفك"
+                  required
+                  dir="ltr"
+                  className="text-right"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2 text-right">
+                <Label htmlFor="password">كلمة المرور</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="ادخل كلمة المرور"
+                  required
+                   value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <div className="text-left text-xs">
                 <Link
                   href="/forgot-password"
                   className="font-medium text-primary hover:underline"
@@ -55,21 +101,23 @@ export default function LoginPage() {
                   نسيت كلمة المرور؟
                 </Link>
               </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4 p-6 pt-0">
-            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base as-child">
-              <Link href="/home">دخول</Link>
-            </Button>
-            <div className="text-xs text-muted-foreground">
-              ليس لديك حساب؟{" "}
-              <Link
-                href="/signup"
-                className="font-medium text-primary hover:underline"
-              >
-                سجل الآن
-              </Link>
-            </div>
-          </CardFooter>
+               {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4 p-6 pt-0">
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base">
+                دخول
+              </Button>
+              <div className="text-xs text-muted-foreground">
+                ليس لديك حساب؟{" "}
+                <Link
+                  href="/signup"
+                  className="font-medium text-primary hover:underline"
+                >
+                  سجل الآن
+                </Link>
+              </div>
+            </CardFooter>
+          </form>
         </Card>
       </div>
     </main>
