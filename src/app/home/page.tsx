@@ -69,7 +69,7 @@ export default function HomePage() {
 
       <main className="p-4 space-y-6">
         <Card className="w-full shadow-lg rounded-2xl bg-primary text-primary-foreground">
-          <CardContent className="p-6 flex justify-between items-center">
+          <CardContent className="p-8 flex justify-between items-center">
             <div>
               <p className="text-sm text-primary-foreground/80">الرصيد الحالي</p>
               {isLoading ? (
@@ -78,8 +78,8 @@ export default function HomePage() {
                 <div className="text-3xl font-bold tracking-wider mt-1" dir="ltr">
                   {balanceVisible ? (
                     <span className="flex items-baseline gap-2">
-                      <span>{(customer?.balance || 0).toLocaleString()}</span>
                        <span className="text-sm font-normal">ريال يمني</span>
+                      <span>{(customer?.balance || 0).toLocaleString()}</span>
                     </span>
                   ) : (
                     "********"
