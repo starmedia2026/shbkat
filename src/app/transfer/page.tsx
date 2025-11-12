@@ -100,7 +100,7 @@ export default function TransferPage() {
               {isLoading ? (
                 <Skeleton className="h-7 w-28 mt-1" />
               ) : (
-                <p className="text-xl font-bold text-primary flex items-baseline gap-2">
+                <p className="text-xl font-bold text-primary flex items-baseline gap-2" dir="rtl">
                   <span>{(customer?.balance || 0).toLocaleString()}</span>
                   <span className="text-sm font-normal">ريال يمني</span>
                 </p>
@@ -169,3 +169,5 @@ export default function TransferPage() {
     </div>
   );
 }
+
+    

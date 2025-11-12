@@ -63,7 +63,7 @@ function UserManagementContent() {
     }, [customers, searchTerm]);
 
     return (
-        <>
+        <div className="space-y-6">
             <div className="relative">
                 <Input
                     type="search"
@@ -86,7 +86,7 @@ function UserManagementContent() {
                     ))}
                 </div>
             )}
-        </>
+        </div>
     )
 }
 
@@ -105,14 +105,15 @@ export default function UserManagementPage() {
   const isLoading = isUserLoading || isAdminCustomerLoading;
 
   useEffect(() => {
-    // If loading is finished and the user is not the admin, redirect.
+    // If loading is finished and the user is NOT the admin, redirect.
+    // This runs only when isLoading changes from true to false.
     if (!isLoading && adminCustomer?.phoneNumber !== "770326828") {
       router.replace("/account");
     }
   }, [isLoading, adminCustomer, router]);
 
 
-  // While loading, show a loading screen.
+  // While loading, show a full-screen loading indicator.
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -121,7 +122,8 @@ export default function UserManagementPage() {
     );
   }
 
-  // If loading is complete and user is the admin, render the page.
+  // If loading is complete and the user IS the admin, render the page.
+  // The useEffect above prevents non-admins from ever seeing this.
   if (adminCustomer?.phoneNumber === "770326828") {
     return (
       <div className="bg-background text-foreground min-h-screen">
@@ -138,15 +140,15 @@ export default function UserManagementPage() {
             إدارة المستخدمين
           </h1>
         </header>
-        <main className="p-4 space-y-6">
+        <main className="p-4">
           <UserManagementContent />
         </main>
       </div>
     );
   }
 
-  // If loading is complete but user is not admin, they are being redirected.
-  // Showing a message here prevents a flash of an empty screen.
+  // Fallback for non-admins after loading. They are being redirected by the useEffect.
+  // This message is shown briefly during the redirection process.
   return (
     <div className="flex items-center justify-center h-screen">
       <p>غير مصرح لك بالدخول. جاري إعادة التوجيه...</p>
@@ -211,7 +213,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
                     <div className="text-left">
                         <p className="font-bold text-sm text-green-500 flex items-center justify-end gap-1" dir="ltr">
                             {customer.balance.toLocaleString()}
-                             <span className="text-xs">YER</span>
+                             <span className="text-xs">ريال يمني</span>
                         </p>
                     </div>
                 </div>
@@ -255,3 +257,5 @@ function CustomerCard({ customer }: { customer: Customer }) {
         </Card>
     )
 }
+
+    
