@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [hasNotifications, setHasNotifications] = useState(true); // Changed to true to show notification dot
+  const [hasNotifications, setHasNotifications] = useState(false); // Changed to false
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 

@@ -5,9 +5,7 @@ import { ArrowLeft, ChevronLeft, Heart } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-const favoriteNetworks = [
-  { id: "behim", name: "شبكة بيحم", logo: "/behim-logo.png" },
-];
+const favoriteNetworks: any[] = [];
 
 export default function FavoritesPage() {
   const router = useRouter();

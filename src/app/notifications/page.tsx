@@ -4,12 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, ArrowUp, ArrowDown, ShoppingCart, BellRing } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-const notifications = [
-  { id: 1, type: "إيداع رصيد", description: "تم إضافة 10,000 ريال إلى حسابك.", date: "2024-07-22", icon: ArrowDown, color: "text-green-500", amount: 10000 },
-  { id: 2, type: "شراء باقة", description: "تم شراء باقة شبكة بيحم.", date: "2024-07-21", icon: ShoppingCart, color: "text-blue-500", amount: -500 },
-  { id: 3, type: "تحويل رصيد", description: "تم تحويل مبلغ إلى 77xxxxxxx", date: "2024-07-20", icon: ArrowUp, color: "text-red-500", amount: -1000 },
-  { id: 4, type: "إشعار من النظام", description: "تحديث جديد للتطبيق متوفر الآن.", date: "2024-07-19", icon: BellRing, color: "text-primary", amount: null },
-];
+const notifications: any[] = [];
 
 export default function NotificationsPage() {
   const router = useRouter();
