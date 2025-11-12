@@ -1,8 +1,9 @@
+
 /**
  * @fileoverview Firestore Security Rules for the Customer Management App.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for customer data, with an exception for a specific admin user (identified by UID corresponding to phone number 770326828) who has full read and write access to all customer data for management purposes.
+ * This ruleset enforces a strict user-ownership model for customer data, with an exception for a specific admin user (identified by name "محمد راضي ربيع باشادي") who has full read and write access to all customer data for management purposes.
  *
  * Data Structure:
  * - /customers/{customerId}: Stores public and private data for each customer.
@@ -32,10 +33,10 @@ service cloud.firestore {
       return isOwner(customerId) && resource != null;
     }
 
-    // Admin is identified by their specific phone number stored in their customer document
+    // Admin is identified by their specific name stored in their customer document
     function isAdmin() {
        return exists(/databases/$(database)/documents/customers/$(request.auth.uid)) && 
-              get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == '770326828';
+              get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.name == "محمد راضي ربيع باشادي";
     }
 
     match /customers/{customerId} {
@@ -43,7 +44,7 @@ service cloud.firestore {
       allow list: if isAdmin();
 
       allow create: if isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId;
-      allow update: if isExistingOwner(customerId) || isAdmin();
+      allow update: if isOwner(customerId) || isAdmin();
       allow delete: if isExistingOwner(customerId);
 
       match /operations/{operationId} {
