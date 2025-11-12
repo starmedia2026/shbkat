@@ -5,12 +5,10 @@ import { Home, User, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAdmin } from "@/hooks/useAdmin";
 import { useMemo } from "react";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { isAdmin } = useAdmin();
 
   // Hide BottomNav on login, signup, and forgot-password pages
   if (["/", "/signup", "/forgot-password"].includes(pathname)) {
@@ -18,15 +16,12 @@ export function BottomNav() {
   }
 
   const navItems = useMemo(() => {
-    const items = [
+    return [
       { href: "/home", icon: Home, label: "الرئيسية" },
+      { href: "/account/user-management", icon: Users, label: "المستخدمين" },
+      { href: "/account", icon: User, label: "حسابي" },
     ];
-    if (isAdmin) {
-      items.push({ href: "/account/user-management", icon: Users, label: "المستخدمين" });
-    }
-    items.push({ href: "/account", icon: User, label: "حسابي" });
-    return items;
-  }, [isAdmin]);
+  }, []);
 
 
   return (
