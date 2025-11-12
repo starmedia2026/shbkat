@@ -75,11 +75,11 @@ export default function HomePage() {
               {isLoading ? (
                  <Skeleton className="h-9 w-36 mt-2 bg-white/30" />
               ) : (
-                <div className="text-3xl font-bold tracking-wider mt-1" dir="ltr">
+                <div className="text-3xl font-bold tracking-wider mt-1">
                   {balanceVisible ? (
                     <span className="flex items-baseline gap-2">
-                       <span className="text-sm font-normal">ريال يمني</span>
                        <span>{(customer?.balance || 0).toLocaleString()}</span>
+                       <span className="text-sm font-normal">ريال يمني</span>
                     </span>
                   ) : (
                     "********"
@@ -119,9 +119,9 @@ function ServiceButton({ icon: Icon, label, href, iconClassName }: { icon: React
   return (
     <Link href={href} className="block">
       <Card className="shadow-md rounded-2xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card/50 hover:bg-card">
-        <CardContent className="p-4 flex flex-col items-center justify-center space-y-2 h-28">
-          <Icon className={`h-7 w-7 ${iconClassName}`} />
-          <p className="text-xs font-semibold">{label}</p>
+        <CardContent className="p-4 flex flex-col items-center justify-center space-y-3 h-32">
+          <Icon className={`h-8 w-8 ${iconClassName}`} />
+          <p className="text-sm font-semibold">{label}</p>
         </CardContent>
       </Card>
     </Link>
