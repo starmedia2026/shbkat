@@ -95,7 +95,7 @@ export default function UserManagementPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const adminUserDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -105,26 +105,34 @@ export default function UserManagementPage() {
   const { data: adminCustomer, isLoading: isAdminCustomerLoading } = useDoc<Customer>(adminUserDocRef);
 
   useEffect(() => {
-    if (isUserLoading || isAdminCustomerLoading) {
-      return; 
-    }
+    const checkAuth = () => {
+      // Don't do anything until both user and their customer data have loaded
+      if (isUserLoading || isAdminCustomerLoading) {
+        return;
+      }
+      
+      // If no user is logged in, redirect to home
+      if (!user) {
+        router.push("/");
+        return;
+      }
+      
+      // Check if the user is the admin
+      if (adminCustomer?.phoneNumber === "770326828") {
+        setIsAdmin(true);
+      } else {
+        // If not admin, redirect to the account page
+        router.push("/account");
+      }
 
-    if (!user) {
-      router.push("/"); 
-      return;
-    }
-    
-    if (adminCustomer?.phoneNumber === "770326828") {
-      setIsAdmin(true);
-    } else {
-      router.push("/account");
-    }
-    setAuthChecked(true);
+      // Finish loading
+      setIsLoading(false);
+    };
 
+    checkAuth();
   }, [user, isUserLoading, adminCustomer, isAdminCustomerLoading, router]);
-  
 
-  if (!authChecked || isUserLoading || isAdminCustomerLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p>جاري التحميل والتحقق...</p>
