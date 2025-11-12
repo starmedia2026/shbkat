@@ -55,7 +55,7 @@ export default function HomePage() {
           )}
         </div>
         <div className="relative">
-          <Link href="/operations">
+          <Link href="/notifications">
             <Button variant="ghost" size="icon">
               <Bell className="h-6 w-6 text-primary" />
               {hasNotifications && (
