@@ -55,15 +55,17 @@ export default function HomePage() {
           )}
         </div>
         <div className="relative">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-6 w-6 text-primary" />
-            {hasNotifications && (
-              <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-              </span>
-            )}
-          </Button>
+          <Link href="/operations">
+            <Button variant="ghost" size="icon">
+              <Bell className="h-6 w-6 text-primary" />
+              {hasNotifications && (
+                <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                </span>
+              )}
+            </Button>
+          </Link>
         </div>
       </header>
 
