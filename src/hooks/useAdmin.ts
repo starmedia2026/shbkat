@@ -31,7 +31,8 @@ export function useAdmin() {
     if (!customer) {
       return false; // Not an admin if there's no customer data
     }
-    return customer.name === "محمد راضي ربيع باشادي";
+    // Check if the user is the admin based on the specific phone number
+    return customer.phoneNumber === "770326828";
   }, [customer, isLoading]);
 
   return {
