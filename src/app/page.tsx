@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Network } from "lucide-react";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -18,12 +17,11 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-8 flex items-center gap-3">
-          <Network className="h-10 w-10 text-primary" />
           <h1 className="text-4xl font-bold tracking-tight text-primary">
             شبكات
           </h1>
         </div>
-        <Card className="w-full shadow-2xl rounded-2xl">
+        <Card className="w-full border-0 shadow-none bg-transparent">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-xl">تسجيل الدخول</CardTitle>
           </CardHeader>
