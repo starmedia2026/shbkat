@@ -198,7 +198,7 @@ export default function AccountPage() {
                 سيؤدي هذا الإجراء إلى تسجيل خروجك من التطبيق. ستحتاج إلى تسجيل الدخول مرة أخرى للوصول إلى حسابك.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter className="flex-row justify-end space-x-2 space-x-reverse">
               <AlertDialogCancel>إلغاء</AlertDialogCancel>
               <AlertDialogAction onClick={handleLogout}>تأكيد</AlertDialogAction>
             </AlertDialogFooter>
