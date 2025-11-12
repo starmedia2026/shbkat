@@ -28,6 +28,13 @@ body {
     --input: 214.3 31.8% 91.4%;
     --ring: 210 100% 56%;
     --radius: 0.75rem;
+
+    --chart-1: 199 98% 48%; /* Sky Blue */
+    --chart-2: 142 76% 42%; /* Light Green */
+    --chart-3: 262 80% 58%; /* Purple */
+    --chart-4: 25 95% 53%;  /* Soft Orange */
+    --chart-5: 45 93% 47%;  /* Golden Yellow */
+    --chart-6: 175 70% 40%; /* Light Turquoise */
   }
   .dark {
     --background: 224 71.4% 4.1%;
@@ -49,6 +56,13 @@ body {
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
     --ring: 210 100% 56%;
+    
+    --chart-1: 199 98% 68%;
+    --chart-2: 142 76% 62%;
+    --chart-3: 262 80% 78%;
+    --chart-4: 25 95% 73%;
+    --chart-5: 45 93% 67%;
+    --chart-6: 175 70% 60%;
   }
 }
 

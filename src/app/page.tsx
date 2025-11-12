@@ -27,7 +27,7 @@ export default function LoginPage() {
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4">
+          <CardContent className="grid gap-4 p-6">
             <div className="grid gap-2 text-right">
               <Label htmlFor="phone">رقم الهاتف</Label>
               <Input
@@ -57,8 +57,8 @@ export default function LoginPage() {
                 </Link>
               </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-lg">
+          <CardFooter className="flex flex-col gap-4 p-6 pt-0">
+            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-lg as-child">
               <Link href="/home">دخول</Link>
             </Button>
             <div className="text-sm text-muted-foreground">
