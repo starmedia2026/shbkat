@@ -53,7 +53,7 @@ export default function SignupPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+            <Button className="w-full">
               إنشاء حساب
             </Button>
             <div className="text-sm text-muted-foreground">
