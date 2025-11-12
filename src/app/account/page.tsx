@@ -62,14 +62,6 @@ export default function AccountPage() {
     setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      user.getIdTokenResult().then((idTokenResult) => {
-        setIsAdmin(!!idTokenResult.claims.admin);
-      });
-    }
-  }, [user]);
-
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, "customers", user.uid);
@@ -78,6 +70,14 @@ export default function AccountPage() {
   const { data: customer, isLoading: isCustomerLoading } =
     useDoc(customerDocRef);
   const isLoading = isUserLoading || isCustomerLoading;
+  
+  useEffect(() => {
+    if (customer) {
+      // Check if the logged-in user's phone number is the admin number
+      setIsAdmin(customer.phoneNumber === "770326828");
+    }
+  }, [customer]);
+
 
   const handleLogout = async () => {
     try {

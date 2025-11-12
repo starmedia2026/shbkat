@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from "@/firebase";
 import { collection, doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
@@ -44,32 +44,39 @@ interface Customer {
 
 export default function UserManagementPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [isAdmin, setIsAdmin] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const adminUserDocRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, "customers", user.uid);
+  }, [firestore, user?.uid]);
+  
+  const { data: adminCustomer, isLoading: isAdminCustomerLoading } = useDoc<Customer>(adminUserDocRef);
 
   const customersCollectionRef = useMemoFirebase(() => {
     if (!firestore || !isAdmin) return null;
     return collection(firestore, "customers");
   }, [firestore, isAdmin]);
   
-  const { data: customers, isLoading } = useCollection<Customer>(customersCollectionRef);
+  const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(customersCollectionRef);
+  
+  const isLoading = isUserLoading || isAdminCustomerLoading || (isAdmin && areCustomersLoading);
 
   useEffect(() => {
-    if (user) {
-      user.getIdTokenResult().then((idTokenResult) => {
-        const isAdminClaim = !!idTokenResult.claims.admin;
-        setIsAdmin(isAdminClaim);
-        if (!isAdminClaim) {
-          router.push("/account"); // Redirect if not admin
-        }
-      });
-    } else {
+    if (!isUserLoading && !isAdminCustomerLoading) {
+      if (adminCustomer?.phoneNumber === "770326828") {
+        setIsAdmin(true);
+      } else {
+        router.push("/account"); // Redirect if not the specific admin user
+      }
+    } else if (!isUserLoading && !user) {
         // If no user, redirect
         router.push("/account");
     }
-  }, [user, router]);
+  }, [user, isUserLoading, adminCustomer, isAdminCustomerLoading, router]);
   
   const filteredCustomers = useMemo(() => {
     if (!customers) return [];
