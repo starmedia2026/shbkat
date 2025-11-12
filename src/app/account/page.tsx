@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -54,6 +54,11 @@ export default function AccountPage() {
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -125,32 +130,39 @@ export default function AccountPage() {
             <h3 className="font-semibold text-center text-sm text-muted-foreground my-2">
               الوضع المفضل
             </h3>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div
-                onClick={() => setTheme("light")}
-                className={cn(
-                  "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
-                  !darkMode
-                    ? "bg-primary/10 border-primary"
-                    : "border-transparent bg-muted/50 hover:bg-muted"
-                )}
-              >
-                <Sun className="mx-auto h-6 w-6 mb-2" />
-                <span className="text-sm font-semibold">فاتح</span>
+            {isClient ? (
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div
+                  onClick={() => setTheme("light")}
+                  className={cn(
+                    "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
+                    !darkMode
+                      ? "bg-primary/10 border-primary"
+                      : "border-transparent bg-muted/50 hover:bg-muted"
+                  )}
+                >
+                  <Sun className="mx-auto h-6 w-6 mb-2" />
+                  <span className="text-sm font-semibold">فاتح</span>
+                </div>
+                <div
+                  onClick={() => setTheme("dark")}
+                  className={cn(
+                    "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
+                    darkMode
+                      ? "bg-primary/10 border-primary"
+                      : "border-transparent bg-muted/50 hover:bg-muted"
+                  )}
+                >
+                  <Moon className="mx-auto h-6 w-6 mb-2" />
+                  <span className="text-sm font-semibold">داكن</span>
+                </div>
               </div>
-              <div
-                onClick={() => setTheme("dark")}
-                className={cn(
-                  "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
-                  darkMode
-                    ? "bg-primary/10 border-primary"
-                    : "border-transparent bg-muted/50 hover:bg-muted"
-                )}
-              >
-                <Moon className="mx-auto h-6 w-6 mb-2" />
-                <span className="text-sm font-semibold">داكن</span>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <Skeleton className="h-[92px] w-full" />
+                <Skeleton className="h-[92px] w-full" />
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
