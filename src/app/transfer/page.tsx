@@ -91,16 +91,9 @@ export default function TransferPage() {
                   placeholder="77xxxxxxxx"
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
-                  className="pr-12 text-right"
+                  className="text-left"
                   dir="ltr"
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-10 text-muted-foreground"
-                >
-                  <Contact className="h-5 w-5" />
-                </Button>
               </div>
             </div>
             <div className="space-y-2 text-right">
