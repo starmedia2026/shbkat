@@ -2,15 +2,14 @@
 
 import {
   ArrowLeft,
-  Contact,
   Send,
+  User,
   Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -18,9 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { collection, doc, getDocs, query, where } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function TransferPage() {
   const router = useRouter();
@@ -28,6 +27,8 @@ export default function TransferPage() {
   const firestore = useFirestore();
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  const [recipientName, setRecipientName] = useState<string | null>(null);
+  const [isRecipientLoading, setIsRecipientLoading] = useState(false);
 
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -37,6 +38,39 @@ export default function TransferPage() {
   const { data: customer, isLoading: isCustomerLoading } =
     useDoc(customerDocRef);
   const isLoading = isUserLoading || isCustomerLoading;
+
+  useEffect(() => {
+    const findRecipient = async () => {
+      if (recipient.length >= 9) { // Assuming a valid length for a phone number
+        setIsRecipientLoading(true);
+        setRecipientName(null);
+        try {
+          const customersRef = collection(firestore, "customers");
+          const q = query(customersRef, where("phoneNumber", "==", recipient));
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            const recipientData = querySnapshot.docs[0].data();
+            setRecipientName(recipientData.name);
+          } else {
+            setRecipientName("المستلم غير موجود");
+          }
+        } catch (error) {
+          console.error("Error fetching recipient:", error);
+          setRecipientName("خطأ في البحث عن المستلم");
+        } finally {
+          setIsRecipientLoading(false);
+        }
+      } else {
+        setRecipientName(null);
+      }
+    };
+
+    const debounceTimer = setTimeout(() => {
+      findRecipient();
+    }, 500); // Debounce to avoid querying on every keystroke
+
+    return () => clearTimeout(debounceTimer);
+  }, [recipient, firestore]);
 
   const handleTransfer = () => {
     // Transfer logic will be implemented here
@@ -91,11 +125,26 @@ export default function TransferPage() {
                   placeholder="77xxxxxxxx"
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
-                  className="text-left"
+                  className="text-right"
                   dir="ltr"
                 />
               </div>
             </div>
+
+            {(isRecipientLoading || recipientName) && (
+                 <div className="space-y-2 text-right">
+                    <Label htmlFor="recipientName">اسم المستلم</Label>
+                    {isRecipientLoading ? (
+                        <Skeleton className="h-10 w-full" />
+                    ) : (
+                        <div id="recipientName" className="flex items-center p-3 h-10 rounded-md border border-input bg-muted/50">
+                           <User className="h-4 w-4 mr-2 text-muted-foreground"/>
+                           <p className="text-sm font-medium">{recipientName}</p>
+                        </div>
+                    )}
+                 </div>
+            )}
+            
             <div className="space-y-2 text-right">
               <Label htmlFor="amount">المبلغ</Label>
               <Input
@@ -104,7 +153,7 @@ export default function TransferPage() {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="text-left"
+                className="text-right"
                 dir="ltr"
               />
             </div>
