@@ -5,49 +5,45 @@ import {
   Eye,
   EyeOff,
   Heart,
-  Home,
+  History,
+  MessageSquare,
   Send,
-  Share2,
   User,
   Wallet,
   Wifi,
-  History,
-  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { Switch } from "@/components/ui/switch";
 
 export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   return (
-    <div className="bg-background text-foreground min-h-screen pb-20">
-      <header className="p-4 flex justify-between items-center">
+    <div className="bg-background text-foreground min-h-screen pb-24">
+      <header className="p-6 flex justify-between items-center">
         <div className="text-right">
-          <h1 className="text-lg font-bold">مرحباً بك، محمد باشادي</h1>
+          <h2 className="text-xl text-muted-foreground">مرحباً بك</h2>
+          <h1 className="text-2xl font-bold">محمد باشادي</h1>
         </div>
         <div className="relative">
-          <Bell className="h-6 w-6 text-primary" />
-          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-          </span>
+          <Button variant="ghost" size="icon">
+            <Bell className="h-6 w-6 text-primary" />
+            <span className="absolute top-1 right-1 flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+          </Button>
         </div>
       </header>
 
       <main className="p-4 space-y-6">
-        <Card className="w-full shadow-lg rounded-xl bg-card">
+        <Card className="w-full shadow-lg rounded-2xl bg-card">
           <CardContent className="p-6 flex justify-between items-center">
             <div>
               <p className="text-sm text-muted-foreground">الرصيد الحالي</p>
-              <p
-                className={`text-2xl font-bold ${
-                  balanceVisible ? "" : "blur-sm"
-                }`}
-              >
-                ١٥,٠٠٠ ريال يمني
+              <p className="text-3xl font-bold tracking-wider">
+                {balanceVisible ? "١٥,٠٠٠ ريال" : "********"}
               </p>
             </div>
             <Button
@@ -64,7 +60,7 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-2 gap-4 text-center">
           <ServiceButton icon={Wifi} label="الشبكات" href="/networks" />
           <ServiceButton icon={History} label="العمليات" href="/operations" />
           <ServiceButton icon={Heart} label="المفضلة" href="/favorites" />
@@ -79,13 +75,13 @@ export default function HomePage() {
 
 function ServiceButton({ icon: Icon, label, href }: { icon: React.ElementType, label: string, href: string }) {
   return (
-    <Link href={href}>
-      <Card className="shadow-md rounded-xl hover:shadow-xl transition-shadow cursor-pointer">
-        <CardContent className="p-4 flex flex-col items-center justify-center space-y-2">
-          <div className="p-3 bg-accent rounded-full">
-            <Icon className="h-6 w-6 text-primary" />
+    <Link href={href} className="block">
+      <Card className="shadow-md rounded-2xl hover:shadow-xl transition-shadow cursor-pointer h-full">
+        <CardContent className="p-6 flex flex-col items-center justify-center space-y-3">
+          <div className="p-4 bg-accent rounded-full">
+            <Icon className="h-8 w-8 text-primary" />
           </div>
-          <p className="text-sm font-medium">{label}</p>
+          <p className="text-md font-semibold">{label}</p>
         </CardContent>
       </Card>
     </Link>
