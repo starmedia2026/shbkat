@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from "@/firebase";
-import { collection, doc, updateDoc } from "firebase/firestore";
+import { collection, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import {
@@ -32,7 +32,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 
 interface Customer {
@@ -94,27 +93,34 @@ export default function UserManagementPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
-  const adminUserDocRef = useMemoFirebase(() => {
+  const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, "customers", user.uid);
   }, [firestore, user?.uid]);
-  
-  const { data: adminCustomer, isLoading: isAdminCustomerLoading } = useDoc<Customer>(adminUserDocRef);
 
-  const isLoading = isUserLoading || isAdminCustomerLoading;
+  const { data: customerData, isLoading: isCustomerLoading } = useDoc(customerDocRef);
 
   useEffect(() => {
-    // If loading is finished and the user is NOT the admin, redirect.
-    // This runs only when isLoading changes from true to false.
-    if (!isLoading && adminCustomer?.phoneNumber !== "770326828") {
-      router.replace("/account");
-    }
-  }, [isLoading, adminCustomer, router]);
+    const checkAdmin = () => {
+      // Don't do anything until both user and customer data have loaded
+      if (isUserLoading || isCustomerLoading) return;
 
+      const isAdminUser = customerData?.phoneNumber === "770326828";
+      setIsAdmin(isAdminUser);
+      setIsAuthLoading(false); // Authorization check is complete
 
-  // While loading, show a full-screen loading indicator.
-  if (isLoading) {
+      if (!isAdminUser) {
+        router.replace("/account");
+      }
+    };
+
+    checkAdmin();
+  }, [user, customerData, isUserLoading, isCustomerLoading, router]);
+
+  if (isAuthLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p>جاري التحميل والتحقق...</p>
@@ -122,9 +128,7 @@ export default function UserManagementPage() {
     );
   }
 
-  // If loading is complete and the user IS the admin, render the page.
-  // The useEffect above prevents non-admins from ever seeing this.
-  if (adminCustomer?.phoneNumber === "770326828") {
+  if (isAdmin) {
     return (
       <div className="bg-background text-foreground min-h-screen">
         <header className="p-4 flex items-center justify-between relative">
@@ -146,13 +150,12 @@ export default function UserManagementPage() {
       </div>
     );
   }
-
-  // Fallback for non-admins after loading. They are being redirected by the useEffect.
-  // This message is shown briefly during the redirection process.
+  
+  // This is a fallback, but the useEffect should have already redirected.
   return (
-    <div className="flex items-center justify-center h-screen">
-      <p>غير مصرح لك بالدخول. جاري إعادة التوجيه...</p>
-    </div>
+      <div className="flex items-center justify-center h-screen">
+          <p>غير مصرح لك بالدخول. جاري إعادة التوجيه...</p>
+      </div>
   );
 }
 
@@ -172,12 +175,25 @@ function CustomerCard({ customer }: { customer: Customer }) {
             return;
         }
 
+        const topUpAmount = Number(amount);
         const customerDocRef = doc(firestore, "customers", customer.id);
-        const newBalance = customer.balance + Number(amount);
+        const operationDocRef = doc(collection(firestore, `customers/${customer.id}/operations`));
+        const newBalance = customer.balance + topUpAmount;
+
+        const operationData = {
+            type: "topup_admin",
+            amount: topUpAmount,
+            date: new Date().toISOString(),
+            description: "تغذية الرصيد من قبل الإدارة",
+            status: "completed"
+        };
 
         try {
-            // Using non-blocking update
-            updateDocumentNonBlocking(customerDocRef, { balance: newBalance });
+            const batch = writeBatch(firestore);
+            batch.update(customerDocRef, { balance: newBalance });
+            batch.set(operationDocRef, operationData);
+            await batch.commit();
+            
             toast({
                 title: "نجاح",
                 description: `تم تغذية حساب ${customer.name} بمبلغ ${amount} ريال. الرصيد الجديد: ${newBalance.toLocaleString()}`,
@@ -257,5 +273,3 @@ function CustomerCard({ customer }: { customer: Customer }) {
         </Card>
     )
 }
-
-    

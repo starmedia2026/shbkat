@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { collection, doc, getDocs, query, where, runTransaction } from "firebase/firestore";
+import { collection, doc, getDocs, query, where, runTransaction, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -77,7 +77,11 @@ export default function TransferPage() {
           const querySnapshot = await getDocs(q);
           if (!querySnapshot.empty) {
             const recipientData = querySnapshot.docs[0].data() as Customer;
-            setRecipient({ ...recipientData, id: querySnapshot.docs[0].id });
+            if (recipientData.id === user?.uid) {
+              setRecipientError("لا يمكنك التحويل إلى نفسك.");
+            } else {
+              setRecipient({ ...recipientData, id: querySnapshot.docs[0].id });
+            }
           } else {
             setRecipientError("المستلم غير موجود");
           }
@@ -98,7 +102,7 @@ export default function TransferPage() {
     }, 500); // Debounce to avoid querying on every keystroke
 
     return () => clearTimeout(debounceTimer);
-  }, [recipientPhone, firestore]);
+  }, [recipientPhone, firestore, user?.uid]);
 
   const handleTransfer = async () => {
     const transferAmount = Number(amount);
@@ -131,12 +135,41 @@ export default function TransferPage() {
             if (!senderDoc.exists() || !recipientDoc.exists()) {
                 throw "Document not found!";
             }
+            
+            // Check balance again inside transaction
+            const currentSenderBalance = senderDoc.data().balance;
+            if (currentSenderBalance < transferAmount) {
+                throw new Error("رصيد غير كافٍ");
+            }
 
-            const newSenderBalance = senderDoc.data().balance - transferAmount;
+            const newSenderBalance = currentSenderBalance - transferAmount;
             const newRecipientBalance = recipientDoc.data().balance + transferAmount;
             
+            // Update balances
             transaction.update(senderRef, { balance: newSenderBalance });
             transaction.update(recipientRef, { balance: newRecipientBalance });
+
+            // Create operation logs
+            const senderOperationRef = doc(collection(firestore, `customers/${user.uid}/operations`));
+            const recipientOperationRef = doc(collection(firestore, `customers/${recipient.id}/operations`));
+            
+            const now = new Date().toISOString();
+
+            transaction.set(senderOperationRef, {
+                type: 'transfer_sent',
+                amount: -transferAmount,
+                date: now,
+                description: `تحويل إلى ${recipient.name} (${recipient.phoneNumber})`,
+                status: 'completed'
+            });
+
+            transaction.set(recipientOperationRef, {
+                type: 'transfer_received',
+                amount: transferAmount,
+                date: now,
+                description: `استلام من ${sender.name} (${sender.phoneNumber})`,
+                status: 'completed'
+            });
         });
         
         toast({
@@ -148,12 +181,12 @@ export default function TransferPage() {
         setAmount("");
         setRecipient(null);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Transfer failed: ", error);
         toast({
             variant: "destructive",
             title: "فشل التحويل",
-            description: "حدث خطأ أثناء محاولة إتمام عملية التحويل. يرجى المحاولة مرة أخرى.",
+            description: error.message || "حدث خطأ أثناء محاولة إتمام عملية التحويل. يرجى المحاولة مرة أخرى.",
         });
     }
   };

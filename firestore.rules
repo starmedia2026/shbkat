@@ -41,6 +41,10 @@ service cloud.firestore {
       allow create: if isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId;
       allow update: if isExistingOwner(customerId) || isAdmin();
       allow delete: if isExistingOwner(customerId);
+
+      match /operations/{operationId} {
+        allow read, list, create: if isOwner(customerId);
+      }
     }
   }
 }

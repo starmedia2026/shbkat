@@ -40,6 +40,52 @@
         "location",
         "balance"
       ]
+    },
+    "Operation": {
+      "title": "Operation",
+      "description": "Represents a financial transaction or operation for a customer.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Type of the operation.",
+          "enum": [
+            "transfer_sent",
+            "transfer_received",
+            "topup_admin",
+            "purchase"
+          ]
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the transaction. Positive for income, negative for outcome."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp of the operation."
+        },
+        "description": {
+          "type": "string",
+          "description": "A short description of the operation, e.g., 'Transfer to John Doe' or 'Aden Net - 1GB Package'."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the operation.",
+          "enum": [
+            "completed",
+            "pending",
+            "failed"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "amount",
+        "date",
+        "description",
+        "status"
+      ]
     }
   },
   "auth": {
@@ -63,6 +109,26 @@
               "description": "The unique identifier for the customer."
             }
           ]
+        }
+      },
+      {
+        "path": "/customers/{customerId}/operations/{operationId}",
+        "definition": {
+            "entityName": "Operation",
+            "schema": {
+                "$ref": "#/backend/entities/Operation"
+            },
+            "description": "Stores a log of all financial operations for a specific customer.",
+            "params": [
+                {
+                    "name": "customerId",
+                    "description": "The unique identifier for the customer."
+                },
+                {
+                    "name": "operationId",
+                    "description": "The unique identifier for the operation."
+                }
+            ]
         }
       }
     ],
