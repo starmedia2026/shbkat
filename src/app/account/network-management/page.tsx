@@ -20,7 +20,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useAdmin } from "@/hooks/useAdmin";
 import { networks as initialNetworks, saveNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -52,7 +51,6 @@ interface Network {
 
 export default function NetworkManagementPage() {
   const router = useRouter();
-  const { isAdmin, isLoading } = useAdmin();
   const { toast } = useToast();
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
   const [isSaving, setIsSaving] = useState(false);
@@ -60,14 +58,6 @@ export default function NetworkManagementPage() {
   const [editingNetworkName, setEditingNetworkName] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
-
-  useEffect(() => {
-    // Wait until loading is finished and then check the admin status.
-    // Redirect only if loading is complete and the user is explicitly not an admin.
-    if (!isLoading && isAdmin === false) {
-      router.replace('/account');
-    }
-  }, [isLoading, isAdmin, router]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -140,21 +130,6 @@ export default function NetworkManagementPage() {
     ));
   };
 
-  // Render a stable loading state until admin status is confirmed.
-  // This prevents the page from flashing content or redirecting prematurely.
-  if (isLoading || isAdmin === null) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <p>جاري التحميل والتحقق...</p>
-      </div>
-    );
-  }
-
-  // If loading is done and the user is not an admin, the useEffect will handle the redirect.
-  // Render nothing here to avoid showing content for a split second before redirection.
-  if (isAdmin === false) {
-    return null;
-  }
 
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
@@ -318,3 +293,5 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
+
+    

@@ -25,13 +25,10 @@ export function BottomNav() {
   const adminNavItem = { href: "/account/user-management", icon: Users, label: "المستخدمين" };
 
   const navItems = useMemo(() => {
-    // Show admin item only if user is explicitly an admin.
-    // It won't show during loading because isAdmin will be null.
-    if (isAdmin === true) {
-      return [baseNavItems[0], adminNavItem, baseNavItems[1]];
-    }
-    return baseNavItems;
-  }, [isAdmin]);
+    // Always show admin item for now as per user request to debug flicker
+    // In production, this should be gated by `isAdmin`
+    return [baseNavItems[0], adminNavItem, baseNavItems[1]];
+  }, []);
 
 
   return (
@@ -63,3 +60,5 @@ export function BottomNav() {
     </nav>
   );
 }
+
+    
