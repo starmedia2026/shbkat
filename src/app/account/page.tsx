@@ -61,6 +61,11 @@ const colorOptions = [
   { name: 'purple', hsl: '262 80% 58%' },
   { name: 'orange', hsl: '25 95% 53%' },
   { name: 'yellow', hsl: '45 93% 47%' },
+  { name: 'pink', hsl: '340 82% 52%' },
+  { name: 'teal', hsl: '170 76% 42%' },
+  { name: 'indigo', hsl: '240 52% 64%' },
+  { name: 'lime', hsl: '90 75% 55%' },
+  { name: 'gray', hsl: '215 14% 47%' },
 ];
 
 export default function AccountPage() {
@@ -207,7 +212,7 @@ export default function AccountPage() {
                 </h3>
               </div>
               {isClient ? (
-                <div className="flex justify-center gap-3 mt-4">
+                <div className="flex justify-center flex-wrap gap-3 mt-4">
                   {colorOptions.map((color) => (
                     <div key={color.name}
                       onClick={() => setPrimaryColor(color.hsl)}
@@ -332,3 +337,5 @@ function AccountItem({
     </li>
   );
 }
+
+    
