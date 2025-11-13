@@ -85,9 +85,16 @@ export default function NetworkDetailPage() {
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <header className="p-4 flex items-center justify-between relative border-b">
-        <BackButton />
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">
+      <header className="p-4 flex items-center relative border-b">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.back()}
+          className="absolute left-4"
+        >
+          <ArrowRight className="h-6 w-6" />
+        </Button>
+        <h1 className="text-lg font-normal text-right flex-grow mr-16">
           {network.name}
         </h1>
       </header>
@@ -217,26 +224,26 @@ function PackageCard({ category, networkId, networkName }: { category: Category,
                 networkName: networkName
             });
 
-        } catch (error: any) {
-             // This allows our central error listener to catch it and display it in the dev overlay.
-             if (error.code && (error.code === 'permission-denied' || error.code === 'unauthenticated')) {
-                const permissionError = new FirestorePermissionError({
-                    path: 'Transaction for card purchase', // General path for a transaction
+        } catch (serverError: any) {
+             const isPermissionError = serverError.code && (serverError.code === 'permission-denied' || serverError.code === 'unauthenticated' || serverError.message.includes('permission'));
+             if (isPermissionError) {
+                const contextualError = new FirestorePermissionError({
                     operation: 'write',
-                    requestResourceData: {
-                        note: 'This was a transaction involving multiple steps (reading card, updating card, updating customer, creating operation). The exact failing step is not provided by the transaction error, but it was a permission issue.',
+                    path: 'Transaction for card purchase',
+                    requestResourceData: { 
+                        note: "A transaction involving multiple document writes failed during a card purchase.",
+                        userId: user.uid,
                         categoryId: category.id,
-                        price: category.price,
-                        customerId: user.uid
-                    },
+                        price: category.price
+                    }
                 });
-                errorEmitter.emit('permission-error', permissionError);
+                errorEmitter.emit('permission-error', contextualError);
             } else {
-                console.error("Purchase failed: ", error);
+                console.error("Purchase failed: ", serverError);
                 toast({
                     variant: "destructive",
                     title: "فشل الشراء",
-                    description: error.message || "حدث خطأ أثناء محاولة شراء الكرت.",
+                    description: serverError.message || "حدث خطأ أثناء محاولة شراء الكرت.",
                 });
             }
         } finally {
@@ -425,3 +432,5 @@ function BackButton() {
         </button>
     );
 }
+
+    
