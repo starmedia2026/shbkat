@@ -313,6 +313,17 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     const [name, setName] = useState(customer.name);
     const [phoneNumber, setPhoneNumber] = useState(customer.phoneNumber);
     const [isSaving, setIsSaving] = useState(false);
+    const [newTempPassword, setNewTempPassword] = useState('');
+
+    const generateRandomPassword = () => {
+        const password = Math.random().toString(36).slice(-8);
+        setNewTempPassword(password);
+    };
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(newTempPassword);
+        toast({ title: "تم النسخ", description: "تم نسخ كلمة المرور المؤقتة." });
+    };
 
     const handleSaveChanges = async () => {
         if (!name.trim() || !phoneNumber.trim()) {
@@ -358,7 +369,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
                 title: "تم بنجاح",
                 description: `تم وضع علامة على حساب ${customer.name} لفرض تغيير كلمة المرور.`,
             });
-            setIsOpen(false);
+            setIsOpen(false); // Close the main dialog after action
         } catch (error) {
             console.error("Error forcing password change:", error);
              const contextualError = new FirestorePermissionError({
@@ -405,27 +416,41 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
                     </Button>
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button type="button" variant="destructive" disabled={isSaving}>
+                            <Button type="button" variant="destructive" disabled={isSaving} onClick={generateRandomPassword}>
                                 <KeyRound className="h-4 w-4 ml-2"/>
                                 إعادة تعيين كلمة المرور
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>بدء عملية إعادة تعيين كلمة المرور</AlertDialogTitle>
+                                <AlertDialogTitle>إعادة تعيين كلمة المرور</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     <p>سيؤدي هذا الإجراء إلى وضع علامة على حساب المستخدم لفرض تغيير كلمة المرور عند تسجيل الدخول التالي.</p>
+                                    <div className="my-4 space-y-2">
+                                        <Label>كلمة المرور المؤقتة الجديدة:</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                readOnly
+                                                value={newTempPassword}
+                                                className="font-mono tracking-widest"
+                                                dir="ltr"
+                                            />
+                                            <Button variant="outline" size="icon" onClick={copyToClipboard}>
+                                                <Copy className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                     <p className="font-bold mt-2">الخطوات التالية المطلوبة منك:</p>
                                     <ol className="list-decimal list-inside mt-1 text-sm text-muted-foreground">
-                                        <li>اذهب إلى لوحة تحكم Firebase.</li>
-                                        <li>في قسم Authentication، أعد تعيين كلمة المرور للمستخدم يدويًا.</li>
+                                        <li>**انسخ** كلمة المرور المؤقتة أعلاه.</li>
+                                        <li>اذهب إلى **لوحة تحكم Firebase** وأعد تعيين كلمة المرور للمستخدم يدويًا باستخدام الكلمة المنسوخة.</li>
                                         <li>أرسل كلمة المرور المؤقتة الجديدة للمستخدم.</li>
                                     </ol>
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleForcePasswordChange}>نعم، ابدأ العملية</AlertDialogAction>
+                                <AlertDialogAction onClick={handleForcePasswordChange} disabled={isSaving}>نعم، ابدأ العملية</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
