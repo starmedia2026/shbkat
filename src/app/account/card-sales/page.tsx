@@ -106,18 +106,17 @@ export default function CardSalesPage() {
   if (isAdminLoading || isAdmin === null) {
     return (
       <div className="flex flex-col min-h-screen">
-        <header className="p-4 flex items-center justify-end relative">
-          <h1 className="text-lg font-semibold text-right flex-grow mr-4">
-            تقرير مبيعات الكروت
-          </h1>
+        <header className="p-4 flex items-center justify-between relative border-b">
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-0"
             onClick={() => router.back()}
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
+          <h1 className="text-lg font-normal text-right flex-grow">
+            تقرير مبيعات الكروت
+          </h1>
         </header>
         <main className="flex-grow flex items-center justify-center">
           <p>جاري التحميل والتحقق...</p>
@@ -220,18 +219,17 @@ function CardSalesContent() {
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <header className="p-4 flex items-center justify-end relative border-b">
-        <h1 className="text-lg font-semibold text-right flex-grow mr-4">
-          تقرير مبيعات الكروت
-        </h1>
+      <header className="p-4 flex items-center justify-between relative border-b">
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-0"
           onClick={() => router.back()}
         >
           <ArrowLeft className="h-6 w-6" />
         </Button>
+        <h1 className="text-lg font-normal text-right flex-grow">
+          تقرير مبيعات الكروت
+        </h1>
       </header>
       <main className="p-4">
         <Tabs defaultValue="sold" className="w-full">

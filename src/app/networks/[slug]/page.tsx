@@ -85,11 +85,11 @@ export default function NetworkDetailPage() {
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <header className="p-4 flex items-center justify-end relative">
-        <h1 className="text-lg font-semibold text-right flex-grow mr-4">
+      <header className="p-4 flex items-center justify-between relative border-b">
+        <BackButton />
+        <h1 className="text-lg font-normal text-right flex-grow">
           {network.name}
         </h1>
-        <BackButton />
       </header>
       <main className="p-4 space-y-4">
         {network.categories.map((category) => (
@@ -419,7 +419,7 @@ function BackButton() {
     return (
         <button
             onClick={() => router.back()}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2"
+            className="p-2"
         >
             <ArrowLeft className="h-6 w-6" />
         </button>

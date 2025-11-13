@@ -110,18 +110,17 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <header className="p-4 flex items-center justify-end relative border-b">
-        <h1 className="text-lg font-semibold text-right flex-grow mr-4">
-          تغيير كلمة المرور
-        </h1>
+      <header className="p-4 flex items-center justify-between relative border-b">
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-0"
           onClick={() => router.back()}
         >
           <ArrowLeft className="h-6 w-6" />
         </Button>
+        <h1 className="text-lg font-normal text-right flex-grow">
+          تغيير كلمة المرور
+        </h1>
       </header>
 
       <main className="p-4">
