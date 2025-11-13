@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { networks as initialNetworks, saveNetworks } from "@/lib/networks";
+import { networks as initialNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
     AlertDialog,
@@ -100,15 +100,24 @@ function NetworkManagementContent() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Here you would call an API to save the networks data.
-      // For this example, we'll simulate a save with a delay.
-      console.log("Saving networks:", networks);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      const response = await fetch('/api/save-networks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ networks }),
+      });
+
+      if (!response.ok) {
+        throw new Error('فشل في حفظ البيانات على الخادم');
+      }
+
       toast({
         title: "تم الحفظ",
-        description: "تم حفظ تغييرات الشبكات بنجاح. (محاكاة)",
+        description: "تم حفظ تغييرات الشبكات بنجاح.",
       });
     } catch (error) {
+        console.error(error);
       toast({
         variant: "destructive",
         title: "فشل الحفظ",
