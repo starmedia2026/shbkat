@@ -40,13 +40,24 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DialogClose
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useAdmin } from "@/hooks/useAdmin";
 
+
+// WhatsApp icon component
+const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 48 48"
+    fill="currentColor"
+  >
+    <path d="M3.6,37.8L2.4,44.4l6.9-1.8c2.1,1.3,4.5,2,7,2c8.3,0,15-6.7,15-15s-6.7-15-15-15c-8.3,0-15,6.7-15,15 c0,2.8,0.8,5.5,2.2,7.8L3.6,37.8z M11.1,32.4c-0.3-0.5-1.8-2.5-3.1-2.9c-1.3-0.4-2.7,0.4-3.1,0.8c-0.4,0.4-1.2,1-1.5,2.2 c-0.3,1.2,0,3,0.8,4.1c0.8,1.1,1.9,2.4,3.5,4c2,2,3.9,3.2,5.7,4.3c2.4,1.4,3.9,1.3,5.1,0.9c1.2-0.4,2.8-2.2,3.2-2.9 c0.4-0.7,0.4-1.4,0.3-1.6c-0.1-0.2-0.4-0.4-0.8-0.6c-0.5-0.2-2.8-1.4-3.3-1.6c-0.5-0.2-0.8-0.3-1.2,0.3c-0.3,0.6-1.2,1.5-1.5,1.8 c-0.3,0.3-0.6,0.3-1,0.1c-0.4-0.2-1.8-0.7-3.4-2.1c-1.3-1.1-2.2-2.5-2.5-2.9c-0.3-0.5-0.1-0.7,0.2-1c0.2-0.2,0.5-0.6,0.7-0.8 c0.2-0.2,0.3-0.5,0.5-0.8c0.2-0.3,0.1-0.6,0-0.8C14.2,22.1,12,17,11.5,16.1C11.1,15.2,10.8,15.3,10.5,15.3L11.1,32.4z"/>
+  </svg>
+);
 
 interface Customer {
     id: string;
@@ -246,6 +257,10 @@ function CustomerCard({ customer }: { customer: Customer }) {
         });
     };
 
+    const handleWhatsAppRedirect = () => {
+        const message = encodeURIComponent(`مرحباً ${customer.name.split(' ')[0]}`);
+        window.open(`https://wa.me/967${customer.phoneNumber}?text=${message}`, "_blank");
+    };
 
     return (
         <Card className="w-full shadow-md rounded-2xl bg-card/50">
@@ -260,6 +275,9 @@ function CustomerCard({ customer }: { customer: Customer }) {
                             <div className="flex items-center space-x-2 space-x-reverse mt-1 text-xs text-muted-foreground">
                                 <Phone className="h-3.5 w-3.5" />
                                 <span dir="ltr">{customer.phoneNumber}</span>
+                                <button onClick={handleWhatsAppRedirect} className="text-green-500 hover:text-green-600">
+                                    <WhatsAppIcon className="h-4 w-4" />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -427,5 +445,8 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     );
 }
     
+
+    
+
 
     
