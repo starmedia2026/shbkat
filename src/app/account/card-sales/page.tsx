@@ -34,10 +34,24 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 
+// WhatsApp icon component for the button
+const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 48 48"
+      fill="currentColor"
+    >
+        <path d="M3.6,37.8L2.4,44.4l6.9-1.8c2.1,1.3,4.5,2,7,2c8.3,0,15-6.7,15-15s-6.7-15-15-15c-8.3,0-15,6.7-15,15 c0,2.8,0.8,5.5,2.2,7.8L3.6,37.8z M11.1,32.4c-0.3-0.5-1.8-2.5-3.1-2.9c-1.3-0.4-2.7,0.4-3.1,0.8c-0.4,0.4-1.2,1-1.5,2.2 c-0.3,1.2,0,3,0.8,4.1c0.8,1.1,1.9,2.4,3.5,4c2,2,3.9,3.2,5.7,4.3c2.4,1.4,3.9,1.3,5.1,0.9c1.2-0.4,2.8-2.2,3.2-2.9 c0.4-0.7,0.4-1.4,0.3-1.6c-0.1-0.2-0.4-0.4-0.8-0.6c-0.5-0.2-2.8-1.4-3.3-1.6c-0.5-0.2-0.8-0.3-1.2,0.3c-0.3,0.6-1.2,1.5-1.5,1.8 c-0.3,0.3-0.6,0.3-1,0.1c-0.4-0.2-1.8-0.7-3.4-2.1c-1.3-1.1-2.2-2.5-2.5-2.9c-0.3-0.5-0.1-0.7,0.2-1c0.2-0.2,0.5-0.6,0.7-0.8 c0.2-0.2,0.3-0.5,0.5-0.8c0.2-0.3,0.1-0.6,0-0.8C14.2,22.1,12,17,11.5,16.1C11.1,15.2,10.8,15.3,10.5,15.3L11.1,32.4z"/>
+    </svg>
+);
+
+
 interface Customer {
   id: string;
   name: string;
   phoneNumber: string;
+  balance: number;
 }
 
 interface CardData {
@@ -50,17 +64,17 @@ interface CardData {
   usedBy?: string; // UID of user
 }
 
-// Create a lookup map for faster access to network/category names
+// Create a lookup map for faster access to network/category names and prices
 const networkLookup = networks.reduce((acc, net) => {
     acc[net.id] = {
         name: net.name,
         categories: net.categories.reduce((catAcc, cat) => {
-            catAcc[cat.id] = cat.name;
+            catAcc[cat.id] = { name: cat.name, price: cat.price };
             return catAcc;
-        }, {} as Record<string, string>)
+        }, {} as Record<string, { name: string; price: number }>)
     };
     return acc;
-}, {} as Record<string, { name: string; categories: Record<string, string> }>);
+}, {} as Record<string, { name: string; categories: Record<string, { name: string; price: number }> }>);
 
 
 export default function CardSalesPage() {
@@ -110,7 +124,7 @@ function CardSalesContent() {
   }, [firestore]);
   const { data: cards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
 
-  // Fetch all customers
+  // Fetch all customers, including their balance now
   const customersCollectionRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, "customers");
@@ -187,13 +201,40 @@ function CardSalesContent() {
 
 function SoldCardItem({ card, customer }: { card: CardData; customer?: Customer }) {
     const networkName = networkLookup[card.networkId]?.name || 'شبكة غير معروفة';
-    const categoryName = networkLookup[card.networkId]?.categories[card.categoryId] || 'فئة غير معروفة';
+    const categoryInfo = networkLookup[card.networkId]?.categories[card.categoryId];
+    const categoryName = categoryInfo?.name || 'فئة غير معروفة';
+    const categoryPrice = categoryInfo?.price || 0;
+    
     const { toast } = useToast();
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         toast({ title: "تم النسخ!", description: "تم نسخ رقم الكرت إلى الحافظة." });
     };
+
+    const handleWhatsAppRedirect = () => {
+        if (!customer) {
+            toast({ variant: "destructive", title: "خطأ", description: "معلومات العميل غير متوفرة." });
+            return;
+        }
+
+        const firstName = customer.name.split(' ')[0];
+        const message = `السلام عليكم ورحمة الله وبركاته،
+يا أهلاً وسهلاً فيك يا ${firstName} 🌹
+
+شكراً جزيلاً لك على ثقتك واستخدامك تطبيق شبكات
+
+🛒 **معلومات الكرت المشترى:**
+📡 الفئة: ${networkName} (${categoryPrice} ريال)
+🔢 رقم الكرت: ${card.id}
+
+💳 *رصيدك المتبقي في التطبيق :*
+${customer.balance.toLocaleString('en-US')} ريال
+`;
+        const whatsappUrl = `https://wa.me/${customer.phoneNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, "_blank");
+    };
+
 
     return (
         <Card className="w-full shadow-md rounded-2xl bg-card/50">
@@ -219,6 +260,12 @@ function SoldCardItem({ card, customer }: { card: CardData; customer?: Customer 
                          <p className="flex items-center justify-end gap-2" dir="ltr"><span className="font-mono">{customer?.phoneNumber || 'لا يوجد رقم'}</span> <Phone className="h-4 w-4 text-primary"/> </p>
                     </div>
                 </div>
+                <div className="mt-3 pt-3 border-t">
+                    <Button onClick={handleWhatsAppRedirect} variant="outline" className="w-full bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
+                        <WhatsAppIcon className="h-5 w-5 ml-2"/>
+                        إرسال عبر واتساب
+                    </Button>
+                </div>
             </CardContent>
         </Card>
     )
@@ -226,7 +273,7 @@ function SoldCardItem({ card, customer }: { card: CardData; customer?: Customer 
 
 function AvailableCardItem({ card }: { card: CardData }) {
     const networkName = networkLookup[card.networkId]?.name || 'Unknown Network';
-    const categoryName = networkLookup[card.networkId]?.categories[card.categoryId] || 'Unknown Category';
+    const categoryName = networkLookup[card.networkId]?.categories[card.categoryId]?.name || 'Unknown Category';
      const { toast } = useToast();
 
     const copyToClipboard = (text: string) => {
@@ -280,5 +327,7 @@ function CardSkeleton() {
     );
 }
 
+
+    
 
     
