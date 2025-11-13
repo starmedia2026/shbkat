@@ -34,20 +34,22 @@ export default function NetworksPage() {
                     <div className="w-12 h-12 bg-black/10 rounded-full flex items-center justify-center">
                         <Wifi className="h-7 w-7"/>
                     </div>
-                    <div className="flex-grow space-y-1 text-right">
+                    <div className="flex-grow text-right">
                         <h2 className="font-bold text-lg">{network.name}</h2>
-                        {network.ownerPhone && (
-                           <div className="flex items-center justify-end gap-2 text-xs text-primary-foreground/90">
-                            <Phone className="h-3 w-3" />
+                        <div className="flex items-center justify-end gap-4 text-xs text-primary-foreground/90 mt-1">
+                           {network.ownerPhone && (
+                           <div className="flex items-center gap-2">
                             <span dir="ltr">{network.ownerPhone}</span>
+                            <Phone className="h-3 w-3" />
                            </div>
-                        )}
-                        {network.address && (
-                           <div className="flex items-center justify-end gap-2 text-xs text-primary-foreground/90">
-                             <MapPin className="h-3 w-3" />
+                           )}
+                           {network.address && (
+                           <div className="flex items-center gap-2">
                             <span>{network.address}</span>
+                            <MapPin className="h-3 w-3" />
                            </div>
-                        )}
+                           )}
+                        </div>
                     </div>
                 </div>
                 <ChevronLeft className="w-8 h-8 opacity-70" />
@@ -66,5 +68,6 @@ const Button = ({ onClick, children, className, ...props }: any) => (
     {children}
   </button>
 );
+
 
 
