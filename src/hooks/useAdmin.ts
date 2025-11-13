@@ -5,7 +5,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useMemo } from "react";
 
-const ADMIN_PHONE_NUMBERS = ["770326828", "779838290"];
+const ADMIN_PHONE_NUMBERS = ["770326828"];
 
 /**
  * Custom hook to determine if the current user is an admin.

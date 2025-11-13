@@ -36,7 +36,7 @@ service cloud.firestore {
     // Admins are identified by a list of specific phone numbers stored in their customer document
     function isAdmin() {
        return exists(/databases/$(database)/documents/customers/$(request.auth.uid)) && 
-              get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber in ["770326828", "779838290"];
+              get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber in ["770326828"];
     }
 
     match /customers/{customerId} {
