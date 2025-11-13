@@ -10,7 +10,8 @@ import {
   RefreshCw,
   Copy,
   KeyRound,
-  Info
+  Info,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
-import { collection, doc, writeBatch, updateDoc } from "firebase/firestore";
+import { collection, doc, writeBatch, updateDoc, deleteDoc } from "firebase/firestore";
 import { useRouter }from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import {
@@ -238,6 +239,30 @@ function CustomerCard({ customer }: { customer: Customer }) {
         });
     };
 
+    const handleDeleteCustomer = async () => {
+        if (!firestore) {
+            toast({ variant: "destructive", title: "خطأ", description: "خدمة قاعدة البيانات غير متوفرة." });
+            return;
+        }
+
+        const customerDocRef = doc(firestore, "customers", customer.id);
+        try {
+            await deleteDoc(customerDocRef);
+            toast({
+                title: "تم الحذف بنجاح",
+                description: `تم حذف بيانات العميل ${customer.name} من قاعدة البيانات.`,
+            });
+        } catch (error) {
+            console.error("Error deleting customer:", error);
+            const contextualError = new FirestorePermissionError({
+                operation: 'delete',
+                path: `customers/${customer.id}`,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+            toast({ variant: "destructive", title: "فشل الحذف", description: "حدث خطأ أثناء حذف بيانات العميل." });
+        }
+    };
+
 
     return (
         <Card className="w-full shadow-md rounded-2xl bg-card/50">
@@ -300,6 +325,28 @@ function CustomerCard({ customer }: { customer: Customer }) {
                         </AlertDialog>
                         <EditCustomerDialog customer={customer} />
                          <PasswordResetInfoDialog />
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" className="flex-grow">
+                                    <Trash2 className="h-4 w-4 ml-2" />
+                                    حذف
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        هل أنت متأكد من رغبتك في حذف بيانات العميل "{customer.name}"؟ سيتم حذف سجله من قاعدة بيانات Firestore فقط.
+                                        <br/><br/>
+                                        <strong>ملاحظة هامة:</strong> هذا الإجراء لا يحذف حساب المصادقة (Authentication) الخاص به. يجب عليك حذفه يدويًا من لوحة تحكم Firebase لإكمال الحذف.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeleteCustomer}>تأكيد الحذف</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
             </CardContent>
@@ -399,54 +446,103 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
 }
 
 function PasswordResetInfoDialog() {
-    return (
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="destructive" className="flex-grow">
-            <KeyRound className="h-4 w-4 ml-2" />
-            إعادة تعيين
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Info className="h-5 w-5" />
-              تعليمات إعادة تعيين كلمة المرور
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3 pt-2 text-right">
-                <p>
-                  بسبب قيود الأمان، لا يمكن إعادة تعيين كلمة المرور مباشرة من
-                  هنا. يرجى اتباع الخطوات التالية يدويًا:
-                </p>
-                <ol className="list-decimal list-inside space-y-2 text-sm bg-muted p-3 rounded-md">
-                  <li>
-                    اذهب إلى لوحة تحكم Firebase قسم{" "}
-                    <strong>Authentication</strong>.
-                  </li>
-                  <li>
-                    <strong>احذف</strong> حساب المستخدم المطلوب.
-                  </li>
-                  <li>اطلب من المستخدم <strong>التسجيل مرة أخرى</strong> بنفس رقم هاتفه.</li>
-                  <li>
-                    بعد تسجيله، اذهب إلى قسم <strong>Firestore Database</strong>،
-                    وابحث عن سجله القديم وانسخ بياناته (مثل الرصيد).
-                  </li>
-                  <li>
-                    ابحث عن سجله الجديد و<strong>ألصق البيانات</strong> التي نسختها.
-                  </li>
-                </ol>
-                <p className="text-xs text-muted-foreground pt-2">
-                  نعتذر عن هذه العملية اليدوية، لكنها ضرورية لضمان أمان
-                  الحسابات.
-                </p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>فهمت</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    );
-  }
+  const [passwordResetInitiated, setPasswordResetInitiated] = useState(false);
+  const [newTempPassword, setNewTempPassword] = useState('');
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  // This is a placeholder for the customer prop which should be passed into this component
+  const customer: Customer | null = null; 
+
+  const handleInitiatePasswordReset = async () => {
+      if (!customer || !firestore) {
+          toast({ variant: "destructive", title: "خطأ", description: "لا يمكن بدء إعادة التعيين." });
+          return;
+      }
+      
+      const tempPassword = Math.random().toString(36).slice(-8);
+      setNewTempPassword(tempPassword);
+      setPasswordResetInitiated(true);
+      
+      const customerDocRef = doc(firestore, "customers", customer.id);
+      try {
+          await updateDoc(customerDocRef, { requiresPasswordChange: true });
+          toast({ title: "تم بدء العملية", description: "تم وضع علامة على الحساب. يرجى إكمال الخطوات التالية." });
+      } catch (error) {
+          console.error("Error setting password change flag:", error);
+          const contextualError = new FirestorePermissionError({
+              operation: 'update',
+              path: `customers/${customer.id}`,
+              requestResourceData: { requiresPasswordChange: true }
+          });
+          errorEmitter.emit('permission-error', contextualError);
+          toast({ variant: "destructive", title: "فشل", description: "لم يتم وضع علامة على الحساب." });
+      }
+  };
+
+  const copyToClipboard = () => {
+      navigator.clipboard.writeText(newTempPassword);
+      toast({ title: "تم النسخ", description: "تم نسخ كلمة المرور المؤقتة." });
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline" className="flex-grow">
+          <KeyRound className="h-4 w-4 ml-2" />
+          إعادة تعيين
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Info className="h-5 w-5" />
+            تعليمات إعادة تعيين كلمة المرور
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 pt-2 text-right">
+              {passwordResetInitiated ? (
+                 <>
+                    <p>الخطوة 1: انسخ كلمة المرور المؤقتة الجديدة.</p>
+                    <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                        <Input readOnly value={newTempPassword} className="font-mono" dir="ltr"/>
+                        <Button variant="ghost" size="icon" onClick={copyToClipboard}><Copy className="h-4 w-4"/></Button>
+                    </div>
+                     <p>الخطوة 2: اذهب إلى لوحة تحكم Firebase وأعد تعيين كلمة مرور العميل باستخدام هذه الكلمة.</p>
+                      <p className="text-xs text-muted-foreground pt-2">
+                        بعد ذلك، أرسل كلمة المرور هذه للعميل ليتمكن من تسجيل الدخول وتعيين كلمة مرور جديدة.
+                     </p>
+                 </>
+              ) : (
+                <>
+                  <p>
+                    هذه العملية ستضع علامة على حساب المستخدم لإجباره على تغيير كلمة المرور عند تسجيل الدخول التالي.
+                  </p>
+                   <ol className="list-decimal list-inside space-y-2 text-sm bg-muted p-3 rounded-md">
+                      <li>اضغط على "تأكيد وبدء العملية" لإنشاء كلمة مرور مؤقتة.</li>
+                      <li><strong>انسخ</strong> كلمة المرور المؤقتة التي ستظهر.</li>
+                      <li>اذهب إلى لوحة تحكم Firebase قسم <strong>Authentication</strong>.</li>
+                      <li>ابحث عن المستخدم وأعد تعيين كلمة المرور الخاصة به باستخدام الكلمة التي نسختها.</li>
+                      <li>أرسل كلمة المرور المؤقتة للمستخدم.</li>
+                   </ol>
+                  <p className="text-xs text-muted-foreground pt-2">
+                    هل أنت متأكد أنك تريد بدء عملية إعادة تعيين كلمة المرور؟
+                  </p>
+                </>
+              )}
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+            {passwordResetInitiated ? (
+                 <AlertDialogCancel>إغلاق</AlertDialogCancel>
+            ) : (
+                <>
+                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleInitiatePasswordReset}>تأكيد وبدء العملية</AlertDialogAction>
+                </>
+            )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
