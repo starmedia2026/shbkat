@@ -41,6 +41,7 @@ const networkData = networks.reduce((acc, network) => {
     return acc;
   }, {} as { [key: string]: typeof networks[0] });
   
+const ADMIN_PHONE_NUMBER = "770326828";
 
 interface Customer {
     id: string;
@@ -158,14 +159,12 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             const cardToPurchaseDoc = availableCardsSnapshot.docs[0];
             const cardRef = cardToPurchaseDoc.ref;
             
-            // Find the network owner outside the transaction
-            let ownerRef: any = null;
-            if (network.ownerPhone) {
-                const ownerQuery = query(collection(firestore, "customers"), where("phoneNumber", "==", network.ownerPhone), limit(1));
-                const ownerSnapshot = await getDocs(ownerQuery);
-                if (!ownerSnapshot.empty) {
-                    ownerRef = ownerSnapshot.docs[0].ref;
-                }
+            // Find the admin user outside the transaction
+            let adminRef: any = null;
+            const adminQuery = query(collection(firestore, "customers"), where("phoneNumber", "==", ADMIN_PHONE_NUMBER), limit(1));
+            const adminSnapshot = await getDocs(adminQuery);
+            if (!adminSnapshot.empty) {
+                adminRef = adminSnapshot.docs[0].ref;
             }
 
             const purchasedCardNumber = await runTransaction(firestore, async (transaction) => {
@@ -179,7 +178,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 if (senderBalance < category.price) throw new Error("رصيد غير كافٍ.");
 
                 const now = new Date().toISOString();
-                const ownerAmount = category.price * 0.90; // 90% for the owner
+                const profitAmount = category.price * 0.90; // 90% for the profit receiver
 
                 // 1. Update card status
                 transaction.update(cardRef, { status: "used", usedAt: now, usedBy: user.uid });
@@ -188,17 +187,17 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 const newSenderBalance = senderBalance - category.price;
                 transaction.update(customerDocRef, { balance: newSenderBalance });
                 
-                // 3. Update network owner balance (if owner exists)
-                if (ownerRef) {
-                    const ownerDoc = await transaction.get(ownerRef);
-                    if (ownerDoc.exists()) {
-                        const newOwnerBalance = ownerDoc.data().balance + ownerAmount;
-                        transaction.update(ownerRef, { balance: newOwnerBalance });
+                // 3. Update admin balance (if admin exists)
+                if (adminRef) {
+                    const adminDoc = await transaction.get(adminRef);
+                    if (adminDoc.exists()) {
+                        const newAdminBalance = adminDoc.data().balance + profitAmount;
+                        transaction.update(adminRef, { balance: newAdminBalance });
 
-                        // Network owner's operation & notification
-                        const ownerId = ownerDoc.id;
-                        transaction.set(doc(collection(firestore, `customers/${ownerId}/operations`)), { type: 'transfer_received', amount: ownerAmount, date: now, description: `أرباح بيع كرت: ${category.name}`, status: 'completed' });
-                        transaction.set(doc(collection(firestore, `customers/${ownerId}/notifications`)), { type: 'transfer_received', title: 'إيداع أرباح', body: `تم إيداع ${ownerAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: ownerAmount, date: now, read: false });
+                        // Admin's operation & notification
+                        const adminId = adminDoc.id;
+                        transaction.set(doc(collection(firestore, `customers/${adminId}/operations`)), { type: 'transfer_received', amount: profitAmount, date: now, description: `أرباح بيع كرت: ${category.name}`, status: 'completed' });
+                        transaction.set(doc(collection(firestore, `customers/${adminId}/notifications`)), { type: 'transfer_received', title: 'إيداع أرباح', body: `تم إيداع ${profitAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: profitAmount, date: now, read: false });
                     }
                 }
                 
