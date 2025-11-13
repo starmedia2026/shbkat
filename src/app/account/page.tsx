@@ -19,6 +19,8 @@ import {
   BarChart3,
   Palette,
   Image as ImageIcon,
+  Type,
+  LayoutDashboard,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -69,8 +71,14 @@ const colorOptions = [
   { name: 'gray', hsl: '215 14% 47%' },
 ];
 
+const fontOptions = [
+    { name: 'كايرو', class: 'font-cairo' },
+    { name: 'مروي', class: 'font-almarai' },
+    { name: 'ت جوال', class: 'font-tajawal' },
+];
+
 export default function AccountPage() {
-  const { darkMode, setTheme, primaryColor, setPrimaryColor } = useTheme();
+  const { darkMode, setTheme, primaryColor, setPrimaryColor, font, setFont } = useTheme();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
@@ -161,6 +169,37 @@ export default function AccountPage() {
             )}
           </CardContent>
         </Card>
+        
+        <Card className="w-full shadow-lg rounded-xl">
+            <CardContent className="p-4">
+                <h3 className="font-semibold text-center text-sm text-muted-foreground my-2">
+                    الخط المفضل
+                </h3>
+                {isClient ? (
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                    {fontOptions.map((fontOpt) => (
+                        <div
+                        key={fontOpt.class}
+                        onClick={() => setFont(fontOpt.class)}
+                        className={cn(
+                            "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
+                            font === fontOpt.class
+                            ? "bg-primary/10 border-primary"
+                            : "border-transparent bg-muted/50 hover:bg-muted"
+                        )}
+                        >
+                        <Type className="mx-auto h-6 w-6 mb-2" />
+                        <span className={`text-sm font-semibold ${fontOpt.class}`}>{fontOpt.name}</span>
+                        </div>
+                    ))}
+                </div>
+                ) : (
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-[92px] w-full" />)}
+                </div>
+                )}
+          </CardContent>
+        </Card>
 
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-4">
@@ -202,36 +241,42 @@ export default function AccountPage() {
             )}
           </CardContent>
         </Card>
-
+        
         {isAdmin && (
-          <Card className="w-full shadow-lg rounded-xl">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Palette className="h-5 w-5 text-muted-foreground"/>
-                <h3 className="font-semibold text-center text-sm text-muted-foreground">
-                  اللون الأساسي للتطبيق
-                </h3>
-              </div>
-              {isClient ? (
-                <div className="flex justify-center flex-wrap gap-3 mt-4">
-                  {colorOptions.map((color) => (
-                    <div key={color.name}
-                      onClick={() => setPrimaryColor(color.hsl)}
-                      style={{ backgroundColor: `hsl(${color.hsl})` }}
-                      className={cn(
-                        "cursor-pointer h-8 w-8 rounded-full border-2 transition-all transform hover:scale-110",
-                        primaryColor === color.hsl ? 'border-card' : 'border-transparent'
-                      )}
-                    />
-                  ))}
+            <>
+            <div className="flex items-center justify-center gap-3 text-muted-foreground font-semibold pt-4">
+                <LayoutDashboard className="h-5 w-5" />
+                <h2>لوحة التحكم</h2>
+            </div>
+            <Card className="w-full shadow-lg rounded-xl">
+                <CardContent className="p-4">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                    <Palette className="h-5 w-5 text-muted-foreground"/>
+                    <h3 className="font-semibold text-center text-sm text-muted-foreground">
+                    اللون الأساسي للتطبيق
+                    </h3>
                 </div>
-              ) : (
-                <div className="flex justify-center gap-3 mt-4">
-                  {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-8 rounded-full" />)}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                {isClient ? (
+                    <div className="flex justify-center flex-wrap gap-3 mt-4">
+                    {colorOptions.map((color) => (
+                        <div key={color.name}
+                        onClick={() => setPrimaryColor(color.hsl)}
+                        style={{ backgroundColor: `hsl(${color.hsl})` }}
+                        className={cn(
+                            "cursor-pointer h-8 w-8 rounded-full border-2 transition-all transform hover:scale-110",
+                            primaryColor === color.hsl ? 'border-card' : 'border-transparent'
+                        )}
+                        />
+                    ))}
+                    </div>
+                ) : (
+                    <div className="flex justify-center gap-3 mt-4">
+                    {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-8 rounded-full" />)}
+                    </div>
+                )}
+                </CardContent>
+            </Card>
+            </>
         )}
 
         <Card className="w-full shadow-lg rounded-xl">

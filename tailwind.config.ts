@@ -10,9 +10,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Cairo', 'sans-serif'],
-        headline: ['Cairo', 'sans-serif'],
-        code: ['monospace'],
+        cairo: ['Cairo', 'sans-serif'],
+        tajawal: ['Tajawal', 'sans-serif'],
+        almarai: ['Almarai', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

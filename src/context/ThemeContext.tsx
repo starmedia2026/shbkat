@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
+import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useAdmin } from "@/hooks/useAdmin";
 
@@ -11,20 +11,23 @@ interface ThemeContextType {
   setTheme: (theme: 'dark' | 'light') => void;
   primaryColor: string;
   setPrimaryColor: (hslColor: string) => void;
+  font: string;
+  setFont: (fontClass: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const DEFAULT_PRIMARY_COLOR = "210 100% 56%"; // Default blue
+const DEFAULT_FONT = "font-cairo";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkMode] = useState(false);
+  const [font, setFontState] = useState(DEFAULT_FONT);
   const firestore = useFirestore();
   const { isAdmin } = useAdmin();
 
   // Firestore reference to the global theme document
   const themeDocRef = useMemoFirebase(() => {
-    // We create the reference regardless of auth state now
     if (!firestore) return null;
     return doc(firestore, "settings", "theme");
   }, [firestore]);
@@ -42,8 +45,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [primaryColor]);
 
-
-  // Initialize dark mode from localStorage (it remains a per-device setting)
+  // Initialize dark mode and font from localStorage
   useEffect(() => {
     const storedDarkMode = localStorage.getItem('darkMode') === 'true';
     setDarkMode(storedDarkMode);
@@ -52,6 +54,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    const storedFont = localStorage.getItem('font') || DEFAULT_FONT;
+    setFontState(storedFont);
+    document.body.classList.remove('font-cairo', 'font-tajawal', 'font-almarai');
+    document.body.classList.add(storedFont);
   }, []);
 
   const setTheme = useCallback((theme: 'dark' | 'light') => {
@@ -64,6 +71,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("darkMode", "false");
     }
+  }, []);
+
+  const setFont = useCallback((fontClass: string) => {
+    setFontState(fontClass);
+    localStorage.setItem('font', fontClass);
+    document.body.classList.remove('font-cairo', 'font-tajawal', 'font-almarai');
+    document.body.classList.add(fontClass);
   }, []);
 
   // setPrimaryColor now writes to Firestore if the user is an admin
@@ -81,7 +95,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [isAdmin, themeDocRef, primaryColor]);
 
   // The context value now provides the color from Firestore
-  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor };
+  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor, font, setFont };
 
   return (
     <ThemeContext.Provider value={contextValue}>
