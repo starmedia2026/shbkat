@@ -257,11 +257,13 @@ function MyNetworkContent() {
                             </div>
                         </div>
                     )}
-                    <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(networkToDisplay.id); setEditingNetworkData({name: networkToDisplay.name, logo: networkToDisplay.logo || "", address: networkToDisplay.address || "", ownerPhone: networkToDisplay.ownerPhone || ""}); }}>
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                    </div>
+                    {editingNetworkId !== networkToDisplay.id && (
+                        <div className="flex items-center gap-1">
+                            <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(networkToDisplay.id); setEditingNetworkData({name: networkToDisplay.name, logo: networkToDisplay.logo || "", address: networkToDisplay.address || "", ownerPhone: networkToDisplay.ownerPhone || ""}); }}>
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {networkToDisplay.categories.map((category) => 
