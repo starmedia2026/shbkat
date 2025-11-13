@@ -93,7 +93,7 @@ export default function TransferPage() {
           }
         } catch (error) {
           console.error("Error fetching recipient:", error);
-          setRecipientError("خطأ في البحث عن المستلم");
+          setRecipientError("خطأ في البحث عن المستلم.");
         } finally {
           setIsRecipientLoading(false);
         }
@@ -136,7 +136,7 @@ export default function TransferPage() {
             const recipientDoc = await transaction.get(recipientRef);
 
             if (!senderDoc.exists() || !recipientDoc.exists()) {
-                throw new Error("Document not found!");
+                throw new Error("لم يتم العثور على حساب العميل.");
             }
             
             const currentSenderBalance = senderDoc.data().balance;
@@ -171,33 +171,21 @@ export default function TransferPage() {
         setRecipient(null);
         setRecipientError(null);
 
-    } catch (error: any) {
-        // This logic ensures that if the error is a permission error, we emit a detailed contextual error.
-        // Otherwise, we show a generic toast.
-        const isPermissionError = error.code && (error.code === 'permission-denied' || error.code === 'unauthenticated');
-
-        if (isPermissionError) {
-             const contextualError = new FirestorePermissionError({
-                operation: 'write',
-                path: `Transaction failed for customers: ${user.uid} -> ${recipient.id}`,
-                requestResourceData: { 
-                    note: "A transaction involving multiple document writes failed. The updates below were attempted.",
-                    senderUpdate: { path: `customers/${user.uid}`, data: { balance: sender.balance - transferAmount } },
-                    recipientUpdate: { path: `customers/${recipient.id}`, data: { balance: recipient.balance + transferAmount } },
-                    senderOperation: { path: `customers/${user.uid}/operations/...` },
-                    recipientOperation: { path: `customers/${recipient.id}/operations/...` },
-                    senderNotification: { path: `customers/${user.uid}/notifications/...` },
-                    recipientNotification: { path: `customers/${recipient.id}/notifications/...` }
-                }
-            });
-            errorEmitter.emit('permission-error', contextualError);
-        } else {
-             toast({
-                variant: "destructive",
-                title: "فشل التحويل",
-                description: error.message || "حدث خطأ غير متوقع أثناء عملية التحويل."
-            });
-        }
+    } catch (serverError: any) {
+        const contextualError = new FirestorePermissionError({
+            operation: 'write',
+            path: `Transaction failed for customers: ${user.uid} -> ${recipient.id}`,
+            requestResourceData: { 
+                note: "A transaction involving multiple document writes failed during a funds transfer. The updates below were attempted.",
+                senderUpdate: { path: `customers/${user.uid}`, data: { balance: sender.balance - transferAmount } },
+                recipientUpdate: { path: `customers/${recipient.id}`, data: { balance: recipient.balance + transferAmount } },
+                senderOperation: { path: `customers/${user.uid}/operations/...` },
+                recipientOperation: { path: `customers/${recipient.id}/operations/...` },
+                senderNotification: { path: `customers/${user.uid}/notifications/...` },
+                recipientNotification: { path: `customers/${recipient.id}/notifications/...` }
+            }
+        });
+        errorEmitter.emit('permission-error', contextualError);
     }
   };
   
@@ -313,6 +301,8 @@ export default function TransferPage() {
     </div>
   );
 }
+
+    
 
     
 
