@@ -31,6 +31,7 @@ import { networks } from "@/lib/networks";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 
 interface Customer {
@@ -149,8 +150,12 @@ function CardSalesContent() {
       <main className="p-4">
         <Tabs defaultValue="sold" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="sold">مباعة ({isLoading ? '...' : soldCards.length})</TabsTrigger>
-            <TabsTrigger value="available">متوفرة ({isLoading ? '...' : availableCards.length})</TabsTrigger>
+            <TabsTrigger value="sold" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:border-destructive/20 border-2 border-transparent">
+                مباعة ({isLoading ? '...' : soldCards.length})
+            </TabsTrigger>
+            <TabsTrigger value="available" className="data-[state=active]:bg-green-500/10 data-[state=active]:text-green-600 data-[state=active]:border-green-500/20 border-2 border-transparent">
+                متوفرة ({isLoading ? '...' : availableCards.length})
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="sold" className="mt-4 space-y-4">
             {isLoading ? (
@@ -275,3 +280,5 @@ function CardSkeleton() {
     );
 }
 
+
+    
