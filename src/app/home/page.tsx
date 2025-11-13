@@ -217,7 +217,7 @@ export default function HomePage() {
         <Card className="w-full shadow-xl rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden">
           <CardContent className="p-5 flex flex-col justify-start">
              <div className="flex justify-between items-center w-full">
-                <p className="text-sm font-medium">الرصيد الكلي</p>
+                <p className="text-sm font-medium">الرصيد المتاح</p>
                 <Button
                     variant="ghost"
                     size="icon"
@@ -370,6 +370,8 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
+    
+
     
 
     
