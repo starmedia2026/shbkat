@@ -20,7 +20,7 @@ const tajawal = Tajawal({
   variable: "--font-tajawal",
 });
 
-const DEFAULT_PRIMARY_COLOR = "210 100% 56%";
+const DEFAULT_PRIMARY_COLOR = "142 76% 36%";
 
 async function getThemeSettings() {
     try {
