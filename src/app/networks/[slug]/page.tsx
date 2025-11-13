@@ -243,8 +243,6 @@ function PackageCard({ category, networkId, networkName, isClient }: { category:
         }
     };
     
-    const canBuy = customer && customer.balance >= category.price;
-
     return (
         <>
         <Card
@@ -269,7 +267,7 @@ function PackageCard({ category, networkId, networkName, isClient }: { category:
                             <AlertDialogTrigger asChild>
                                 <Button 
                                     className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-5 rounded-lg text-xs"
-                                    disabled={!canBuy || isPurchasing}
+                                    disabled={isPurchasing}
                                 >
                                     {isPurchasing ? <Loader2 className="h-4 w-4 animate-spin" /> : "شراء"}
                                 </Button>
@@ -381,10 +379,10 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
             </Dialog>
 
             <Dialog open={smsDialogOpen} onOpenChange={setSmsDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[425px] rounded-2xl bg-card">
                     <DialogHeader>
-                         <DialogTitle>ارسال معلومات الكرت</DialogTitle>
-                         <DialogDescription className="text-center text-muted-foreground p-4">
+                         <DialogTitle className="text-center">ارسال معلومات الكرت</DialogTitle>
+                         <DialogDescription className="text-center text-muted-foreground p-4 pt-2">
                             يمكنك ارسال معلومات الكرت برسالة نصية SMS الى اي رقم. يرجى إدخال رقم الجوال الذي تريد إرسال الكرت اليه.
                         </DialogDescription>
                     </DialogHeader>
