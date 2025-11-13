@@ -92,15 +92,6 @@ function AppSettingsContent() {
 
 
   const handleSaveSettings = async () => {
-    if (!logoUrl.trim()) {
-      toast({
-        variant: "destructive",
-        title: "رابط الشعار مطلوب",
-        description: "الرجاء إدخال رابط صالح للشعار.",
-      });
-      return;
-    }
-    
     if (!firestore || !appSettingsDocRef) {
         toast({ variant: "destructive", title: "خطأ", description: "خدمة قاعدة البيانات غير متوفرة." });
         return;
@@ -165,7 +156,7 @@ function AppSettingsContent() {
                     <div className="space-y-2">
                         <Label htmlFor="logoUrl" className="flex items-center gap-2">
                             <ImageIcon className="h-4 w-4" />
-                            <span>رابط الشعار (مطلوب)</span>
+                            <span>رابط الشعار (اختياري)</span>
                         </Label>
                         <Input id="logoUrl" placeholder="https://example.com/logo.png" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} dir="ltr" />
                     </div>

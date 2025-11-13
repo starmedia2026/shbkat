@@ -240,10 +240,7 @@
           "type": "string",
           "description": "The URL to be shared when a user clicks the 'Share App' button."
         }
-      },
-      "required": [
-        "logoUrl"
-      ]
+      }
     }
   },
   "auth": {
