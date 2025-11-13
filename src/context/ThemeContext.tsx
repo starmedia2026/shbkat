@@ -95,7 +95,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider value={contextValue}>
-      {children}
+      <div className={cn(isMounted ? font : '')}>
+        {children}
+      </div>
     </ThemeContext.Provider>
   );
 }
