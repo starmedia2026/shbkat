@@ -139,7 +139,14 @@ function CardSalesContent() {
 
   const { soldCards, availableCards } = useMemo(() => {
     if (!cards) return { soldCards: [], availableCards: [] };
-    const sold = cards.filter(card => card.status === 'used');
+    const sold = cards
+      .filter(card => card.status === 'used')
+      .sort((a, b) => {
+        if (a.usedAt && b.usedAt) {
+          return new Date(b.usedAt).getTime() - new Date(a.usedAt).getTime();
+        }
+        return 0;
+      });
     const available = cards.filter(card => card.status === 'available');
     return { soldCards: sold, availableCards: available };
   }, [cards]);
