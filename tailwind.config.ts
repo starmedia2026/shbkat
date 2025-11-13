@@ -14,6 +14,7 @@ export default {
         'tajawal': ['"Tajawal"', 'sans-serif'],
         'cairo': ['"Cairo"', 'sans-serif'],
         'almarai': ['"Almarai"', 'sans-serif'],
+        'ibm-plex-sans-arabic': ['"IBM Plex Sans Arabic"', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
