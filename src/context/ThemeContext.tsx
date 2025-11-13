@@ -42,14 +42,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setIsMounted(true);
   }, []);
 
-
   useEffect(() => {
     if (isMounted) {
       if (primaryColor) {
         document.documentElement.style.setProperty('--primary', primaryColor);
       }
+      
+      // Remove all other font classes and add the correct one
+      const fontClasses = ['font-tajawal', 'font-cairo', 'font-almarai', 'font-ibm-plex-sans-arabic'];
+      document.body.classList.remove(...fontClasses);
+      if (font) {
+        document.body.classList.add(font);
+      } else {
+        document.body.classList.add(DEFAULT_FONT);
+      }
     }
-  }, [primaryColor, isMounted]);
+  }, [primaryColor, font, isMounted]);
 
   useEffect(() => {
     const storedDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -95,9 +103,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider value={contextValue}>
-      <div className={cn(isMounted ? font : '')}>
-        {children}
-      </div>
+      {children}
     </ThemeContext.Provider>
   );
 }

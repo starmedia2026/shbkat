@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider, useTheme } from "@/context/ThemeContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { FirebaseClientProvider } from "@/firebase";
 import { cn } from "@/lib/utils";
 
@@ -29,16 +29,6 @@ const ThemeScript = () => (
   />
 );
 
-function AppBody({ children }: { children: React.ReactNode }) {
-  // The font class will be applied by the ThemeProvider's wrapper div
-  return (
-    <body className={cn("font-tajawal")}>
-      {children}
-      <Toaster />
-    </body>
-  );
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -59,11 +49,14 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <FirebaseClientProvider>
-        <ThemeProvider>
-          <AppBody>{children}</AppBody>
-        </ThemeProvider>
-      </FirebaseClientProvider>
+      <body>
+        <FirebaseClientProvider>
+          <ThemeProvider>
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </FirebaseClientProvider>
+      </body>
     </html>
   );
 }
