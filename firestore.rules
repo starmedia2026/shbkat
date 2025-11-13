@@ -92,8 +92,7 @@ service cloud.firestore {
     }
 
     match /settings/navigation/items/{itemId} {
-        allow list: if isSignedIn();
-        allow get: if isSignedIn();
+        allow list, get: if isSignedIn();
         allow write: if isAdmin();
     }
     
