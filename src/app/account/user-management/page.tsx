@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, errorEmitter, useUser } from "@/firebase";
 import { collection, doc, writeBatch, updateDoc, deleteDoc } from "firebase/firestore";
 import { useRouter }from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
@@ -176,14 +176,17 @@ function UserManagementContent() {
 
 function CustomerCard({ customer }: { customer: Customer }) {
     const firestore = useFirestore();
+    const { user: adminUser } = useUser();
     const { toast } = useToast();
     const [amount, setAmount] = useState("");
 
     const performTopUp = (topUpAmount: number, andThen?: (newBalance: number) => void) => {
-        if (!firestore) return;
+        if (!firestore || !adminUser) return;
         const customerDocRef = doc(firestore, "customers", customer.id);
-        const operationDocRef = doc(collection(firestore, `customers/${customer.id}/operations`));
-        const notificationDocRef = doc(collection(firestore, `customers/${customer.id}/notifications`));
+        const customerOperationDocRef = doc(collection(firestore, `customers/${customer.id}/operations`));
+        const customerNotificationDocRef = doc(collection(firestore, `customers/${customer.id}/notifications`));
+        const adminNotificationDocRef = doc(collection(firestore, `customers/${adminUser.uid}/notifications`));
+
         const newBalance = customer.balance + topUpAmount;
 
         const operationData = {
@@ -203,10 +206,20 @@ function CustomerCard({ customer }: { customer: Customer }) {
             read: false
         };
 
+        const adminNotificationData = {
+            type: "topup_admin",
+            title: `تم إيداع مبلغ إلى ${customer.name}`,
+            body: `تم إيداع ${topUpAmount.toLocaleString('en-US')} ريال بنجاح.`,
+            amount: topUpAmount,
+            date: new Date().toISOString(),
+            read: false
+        };
+
         const batch = writeBatch(firestore);
         batch.update(customerDocRef, { balance: newBalance });
-        batch.set(operationDocRef, operationData);
-        batch.set(notificationDocRef, notificationData);
+        batch.set(customerOperationDocRef, operationData);
+        batch.set(customerNotificationDocRef, notificationData);
+        batch.set(adminNotificationDocRef, adminNotificationData); // Add notification for the admin
         
         batch.commit().then(() => {
             toast({
@@ -221,8 +234,9 @@ function CustomerCard({ customer }: { customer: Customer }) {
                 path: 'batch-write', // Generic path for batch
                 requestResourceData: {
                   update: { path: customerDocRef.path, data: { balance: newBalance } },
-                  setOp: { path: operationDocRef.path, data: operationData },
-                  setNotif: { path: notificationDocRef.path, data: notificationData }
+                  setOp: { path: customerOperationDocRef.path, data: operationData },
+                  setNotif: { path: customerNotificationDocRef.path, data: notificationData },
+                  setAdminNotif: { path: adminNotificationDocRef.path, data: adminNotificationData }
                 }
             });
             errorEmitter.emit('permission-error', contextualError);
@@ -514,3 +528,4 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     
 
     
+
