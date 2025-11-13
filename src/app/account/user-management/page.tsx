@@ -308,18 +308,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     const [isOpen, setIsOpen] = useState(false);
     const [name, setName] = useState(customer.name);
     const [phoneNumber, setPhoneNumber] = useState(customer.phoneNumber);
-    const [newPassword, setNewPassword] = useState("");
     const [isSaving, setIsSaving] = useState(false);
-
-    const generateRandomPassword = () => {
-        const password = Math.random().toString(36).slice(-8);
-        setNewPassword(password);
-    };
-
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(newPassword);
-        toast({ title: "تم النسخ", description: "تم نسخ كلمة المرور الجديدة." });
-    };
 
     const handleSaveChanges = async () => {
         if (!name.trim() || !phoneNumber.trim()) {
@@ -332,25 +321,15 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
             if (!firestore) throw new Error("Firestore not available");
             const customerDocRef = doc(firestore, "customers", customer.id);
             
-            const updateData: { name: string; phoneNumber: string; requiresPasswordChange?: boolean } = {
+            const updateData: { name: string; phoneNumber: string; } = {
                 name: name,
                 phoneNumber: phoneNumber,
             };
 
-            // If a new password was generated, set the flag to force change on next login
-            if (newPassword) {
-                updateData.requiresPasswordChange = true;
-            }
-
             await updateDoc(customerDocRef, updateData);
-
-            // Note: Password update is not actually performed on Firebase Auth
-            // as it requires Admin SDK which is not available on the client-side.
-            // We only show it to the admin and set a flag for the user to change it.
 
             toast({ title: "نجاح", description: "تم تحديث بيانات العميل بنجاح." });
             setIsOpen(false);
-            setNewPassword(""); // Clear the generated password after closing
         } catch (error) {
             console.error("Error updating customer:", error);
             const contextualError = new FirestorePermissionError({
@@ -367,7 +346,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
 
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(!open) setNewPassword("")}}>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button variant="secondary" className="flex-grow">
                     <Edit className="h-4 w-4 ml-2"/>
@@ -378,7 +357,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
                 <DialogHeader>
                     <DialogTitle>تعديل حساب: {customer.name}</DialogTitle>
                     <DialogDescription>
-                        يمكنك تعديل بيانات العميل أو إعادة تعيين كلمة المرور.
+                        يمكنك تعديل بيانات العميل. لإعادة تعيين كلمة المرور، يرجى توجيه العميل إلى صفحة "نسيت كلمة المرور".
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -389,26 +368,6 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="phone" className="text-right col-span-1">الهاتف</Label>
                         <Input id="phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="col-span-3" dir="ltr" />
-                    </div>
-                    <div className="pt-4 border-t">
-                        <Label className="text-right mb-2 block">إعادة تعيين كلمة المرور</Label>
-                         <div className="flex gap-2">
-                             <Button variant="outline" onClick={generateRandomPassword} className="flex-grow">
-                                <RefreshCw className="h-4 w-4 ml-2"/>
-                                إنشاء كلمة مرور جديدة
-                            </Button>
-                         </div>
-                        {newPassword && (
-                             <div className="mt-4 flex items-center justify-between rounded-md border bg-muted p-3">
-                                <p className="font-mono text-sm">{newPassword}</p>
-                                <Button size="icon" variant="ghost" onClick={copyToClipboard}>
-                                    <Copy className="h-4 w-4"/>
-                                </Button>
-                            </div>
-                        )}
-                         <p className="text-xs text-muted-foreground mt-2">
-                            ملاحظة: سيؤدي إنشاء كلمة مرور جديدة إلى تغيير كلمة مرور المستخدم الحالية. يرجى تزويد المستخدم بكلمة المرور الجديدة.
-                        </p>
                     </div>
                 </div>
                 <DialogFooter>
