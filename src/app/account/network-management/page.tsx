@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { networks as initialNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
@@ -41,6 +41,8 @@ import {
   } from "@/components/ui/alert-dialog";
 import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
+import { useNetworkOwner } from "@/hooks/useNetworkOwner";
+
 
 interface Category {
   id: string;
@@ -70,14 +72,17 @@ const initialGlobalCategoryState: Omit<Category, 'id'> = {
 export default function NetworkManagementPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+  const { isOwner, isLoading: isOwnerLoading } = useNetworkOwner();
+
 
   useEffect(() => {
-    if (!isAdminLoading && isAdmin === false) {
+    const isAuthorizing = isAdminLoading || isOwnerLoading;
+    if (!isAuthorizing && !isAdmin && !isOwner) {
       router.replace("/account");
     }
-  }, [isAdmin, isAdminLoading, router]);
+  }, [isAdmin, isOwner, isAdminLoading, isOwnerLoading, router]);
 
-  if (isAdminLoading || isAdmin === null) {
+  if (isAdminLoading || isOwnerLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="p-4 flex items-center justify-between relative border-b">
@@ -104,6 +109,7 @@ export default function NetworkManagementPage() {
 
 function NetworkManagementContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
   const [isSaving, setIsSaving] = useState(false);
@@ -111,10 +117,26 @@ function NetworkManagementContent() {
   const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string, ownerPhone: string}>({name: "", logo: "", address: "", ownerPhone: ""});
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
+  
+  const { isAdmin } = useAdmin();
+  const { isOwner, ownedNetwork } = useNetworkOwner();
+  const ownerNetworkId = searchParams.get('id');
+
 
   const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id'>>(initialGlobalCategoryState);
   
   const isInitialMount = useRef(true);
+
+  const displayedNetworks = useMemo(() => {
+    if (isAdmin) {
+      return networks;
+    }
+    if (isOwner && ownedNetwork) {
+      return networks.filter(n => n.id === ownedNetwork.id || (ownerNetworkId && n.id === ownerNetworkId));
+    }
+    return [];
+  }, [networks, isAdmin, isOwner, ownedNetwork, ownerNetworkId]);
+
 
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
     setIsSaving(true);
@@ -153,6 +175,7 @@ function NetworkManagementContent() {
   };
   
   const handleAddNetwork = () => {
+    if (!isAdmin) return;
     const newId = `new-network-${Date.now()}`;
     const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: "", categories: [] };
     const newNetworks = [...networks, newNetwork];
@@ -169,6 +192,7 @@ function NetworkManagementContent() {
   };
 
   const handleDeleteNetwork = (networkId: string) => {
+    if (!isAdmin) return;
     const newNetworks = networks.filter(n => n.id !== networkId);
     updateAndSave(newNetworks);
   };
@@ -208,6 +232,7 @@ function NetworkManagementContent() {
   };
 
   const handleAddGlobalCategory = () => {
+    if (!isAdmin) return;
     if (!globalCategory.name || globalCategory.price <= 0) {
         toast({
             variant: "destructive",
@@ -256,28 +281,30 @@ function NetworkManagementContent() {
       </header>
       <main className="p-4">
         <div className="space-y-6">
-            <Card className="w-full shadow-md rounded-2xl bg-card/50">
-                <CardHeader>
-                    <div className="flex items-center gap-2">
-                        <Globe className="h-5 w-5 text-primary"/>
-                        <CardTitle>إضافة فئة موحدة لجميع الشبكات</CardTitle>
-                    </div>
-                    <CardDescription>
-                        أدخل تفاصيل الفئة هنا لإضافتها إلى جميع الشبكات الموجودة دفعة واحدة.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <CategoryEditForm 
-                        category={globalCategory}
-                        setCategory={setGlobalCategory}
-                        onSave={handleAddGlobalCategory}
-                        onCancel={() => setGlobalCategory(initialGlobalCategoryState)}
-                        isGlobalForm={true}
-                    />
-                </CardContent>
-            </Card>
+            {isAdmin && (
+                <Card className="w-full shadow-md rounded-2xl bg-card/50">
+                    <CardHeader>
+                        <div className="flex items-center gap-2">
+                            <Globe className="h-5 w-5 text-primary"/>
+                            <CardTitle>إضافة فئة موحدة لجميع الشبكات</CardTitle>
+                        </div>
+                        <CardDescription>
+                            أدخل تفاصيل الفئة هنا لإضافتها إلى جميع الشبكات الموجودة دفعة واحدة.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <CategoryEditForm 
+                            category={globalCategory}
+                            setCategory={setGlobalCategory}
+                            onSave={handleAddGlobalCategory}
+                            onCancel={() => setGlobalCategory(initialGlobalCategoryState)}
+                            isGlobalForm={true}
+                        />
+                    </CardContent>
+                </Card>
+            )}
 
-          {networks.map((network) => (
+          {displayedNetworks.map((network) => (
             <Card key={network.id} className="w-full shadow-md rounded-2xl bg-card/50">
               <CardHeader className="flex-row items-center justify-between">
                 {editingNetworkId === network.id ? (
@@ -285,7 +312,7 @@ function NetworkManagementContent() {
                     <Input placeholder="اسم الشبكة" value={editingNetworkData.name} onChange={e => setEditingNetworkData(prev => ({...prev, name: e.target.value}))}/>
                     <Input placeholder="رابط الشعار" value={editingNetworkData.logo} onChange={e => setEditingNetworkData(prev => ({...prev, logo: e.target.value}))}/>
                     <Input placeholder="عنوان الشبكة" value={editingNetworkData.address} onChange={e => setEditingNetworkData(prev => ({...prev, address: e.target.value}))}/>
-                    <Input placeholder="رقم المالك" value={editingNetworkData.ownerPhone} onChange={e => setEditingNetworkData(prev => ({...prev, ownerPhone: e.target.value}))}/>
+                    {isAdmin && <Input placeholder="رقم المالك" value={editingNetworkData.ownerPhone} onChange={e => setEditingNetworkData(prev => ({...prev, ownerPhone: e.target.value}))}/>}
                     <div className="flex justify-end gap-2 mt-2">
                         <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(network.id)}><Save className="h-4 w-4"/></Button>
                         <Button size="icon" variant="ghost" onClick={() => {
@@ -322,25 +349,27 @@ function NetworkManagementContent() {
                    <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(network.id); setEditingNetworkData({name: network.name, logo: network.logo || "", address: network.address || "", ownerPhone: network.ownerPhone || ""}); }}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            هل أنت متأكد من رغبتك في حذف شبكة "{network.name}"؟ سيتم حذف جميع الباقات المرتبطة بها.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteNetwork(network.id)}>تأكيد الحذف</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  {isAdmin && (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                هل أنت متأكد من رغبتك في حذف شبكة "{network.name}"؟ سيتم حذف جميع الباقات المرتبطة بها.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteNetwork(network.id)}>تأكيد الحذف</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -374,10 +403,12 @@ function NetworkManagementContent() {
               </CardContent>
             </Card>
           ))}
-          <Button variant="secondary" className="w-full" onClick={handleAddNetwork}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            إضافة شبكة جديدة
-          </Button>
+          {isAdmin && (
+            <Button variant="secondary" className="w-full" onClick={handleAddNetwork}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                إضافة شبكة جديدة
+            </Button>
+          )}
         </div>
       </main>
     </div>

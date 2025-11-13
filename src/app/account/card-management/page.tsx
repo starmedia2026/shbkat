@@ -32,6 +32,7 @@ import { networks } from "@/lib/networks";
 import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { writeBatch, collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { useNetworkOwner } from "@/hooks/useNetworkOwner";
 
 interface Category {
   id: string;
@@ -46,14 +47,17 @@ interface CardInput {
 export default function CardManagementPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+  const { isOwner, isLoading: isOwnerLoading } = useNetworkOwner();
+
 
   useEffect(() => {
-    if (!isAdminLoading && isAdmin === false) {
+    const isAuthorizing = isAdminLoading || isOwnerLoading;
+    if (!isAuthorizing && !isAdmin && !isOwner) {
       router.replace("/account");
     }
-  }, [isAdmin, isAdminLoading, router]);
+  }, [isAdmin, isOwner, isAdminLoading, isOwnerLoading, router]);
 
-  if (isAdminLoading || isAdmin === null) {
+  if (isAdminLoading || isOwnerLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="p-4 flex items-center justify-between relative border-b">
@@ -84,6 +88,8 @@ function CardManagementContent() {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { isAdmin } = useAdmin();
+  const { isOwner, ownedNetwork } = useNetworkOwner();
 
   const [selectedNetworkId, setSelectedNetworkId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
@@ -95,16 +101,29 @@ function CardManagementContent() {
     failed: number;
   } | null>(null);
 
+  const displayedNetworks = useMemo(() => {
+    if (isAdmin) return networks;
+    if (isOwner && ownedNetwork) return [ownedNetwork];
+    return [];
+  }, [isAdmin, isOwner, ownedNetwork]);
+
   const availableCategories = useMemo(() => {
-    if (selectedNetworkId === ALL_NETWORKS_VALUE) return [];
+    if (selectedNetworkId === ALL_NETWORKS_VALUE && isAdmin) return [];
     const network = networks.find((n) => n.id === selectedNetworkId);
     return network ? network.categories : [];
-  }, [selectedNetworkId]);
+  }, [selectedNetworkId, isAdmin]);
   
   useEffect(() => {
     // Reset category when network changes
     setSelectedCategoryId("");
   }, [selectedNetworkId]);
+
+  useEffect(() => {
+    // If user is a network owner and not an admin, pre-select their network
+    if (isOwner && !isAdmin && ownedNetwork) {
+        setSelectedNetworkId(ownedNetwork.id);
+    }
+  }, [isOwner, isAdmin, ownedNetwork]);
 
 
   const handleSaveCards = () => {
@@ -150,7 +169,7 @@ function CardManagementContent() {
     let totalCardsAdded = 0;
 
     cardsToSave.forEach((card) => {
-        if (isSelectAll) {
+        if (isSelectAll && isAdmin) {
             // Add card to all categories in all networks
             networks.forEach(network => {
                 network.categories.forEach(category => {
@@ -240,15 +259,18 @@ function CardManagementContent() {
                   dir="rtl"
                   onValueChange={setSelectedNetworkId}
                   value={selectedNetworkId}
+                  disabled={!isAdmin && isOwner}
                 >
                   <SelectTrigger id="network">
                     <SelectValue placeholder="اختر الشبكة" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={ALL_NETWORKS_VALUE}>
-                        -- جميع الشبكات --
-                    </SelectItem>
-                    {networks.map((network) => (
+                    {isAdmin && (
+                        <SelectItem value={ALL_NETWORKS_VALUE}>
+                            -- جميع الشبكات --
+                        </SelectItem>
+                    )}
+                    {displayedNetworks.map((network) => (
                       <SelectItem key={network.id} value={network.id}>
                         {network.name}
                       </SelectItem>
@@ -262,7 +284,7 @@ function CardManagementContent() {
                   dir="rtl"
                   onValueChange={setSelectedCategoryId}
                   value={selectedCategoryId}
-                  disabled={!selectedNetworkId || selectedNetworkId === ALL_NETWORKS_VALUE}
+                  disabled={!selectedNetworkId || (selectedNetworkId === ALL_NETWORKS_VALUE && isAdmin)}
                 >
                   <SelectTrigger id="category">
                     <SelectValue placeholder={selectedNetworkId === ALL_NETWORKS_VALUE ? "لجميع الفئات" : "اختر الفئة"} />
@@ -330,5 +352,3 @@ function CardManagementContent() {
     </div>
   );
 }
-
-    

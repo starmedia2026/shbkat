@@ -48,6 +48,7 @@ import {
 import { DateRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { useNetworkOwner } from "@/hooks/useNetworkOwner";
 
 
 // WhatsApp icon component for the button
@@ -96,14 +97,17 @@ const networkLookup = networks.reduce((acc, net) => {
 export default function CardSalesPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+  const { isOwner, isLoading: isOwnerLoading } = useNetworkOwner();
+
 
   useEffect(() => {
-    if (!isAdminLoading && isAdmin === false) {
+    const isAuthorizing = isAdminLoading || isOwnerLoading;
+    if (!isAuthorizing && !isAdmin && !isOwner) {
       router.replace("/account");
     }
-  }, [isAdmin, isAdminLoading, router]);
+  }, [isAdmin, isOwner, isAdminLoading, isOwnerLoading, router]);
 
-  if (isAdminLoading || isAdmin === null) {
+  if (isAdminLoading || isOwnerLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="p-4 flex items-center justify-between relative border-b">
@@ -132,6 +136,9 @@ function CardSalesContent() {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { isAdmin } = useAdmin();
+  const { isOwner, ownedNetwork } = useNetworkOwner();
+
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
@@ -157,10 +164,16 @@ function CardSalesContent() {
 
   const { soldCards, availableCards, filteredSoldCards } = useMemo(() => {
     if (!cards) return { soldCards: [], availableCards: [], filteredSoldCards: [] };
-    const sold = cards.filter(card => card.status === 'used');
-    const available = cards.filter(card => card.status === 'available');
+    
+    let filteredCards = cards;
+    if (isOwner && ownedNetwork) {
+        filteredCards = cards.filter(card => card.networkId === ownedNetwork.id);
+    }
 
-    const filtered = sold.filter(card => {
+    const sold = filteredCards.filter(card => card.status === 'used');
+    const available = filteredCards.filter(card => card.status === 'available');
+
+    const dateFilteredSold = sold.filter(card => {
         if (!dateRange || !card.usedAt) return true;
         const cardDate = new Date(card.usedAt);
         const from = dateRange.from ? new Date(dateRange.from) : null;
@@ -176,8 +189,8 @@ function CardSalesContent() {
         return true;
     });
 
-    return { soldCards: sold, availableCards: available, filteredSoldCards: filtered };
-  }, [cards, dateRange]);
+    return { soldCards: sold, availableCards: available, filteredSoldCards: dateFilteredSold };
+  }, [cards, dateRange, isOwner, ownedNetwork]);
 
   const isLoading = areCardsLoading || areCustomersLoading;
 
@@ -481,5 +494,3 @@ function CardSkeleton() {
         </Card>
     );
 }
-
-    

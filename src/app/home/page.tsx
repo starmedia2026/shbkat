@@ -14,7 +14,9 @@ import {
   ArrowUp,
   CreditCard,
   Coins,
-  ChevronLeft
+  ChevronLeft,
+  Settings,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +32,7 @@ import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import * as LucideIcons from 'lucide-react';
+import { useNetworkOwner } from "@/hooks/useNetworkOwner";
 
 
 interface Notification {
@@ -77,6 +80,8 @@ export default function HomePage() {
   const firestore = useFirestore();
   const router = useRouter();
   const autoplay = useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
+  const { isOwner, ownedNetwork, isLoading: isOwnerLoading } = useNetworkOwner();
+
 
   useEffect(() => {
     const getGreeting = () => {
@@ -142,23 +147,38 @@ export default function HomePage() {
 
   const { data: adverts, isLoading: areAdvertsLoading } = useCollection<Advert>(advertsQuery);
 
-  const isLoading = isUserLoading || isCustomerLoading || isHomeLoading;
+  const isLoading = isUserLoading || isCustomerLoading || isHomeLoading || isOwnerLoading;
   const hasNotifications = !areNotificationsLoading && notifications && notifications.length > 0;
   
   const services = useMemo(() => {
+    let baseServices: HomeService[] = [];
     if (homeSettings?.services && homeSettings.services.length > 0) {
-      return [...homeSettings.services].sort((a, b) => a.order - b.order);
+      baseServices = [...homeSettings.services].sort((a, b) => a.order - b.order);
+    } else {
+      // Default services if none are set in firestore
+      baseServices = [
+        { id: "networks", href: "/networks", iconUrl: '', label: "الشبكات", order: 1 },
+        { id: "transfer", href: "/transfer", iconUrl: '', label: "تحويل لمشترك", order: 2 },
+        { id: "top-up", href: "/top-up", iconUrl: '', label: "غذي حسابك", order: 3 },
+        { id: "operations", href: "/operations", iconUrl: '', label: "العمليات", order: 4 },
+        { id: "favorites", href: "/favorites", iconUrl: '', label: "المفضلة", order: 5 },
+        { id: "contact", href: "/contact", iconUrl: '', label: "تواصل معنا", order: 6 },
+      ];
     }
-    // Default services if none are set in firestore
-    return [
-      { id: "networks", href: "/networks", iconUrl: '', label: "الشبكات", order: 1 },
-      { id: "transfer", href: "/transfer", iconUrl: '', label: "تحويل لمشترك", order: 2 },
-      { id: "top-up", href: "/top-up", iconUrl: '', label: "غذي حسابك", order: 3 },
-      { id: "operations", href: "/operations", iconUrl: '', label: "العمليات", order: 4 },
-      { id: "favorites", href: "/favorites", iconUrl: '', label: "المفضلة", order: 5 },
-      { id: "contact", href: "/contact", iconUrl: '', label: "تواصل معنا", order: 6 },
-    ];
-  }, [homeSettings]);
+
+    if (isOwner && ownedNetwork) {
+        const ownerServices: HomeService[] = [
+            { id: "owner-network-management", href: `/account/network-management?id=${ownedNetwork.id}`, iconUrl: '', label: "إدارة شبكتي", order: -3 },
+            { id: "owner-card-management", href: "/account/card-management", iconUrl: '', label: "إدارة الكروت", order: -2 },
+            { id: "owner-card-sales", href: "/account/card-sales", iconUrl: '', label: "تقرير المبيعات", order: -1 },
+        ];
+        return [...ownerServices, ...baseServices].sort((a, b) => a.order - b.order);
+    }
+    
+    return baseServices;
+
+  }, [homeSettings, isOwner, ownedNetwork]);
+
 
   const formatDisplayName = (fullName?: string): string => {
     if (!fullName) return "مستخدم جديد";
@@ -368,6 +388,9 @@ const DefaultIconMap: { [key: string]: React.ElementType } = {
   operations: History,
   favorites: Heart,
   contact: Phone,
+  'owner-network-management': Settings,
+  'owner-card-management': CreditCard,
+  'owner-card-sales': BarChart3,
 };
 
 function ServiceGridItem({ href, iconUrl, label, id }: HomeService) {
