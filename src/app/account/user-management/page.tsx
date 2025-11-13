@@ -79,7 +79,7 @@ export default function UserManagementPage() {
           >
             <ArrowRight className="h-6 w-6" />
           </Button>
-          <h1 className="text-lg font-normal text-right flex-grow mr-4">
+          <h1 className="text-lg font-normal text-right flex-grow mr-2">
             إدارة المستخدمين
           </h1>
         </header>
@@ -125,7 +125,7 @@ function UserManagementContent() {
           >
             <ArrowRight className="h-6 w-6" />
           </Button>
-          <h1 className="text-lg font-normal text-right flex-grow mr-4">
+          <h1 className="text-lg font-normal text-right flex-grow mr-2">
             إدارة المستخدمين
           </h1>
         </header>
@@ -210,7 +210,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
                 description: `تم تغذية حساب ${customer.name} بمبلغ ${amount} ريال. الرصيد الجديد: ${newBalance.toLocaleString('en-US')}`,
             });
             setAmount(""); // Clear input
-        }).catch(async (serverError) => {
+        }).catch((serverError) => {
             const contextualError = new FirestorePermissionError({
                 operation: 'write',
                 path: 'batch-write', // Generic path for batch
@@ -224,7 +224,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
         });
     };
 
-    const handleDeleteCustomer = async () => {
+    const handleDeleteCustomer = () => {
         if (!firestore) {
             toast({ variant: "destructive", title: "خطأ", description: "خدمة قاعدة البيانات غير متوفرة." });
             return;
@@ -232,19 +232,18 @@ function CustomerCard({ customer }: { customer: Customer }) {
     
         const customerDocRef = doc(firestore, "customers", customer.id);
         
-        try {
-            await deleteDoc(customerDocRef);
+        deleteDoc(customerDocRef).then(() => {
             toast({
                 title: "تم الحذف بنجاح",
                 description: `تم حذف بيانات العميل ${customer.name} من قاعدة البيانات.`,
             });
-        } catch (serverError) {
+        }).catch((serverError) => {
             const permissionError = new FirestorePermissionError({
                 path: customerDocRef.path,
                 operation: 'delete',
             });
             errorEmitter.emit('permission-error', permissionError);
-        }
+        });
     };
 
 
@@ -377,7 +376,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
         updateDoc(customerDocRef, updateData).then(() => {
             toast({ title: "نجاح", description: "تم تحديث بيانات العميل بنجاح." });
             setIsOpen(false);
-        }).catch(async (serverError) => {
+        }).catch((serverError) => {
             const contextualError = new FirestorePermissionError({
                 operation: 'update',
                 path: customerDocRef.path,
@@ -427,4 +426,6 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
         </Dialog>
     );
 }
+    
+
     

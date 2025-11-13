@@ -114,7 +114,7 @@ export default function CardSalesPage() {
           >
             <ArrowRight className="h-6 w-6" />
           </Button>
-          <h1 className="text-lg font-normal text-right flex-grow mr-4">
+          <h1 className="text-lg font-normal text-right flex-grow mr-2">
             تقرير مبيعات الكروت
           </h1>
         </header>
@@ -227,7 +227,7 @@ function CardSalesContent() {
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">
+        <h1 className="text-lg font-normal text-right flex-grow mr-2">
           تقرير مبيعات الكروت
         </h1>
       </header>
@@ -354,22 +354,21 @@ ${customer.balance.toLocaleString('en-US')} ريال
         window.open(whatsappUrl, "_blank");
     };
     
-    const handleDeleteCard = async () => {
+    const handleDeleteCard = () => {
         if (!firestore) return;
         const cardRef = doc(firestore, 'cards', card.id);
-        try {
-            await deleteDoc(cardRef);
+        deleteDoc(cardRef).then(() => {
             toast({
                 title: "تم الحذف",
                 description: `تم حذف الكرت رقم ${card.id} بنجاح.`
             });
-        } catch (serverError) {
+        }).catch((serverError) => {
              const permissionError = new FirestorePermissionError({
                 path: cardRef.path,
                 operation: 'delete',
             });
             errorEmitter.emit('permission-error', permissionError);
-        }
+        });
     };
 
 
@@ -482,3 +481,5 @@ function CardSkeleton() {
         </Card>
     );
 }
+
+    
