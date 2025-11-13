@@ -94,39 +94,48 @@ const networkLookup = networks.reduce((acc, net) => {
 }, {} as Record<string, { name: string; categories: Record<string, { name: string; price: number }> }>);
 
 
+function LoadingScreen() {
+    const router = useRouter();
+    return (
+        <div className="flex flex-col min-h-screen">
+            <header className="p-4 flex items-center justify-between relative border-b">
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                    <ArrowRight className="h-6 w-6" />
+                </Button>
+                <h1 className="text-lg font-normal text-right flex-grow mr-2">
+                    تقرير مبيعات الكروت
+                </h1>
+            </header>
+            <main className="flex-grow flex items-center justify-center">
+                <p>جاري التحميل والتحقق...</p>
+            </main>
+        </div>
+    );
+}
+
 export default function CardSalesPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
   const { isOwner, isLoading: isOwnerLoading } = useNetworkOwner();
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
+  const isAuthorizing = isAdminLoading || isOwnerLoading;
 
   useEffect(() => {
-    const isAuthorizing = isAdminLoading || isOwnerLoading;
-    if (!isAuthorizing && !isAdmin && !isOwner) {
+    if (isAuthorizing) {
+        setIsAuthorized(null);
+        return;
+    }
+    const hasAccess = isAdmin || isOwner;
+    setIsAuthorized(hasAccess);
+
+    if (!hasAccess) {
       router.replace("/account");
     }
-  }, [isAdmin, isOwner, isAdminLoading, isOwnerLoading, router]);
+  }, [isAdmin, isOwner, isAuthorizing, router]);
 
-  if (isAdminLoading || isOwnerLoading) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <header className="p-4 flex items-center justify-between relative border-b">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-          >
-            <ArrowRight className="h-6 w-6" />
-          </Button>
-          <h1 className="text-lg font-normal text-right flex-grow mr-2">
-            تقرير مبيعات الكروت
-          </h1>
-        </header>
-        <main className="flex-grow flex items-center justify-center">
-          <p>جاري التحميل والتحقق...</p>
-        </main>
-      </div>
-    );
+  if (isAuthorizing || isAuthorized === null || !isAuthorized) {
+    return <LoadingScreen />;
   }
 
   return <CardSalesContent />;
@@ -494,3 +503,5 @@ function CardSkeleton() {
         </Card>
     );
 }
+
+    

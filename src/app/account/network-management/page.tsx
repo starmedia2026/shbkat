@@ -25,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { networks as initialNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -110,7 +110,7 @@ export default function NetworkManagementPage() {
     }
   }, [isAdmin, isOwner, isAuthorizing, router]);
 
-  if (isAuthorizing || isAuthorized === null || isAuthorized === false) {
+  if (isAuthorizing || isAuthorized === null || !isAuthorized) {
     return <LoadingScreen />;
   }
 
@@ -139,11 +139,11 @@ function NetworkManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | nul
       return networks;
     }
     if (isOwner && ownedNetwork) {
-      // An owner can see their own network. Also, if they navigate via the home page link, the id will be in searchParams.
-      return networks.filter(n => n.id === ownedNetwork.id || (ownerNetworkId && n.id === ownerNetworkId));
+      // An owner can see their own network.
+      return networks.filter(n => n.id === ownedNetwork.id);
     }
     return [];
-  }, [networks, isAdmin, isOwner, ownedNetwork, ownerNetworkId]);
+  }, [networks, isAdmin, isOwner, ownedNetwork]);
 
 
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
@@ -344,7 +344,7 @@ function NetworkManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | nul
                                         <span>{network.address}</span>
                                     </div>
                                 )}
-                            {network.ownerPhone && (
+                            {isAdmin && network.ownerPhone && (
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                         <Phone className="h-3 w-3"/>
                                         <span dir="ltr">{network.ownerPhone}</span>
@@ -487,3 +487,5 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel, isGlobalFor
         </div>
     )
 };
+
+    

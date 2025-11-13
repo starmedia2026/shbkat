@@ -83,15 +83,15 @@ export default function CardManagementPage() {
         return;
     }
 
-    if (isAdmin || isOwner) {
-        setIsAuthorized(true);
-    } else {
-        setIsAuthorized(false);
+    const hasAccess = isAdmin || isOwner;
+    setIsAuthorized(hasAccess);
+    
+    if (!hasAccess) {
         router.replace("/account");
     }
   }, [isAdmin, isOwner, isAuthorizing, router]);
 
-  if (isAuthorizing || isAuthorized === null || isAuthorized === false) {
+  if (isAuthorizing || isAuthorized === null || !isAuthorized) {
     return <LoadingScreen />;
   }
 
@@ -114,7 +114,6 @@ function CardManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | null, 
     success: number;
     failed: number;
   } | null>(null);
-
   const ALL_NETWORKS_VALUE = "all";
 
   const displayedNetworks = useMemo(() => {
@@ -268,54 +267,61 @@ function CardManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | null, 
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="network">الشبكة</Label>
-                <Select
-                  dir="rtl"
-                  onValueChange={setSelectedNetworkId}
-                  value={selectedNetworkId}
-                  disabled={!isAdmin && isOwner}
-                >
-                  <SelectTrigger id="network">
-                    <SelectValue placeholder="اختر الشبكة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isAdmin && (
-                        <SelectItem value={ALL_NETWORKS_VALUE}>
-                            -- جميع الشبكات --
+            {(isAdmin || (isOwner && ownedNetwork)) ? (
+                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="network">الشبكة</Label>
+                    <Select
+                    dir="rtl"
+                    onValueChange={setSelectedNetworkId}
+                    value={selectedNetworkId}
+                    disabled={!isAdmin && isOwner}
+                    >
+                    <SelectTrigger id="network">
+                        <SelectValue placeholder="اختر الشبكة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {isAdmin && (
+                            <SelectItem value={ALL_NETWORKS_VALUE}>
+                                -- جميع الشبكات --
+                            </SelectItem>
+                        )}
+                        {displayedNetworks.map((network) => (
+                        <SelectItem key={network.id} value={network.id}>
+                            {network.name}
                         </SelectItem>
-                    )}
-                    {displayedNetworks.map((network) => (
-                      <SelectItem key={network.id} value={network.id}>
-                        {network.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">الفئة</Label>
-                <Select
-                  dir="rtl"
-                  onValueChange={setSelectedCategoryId}
-                  value={selectedCategoryId}
-                  disabled={!selectedNetworkId || (selectedNetworkId === ALL_NETWORKS_VALUE && isAdmin)}
-                >
-                  <SelectTrigger id="category">
-                    <SelectValue placeholder={selectedNetworkId === ALL_NETWORKS_VALUE ? "لجميع الفئات" : "اختر الفئة"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableCategories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name} ({cat.price} ريال)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
+                        ))}
+                    </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="category">الفئة</Label>
+                    <Select
+                    dir="rtl"
+                    onValueChange={setSelectedCategoryId}
+                    value={selectedCategoryId}
+                    disabled={!selectedNetworkId || (selectedNetworkId === ALL_NETWORKS_VALUE && isAdmin)}
+                    >
+                    <SelectTrigger id="category">
+                        <SelectValue placeholder={selectedNetworkId === ALL_NETWORKS_VALUE ? "لجميع الفئات" : "اختر الفئة"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {availableCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name} ({cat.price} ريال)
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                </div>
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 gap-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="cards-input">
                 أرقام الكروت (كل رقم في سطر)
