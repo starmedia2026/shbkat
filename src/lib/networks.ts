@@ -64,6 +64,14 @@ export const networks: Network[] = [
     "address": "مديرية شبام",
     "logo": "",
     "ownerPhone": "773108411",
-    "categories": []
+    "categories": [
+      {
+        "id": "new-cat-1763070278710",
+        "name": "500 ميقا",
+        "price": 100,
+        "validity": "يوم واحد",
+        "capacity": "0.5"
+      }
+    ]
   }
 ];

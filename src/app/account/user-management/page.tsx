@@ -82,7 +82,7 @@ export default function UserManagementPage() {
   }, [isAdmin, isAdminLoading, router]);
 
   // Render a stable loading state until admin status is confirmed.
-  if (isAdminLoading || isAdmin === null) {
+  if (isAdminLoading || isAdmin === null || isAdmin === false) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="p-4 flex items-center justify-between relative border-b">
@@ -112,11 +112,13 @@ function UserManagementContent() {
   const router = useRouter();
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
+  const { isAdmin } = useAdmin();
   
   const customersCollectionRef = useMemoFirebase(() => {
-      if (!firestore) return null;
+      // Only fetch if the user is confirmed to be an admin
+      if (!firestore || !isAdmin) return null;
       return collection(firestore, "customers");
-  }, [firestore]);
+  }, [firestore, isAdmin]);
   
   const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(customersCollectionRef);
   
@@ -529,3 +531,6 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
 
     
 
+
+
+    
