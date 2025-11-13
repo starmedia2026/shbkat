@@ -36,8 +36,6 @@ import { Label } from "@/components/ui/label";
 import Image from "next/image";
 
 
-const ADMIN_PHONE_NUMBER = "770326828";
-
 const networkData = networks.reduce((acc, network) => {
     acc[network.id] = network;
     return acc;
@@ -137,7 +135,6 @@ function PackageCard({ category, network }: { category: Category, network: typeo
         setIsPurchasing(true);
 
         try {
-            const customersRef = collection(firestore, "customers");
             // Find an available card outside the transaction
             const cardsRef = collection(firestore, "cards");
             const q = query(
@@ -163,7 +160,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             // Find the network owner outside the transaction
             let ownerRef: any = null;
             if (network.ownerPhone) {
-                const ownerQuery = query(customersRef, where("phoneNumber", "==", network.ownerPhone), limit(1));
+                const ownerQuery = query(collection(firestore, "customers"), where("phoneNumber", "==", network.ownerPhone), limit(1));
                 const ownerSnapshot = await getDocs(ownerQuery);
                 if (!ownerSnapshot.empty) {
                     ownerRef = ownerSnapshot.docs[0].ref;
@@ -174,8 +171,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             const purchasedCardNumber = await runTransaction(firestore, async (transaction) => {
                 const senderDoc = await transaction.get(customerDocRef);
                 const cardDoc = await transaction.get(cardRef);
-                const ownerDoc = ownerRef ? await transaction.get(ownerRef) : null;
-
+                
                 if (!senderDoc.exists()) throw new Error("لم يتم العثور على حساب العميل.");
                 if (!cardDoc.exists() || cardDoc.data().status !== 'available') throw new Error("هذا الكرت لم يعد متاحًا. الرجاء المحاولة مرة أخرى.");
                 
@@ -183,8 +179,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 if (senderBalance < category.price) throw new Error("رصيد غير كافٍ.");
 
                 const now = new Date().toISOString();
-                const commission = category.price * 0.10;
-                const ownerAmount = category.price - commission;
+                const ownerAmount = category.price * 0.90; // 90% for the owner
 
                 // 1. Update card status
                 transaction.update(cardRef, { status: "used", usedAt: now, usedBy: user.uid });
@@ -192,25 +187,25 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 // 2. Update customer balance
                 const newSenderBalance = senderBalance - category.price;
                 transaction.update(customerDocRef, { balance: newSenderBalance });
+                
+                // 3. Update network owner balance (if owner exists)
+                if (ownerRef) {
+                    const ownerDoc = await transaction.get(ownerRef);
+                    if (ownerDoc.exists()) {
+                        const newOwnerBalance = ownerDoc.data().balance + ownerAmount;
+                        transaction.update(ownerRef, { balance: newOwnerBalance });
 
-                // 3. Update network owner balance
-                if (ownerDoc && ownerDoc.exists()) {
-                    const newOwnerBalance = ownerDoc.data().balance + ownerAmount;
-                    transaction.update(ownerRef, { balance: newOwnerBalance });
+                        // Network owner's operation & notification
+                        const ownerId = ownerDoc.id;
+                        transaction.set(doc(collection(firestore, `customers/${ownerId}/operations`)), { type: 'transfer_received', amount: ownerAmount, date: now, description: `أرباح بيع كرت: ${category.name}`, status: 'completed' });
+                        transaction.set(doc(collection(firestore, `customers/${ownerId}/notifications`)), { type: 'transfer_received', title: 'إيداع أرباح', body: `تم إيداع ${ownerAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: ownerAmount, date: now, read: false });
+                    }
                 }
                 
-                // --- Create Logs and Notifications ---
+                // --- Create Customer Logs and Notifications ---
                 const baseOpData = { amount: -category.price, date: now, status: 'completed', cardNumber: cardDoc.id };
-                // Customer's operation & notification
                 transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name} - ${network.name}` });
                 transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseOpData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح. رقم الكرت: ${cardDoc.id}`, read: false });
-
-                // Network owner's operation & notification
-                if (ownerDoc && ownerDoc.exists()) {
-                    const ownerId = ownerDoc.id;
-                    transaction.set(doc(collection(firestore, `customers/${ownerId}/operations`)), { type: 'transfer_received', amount: ownerAmount, date: now, description: `إيداع أرباح بيع كرت ${category.name}`, status: 'completed' });
-                    transaction.set(doc(collection(firestore, `customers/${ownerId}/notifications`)), { type: 'transfer_received', title: 'إيداع أرباح', body: `تم إيداع ${ownerAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: ownerAmount, date: now, read: false });
-                }
 
                 return cardDoc.id; // Return the card number
             });
@@ -429,3 +424,4 @@ function BackButton() {
         </button>
     );
 }
+
