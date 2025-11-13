@@ -281,9 +281,9 @@ export default function HomePage() {
                     <h3 className="text-base font-bold">لوحة تحكم مالك الشبكة</h3>
                 </div>
                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <ServiceGridItem href="/account/my-network" label="إدارة شبكتي" id="my-network" icon={Briefcase} />
-                    <ServiceGridItem href="/account/card-management" label="إدارة الكروت" id="card-management" icon={CreditCard} />
-                    <ServiceGridItem href="/account/card-sales" label="تقرير المبيعات" id="card-sales" icon={BarChart3} />
+                    <ServiceGridItem href="/account/my-network" label="إدارة شبكتي" id="my-network" Icon={Briefcase} />
+                    <ServiceGridItem href="/account/card-management" label="إدارة الكروت" id="card-management" Icon={CreditCard} />
+                    <ServiceGridItem href="/account/card-sales" label="تقرير المبيعات" id="card-sales" Icon={BarChart3} />
                 </div>
             </div>
         )}
@@ -395,7 +395,7 @@ function ServiceIcon({ id, className }: { id: string; className?: string }) {
   }
 }
 
-function ServiceGridItem({ href, iconUrl, label, id, icon: IconProp }: HomeService & { icon?: React.ElementType }) {
+function ServiceGridItem({ href, iconUrl, label, id, Icon }: HomeService & { Icon?: React.ElementType }) {
     
     return (
         <Link href={href} className="block">
@@ -404,8 +404,8 @@ function ServiceGridItem({ href, iconUrl, label, id, icon: IconProp }: HomeServi
                     <div className="p-3 rounded-lg bg-muted flex items-center justify-center h-12 w-12">
                         {iconUrl ? (
                             <Image src={iconUrl} alt={label} width={28} height={28} className="object-contain"/>
-                        ) : IconProp ? (
-                            <IconProp className="h-7 w-7 text-primary" />
+                        ) : Icon ? (
+                            <Icon className="h-7 w-7 text-primary" />
                         ) : (
                             <ServiceIcon id={id} />
                         )}
@@ -445,5 +445,7 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
+
+    
 
     
