@@ -124,68 +124,41 @@ export default function TransferPage() {
         return;
     }
 
-    runTransaction(firestore, async (transaction) => {
-        const senderRef = doc(firestore, "customers", user.uid);
-        const recipientRef = doc(firestore, "customers", recipient.id);
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const senderRef = doc(firestore, "customers", user.uid);
+            const recipientRef = doc(firestore, "customers", recipient.id);
 
-        // These reads are part of the transaction
-        const senderDoc = await transaction.get(senderRef);
-        const recipientDoc = await transaction.get(recipientRef);
+            const senderDoc = await transaction.get(senderRef);
+            const recipientDoc = await transaction.get(recipientRef);
 
-        if (!senderDoc.exists() || !recipientDoc.exists()) {
-            throw "Document not found!";
-        }
-        
-        const currentSenderBalance = senderDoc.data().balance;
-        if (currentSenderBalance < transferAmount) {
-            throw new Error("رصيد غير كافٍ");
-        }
+            if (!senderDoc.exists() || !recipientDoc.exists()) {
+                throw new Error("Document not found!");
+            }
+            
+            const currentSenderBalance = senderDoc.data().balance;
+            if (currentSenderBalance < transferAmount) {
+                throw new Error("رصيد غير كافٍ");
+            }
 
-        const newSenderBalance = currentSenderBalance - transferAmount;
-        const newRecipientBalance = recipientDoc.data().balance + transferAmount;
-        
-        transaction.update(senderRef, { balance: newSenderBalance });
-        transaction.update(recipientRef, { balance: newRecipientBalance });
+            const newSenderBalance = currentSenderBalance - transferAmount;
+            const newRecipientBalance = recipientDoc.data().balance + transferAmount;
+            
+            transaction.update(senderRef, { balance: newSenderBalance });
+            transaction.update(recipientRef, { balance: newRecipientBalance });
 
-        const now = new Date().toISOString();
+            const now = new Date().toISOString();
+            const senderOpData = { type: 'transfer_sent', amount: -transferAmount, date: now, description: `تحويل إلى ${recipient.name} (${recipient.phoneNumber})`, status: 'completed' };
+            const recipientOpData = { type: 'transfer_received', amount: transferAmount, date: now, description: `استلام من ${sender.name} (${sender.phoneNumber})`, status: 'completed' };
+            const senderNotifData = { type: 'transfer_sent', title: 'تم إرسال حوالة', body: `تم تحويل ${transferAmount.toLocaleString()} ريال إلى ${recipient.name}.`, amount: -transferAmount, date: now, read: false, };
+            const recipientNotifData = { type: 'transfer_received', title: 'تم استلام حوالة', body: `تم استلام ${transferAmount.toLocaleString()} ريال من ${sender.name}.`, amount: transferAmount, date: now, read: false, };
+            
+            transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), senderOpData);
+            transaction.set(doc(collection(firestore, `customers/${recipient.id}/operations`)), recipientOpData);
+            transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), senderNotifData);
+            transaction.set(doc(collection(firestore, `customers/${recipient.id}/notifications`)), recipientNotifData);
+        });
 
-        const senderOpData = {
-            type: 'transfer_sent',
-            amount: -transferAmount,
-            date: now,
-            description: `تحويل إلى ${recipient.name} (${recipient.phoneNumber})`,
-            status: 'completed'
-        };
-        const recipientOpData = {
-            type: 'transfer_received',
-            amount: transferAmount,
-            date: now,
-            description: `استلام من ${sender.name} (${sender.phoneNumber})`,
-            status: 'completed'
-        };
-        const senderNotifData = {
-            type: 'transfer_sent',
-            title: 'تم إرسال حوالة',
-            body: `تم تحويل ${transferAmount.toLocaleString()} ريال إلى ${recipient.name}.`,
-            amount: -transferAmount,
-            date: now,
-            read: false,
-        };
-        const recipientNotifData = {
-            type: 'transfer_received',
-            title: 'تم استلام حوالة',
-            body: `تم استلام ${transferAmount.toLocaleString()} ريال من ${sender.name}.`,
-            amount: transferAmount,
-            date: now,
-read: false,
-        };
-        
-        // Operation and Notification writes
-        transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), senderOpData);
-        transaction.set(doc(collection(firestore, `customers/${recipient.id}/operations`)), recipientOpData);
-        transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), senderNotifData);
-        transaction.set(doc(collection(firestore, `customers/${recipient.id}/notifications`)), recipientNotifData);
-    }).then(() => {
         toast({
             title: "نجاح",
             description: `تم تحويل مبلغ ${transferAmount.toLocaleString()} ريال إلى ${recipient.name} بنجاح.`,
@@ -193,17 +166,20 @@ read: false,
         setRecipientPhone("");
         setAmount("");
         setRecipient(null);
-    }).catch(async (error: any) => {
+
+    } catch (error) {
+        console.error("Transaction failed: ", error);
         const contextualError = new FirestorePermissionError({
             operation: 'write',
-            path: 'customers/(sender and recipient)',
-            requestResourceData: {
-                senderUpdate: { path: `customers/${user.uid}`, balance: sender.balance - transferAmount },
-                recipientUpdate: { path: `customers/${recipient.id}`, balance: recipient.balance + transferAmount }
+            path: `customers collection (sender: ${user.uid}, recipient: ${recipient.id})`,
+            requestResourceData: { 
+                note: "This was a transaction. See below for intended updates.",
+                senderUpdate: { path: `customers/${user.uid}`, data: { balance: sender.balance - transferAmount } },
+                recipientUpdate: { path: `customers/${recipient.id}`, data: { balance: recipient.balance + transferAmount } }
             }
         });
         errorEmitter.emit('permission-error', contextualError);
-    });
+    }
   };
   
   const transferAmountNum = Number(amount);
@@ -319,5 +295,3 @@ read: false,
     </div>
   );
 }
-
-    
