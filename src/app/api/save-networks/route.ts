@@ -30,6 +30,8 @@ interface Network {
   id: string;
   name: string;
   logo?: string;
+  address?: string;
+  ownerPhone?: string;
   categories: Category[];
 }
 

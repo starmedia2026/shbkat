@@ -11,6 +11,8 @@ import {
   ImageIcon,
   Globe,
   Loader2,
+  Phone,
+  MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +54,8 @@ interface Network {
   id: string;
   name: string;
   logo?: string;
+  address?: string;
+  ownerPhone?: string;
   categories: Category[];
 }
 
@@ -104,7 +108,7 @@ function NetworkManagementContent() {
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
   const [isSaving, setIsSaving] = useState(false);
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
-  const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string}>({name: "", logo: ""});
+  const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string, ownerPhone: string}>({name: "", logo: "", address: "", ownerPhone: ""});
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
 
@@ -150,18 +154,18 @@ function NetworkManagementContent() {
   
   const handleAddNetwork = () => {
     const newId = `new-network-${Date.now()}`;
-    const newNetwork: Network = { id: newId, name: "", logo: "", categories: [] };
+    const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: "", categories: [] };
     const newNetworks = [...networks, newNetwork];
     setNetworks(newNetworks); // Update state locally first
     setEditingNetworkId(newId);
-    setEditingNetworkData({name: "", logo: ""});
+    setEditingNetworkData({name: "", logo: "", address: "", ownerPhone: ""});
   };
 
   const handleUpdateNetwork = (networkId: string) => {
-    const newNetworks = networks.map(n => n.id === networkId ? { ...n, name: editingNetworkData.name, logo: editingNetworkData.logo } : n);
+    const newNetworks = networks.map(n => n.id === networkId ? { ...n, ...editingNetworkData } : n);
     updateAndSave(newNetworks);
     setEditingNetworkId(null);
-    setEditingNetworkData({name: "", logo: ""});
+    setEditingNetworkData({name: "", logo: "", address: "", ownerPhone: ""});
   };
 
   const handleDeleteNetwork = (networkId: string) => {
@@ -277,27 +281,45 @@ function NetworkManagementContent() {
             <Card key={network.id} className="w-full shadow-md rounded-2xl bg-card/50">
               <CardHeader className="flex-row items-center justify-between">
                 {editingNetworkId === network.id ? (
-                  <div className="flex items-center gap-2 flex-grow">
-                    <Input placeholder="اسم الشبكة" value={editingNetworkData.name} onChange={e => setEditingNetworkData(prev => ({...prev, name: e.target.value}))} className="flex-grow"/>
-                    <Input placeholder="رابط الشعار" value={editingNetworkData.logo} onChange={e => setEditingNetworkData(prev => ({...prev, logo: e.target.value}))} className="flex-grow"/>
-                    <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(network.id)}><Save className="h-4 w-4"/></Button>
-                    <Button size="icon" variant="ghost" onClick={() => {
-                        setEditingNetworkId(null);
-                        // If the name is empty, it means it was a new network that was cancelled, so remove it.
-                        if (network.name === "") {
-                            setNetworks(networks.filter(n => n.id !== network.id));
-                        }
-                    }}><X className="h-4 w-4"/></Button>
+                  <div className="flex flex-col gap-2 flex-grow">
+                    <Input placeholder="اسم الشبكة" value={editingNetworkData.name} onChange={e => setEditingNetworkData(prev => ({...prev, name: e.target.value}))}/>
+                    <Input placeholder="رابط الشعار" value={editingNetworkData.logo} onChange={e => setEditingNetworkData(prev => ({...prev, logo: e.target.value}))}/>
+                    <Input placeholder="عنوان الشبكة" value={editingNetworkData.address} onChange={e => setEditingNetworkData(prev => ({...prev, address: e.target.value}))}/>
+                    <Input placeholder="رقم المالك" value={editingNetworkData.ownerPhone} onChange={e => setEditingNetworkData(prev => ({...prev, ownerPhone: e.target.value}))}/>
+                    <div className="flex justify-end gap-2 mt-2">
+                        <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(network.id)}><Save className="h-4 w-4"/></Button>
+                        <Button size="icon" variant="ghost" onClick={() => {
+                            setEditingNetworkId(null);
+                            // If the name is empty, it means it was a new network that was cancelled, so remove it.
+                            if (network.name === "") {
+                                setNetworks(networks.filter(n => n.id !== network.id));
+                            }
+                        }}><X className="h-4 w-4"/></Button>
+                    </div>
                   </div>
                 ) : (
                     <div className="flex items-center gap-3">
                         {network.logo && <Image src={network.logo} alt={network.name} width={40} height={40} className="rounded-full"/>}
                         {!network.logo && <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center"><ImageIcon className="h-5 w-5 text-muted-foreground"/></div>}
-                        <CardTitle className="text-lg">{network.name || "شبكة بدون اسم"}</CardTitle>
+                        <div className="flex-grow">
+                           <CardTitle className="text-lg">{network.name || "شبكة بدون اسم"}</CardTitle>
+                           {network.address && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                    <MapPin className="h-3 w-3"/>
+                                    <span>{network.address}</span>
+                                </div>
+                            )}
+                           {network.ownerPhone && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Phone className="h-3 w-3"/>
+                                    <span dir="ltr">{network.ownerPhone}</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
                 <div className="flex items-center gap-1">
-                   <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(network.id); setEditingNetworkData({name: network.name, logo: network.logo || ""}); }}>
+                   <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(network.id); setEditingNetworkData({name: network.name, logo: network.logo || "", address: network.address || "", ownerPhone: network.ownerPhone || ""}); }}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <AlertDialog>

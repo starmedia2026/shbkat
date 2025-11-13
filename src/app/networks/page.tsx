@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, ChevronLeft, Heart } from "lucide-react";
+import { ArrowRight, ChevronLeft, Wifi, Phone, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -12,18 +12,6 @@ import { networks as allNetworks } from "@/lib/networks";
 
 export default function NetworksPage() {
   const router = useRouter();
-  const [favoriteNetworks, setFavoriteNetworks] = React.useState<string[]>([]); // You would likely store this in user preferences
-
-  // In a real app, you'd fetch favorite status from user data
-  // For now, let's just use local state
-
-  const toggleFavorite = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setFavoriteNetworks(prev => 
-      prev.includes(id) ? prev.filter(favId => favId !== id) : [...prev, id]
-    );
-  };
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -40,21 +28,29 @@ export default function NetworksPage() {
       <main className="p-4 space-y-4">
         {allNetworks.map((network) => (
           <Link href={`/networks/${network.id}`} key={network.id} className="block">
-            <Card className="w-full shadow-md rounded-2xl hover:shadow-lg transition-shadow cursor-pointer bg-card/50 hover:bg-card">
+            <Card className="w-full shadow-lg rounded-2xl hover:shadow-xl transition-shadow cursor-pointer bg-primary text-primary-foreground overflow-hidden">
               <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center space-x-4 space-x-reverse">
-                  {/* Placeholder for logo */}
-                  <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center font-bold text-base">
-                    {network.name.charAt(0)}
-                  </div>
-                  <span className="font-semibold text-sm">{network.name}</span>
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-black/10 rounded-full flex items-center justify-center">
+                        <Wifi className="h-7 w-7"/>
+                    </div>
+                    <div className="flex-grow space-y-1 text-right">
+                        <h2 className="font-bold text-lg">{network.name}</h2>
+                        {network.ownerPhone && (
+                           <div className="flex items-center justify-end gap-2 text-xs text-primary-foreground/90">
+                            <span dir="ltr">{network.ownerPhone}</span>
+                            <Phone className="h-3 w-3" />
+                           </div>
+                        )}
+                        {network.address && (
+                           <div className="flex items-center justify-end gap-2 text-xs text-primary-foreground/90">
+                            <span>{network.address}</span>
+                            <MapPin className="h-3 w-3" />
+                           </div>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                   <UIButton variant="ghost" size="icon" onClick={(e) => toggleFavorite(network.id, e)}>
-                      <Heart className={favoriteNetworks.includes(network.id) ? "text-red-500 fill-current" : "text-muted-foreground"} />
-                   </UIButton>
-                   <ChevronLeft />
-                </div>
+                <ChevronLeft className="w-8 h-8 opacity-70" />
               </CardContent>
             </Card>
           </Link>
