@@ -11,6 +11,7 @@
  * - /customers/{customerId}/notifications/{notificationId}: Notifications for a customer.
  * - /cards/{cardId}: Stores scratch card information.
  * - /settings/theme: Stores global theme settings.
+ * - /settings/navigation/items/{itemId}: Stores configurable navigation items.
  * - /adverts/{advertId}: Stores advertisement images for the home page carousel.
  */
 rules_version = '2';
@@ -83,11 +84,18 @@ service cloud.firestore {
           request.resource.data.usedBy == request.auth.uid) || isAdmin();
     }
 
-    match /settings/theme {
-        // Allow anyone (including signed-out users) to read the theme.
+    match /settings/{docId} {
+        // Allow anyone (including signed-out users) to read settings like theme and navigation.
         allow get: if true;
-        // Only the admin can change the theme.
+        // Only the admin can change the settings.
         allow write: if isAdmin();
+
+        match /navigation/items/{itemId} {
+             // Any signed-in user can read the navigation items.
+            allow get, list: if true;
+            // Only admin can create, update, or delete navigation items.
+            allow write: if isAdmin();
+        }
     }
 
     match /adverts/{advertId} {

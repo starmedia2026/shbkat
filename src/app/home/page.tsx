@@ -29,6 +29,8 @@ import { ar } from "date-fns/locale";
 import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import * as LucideIcons from 'lucide-react';
+
 
 interface Notification {
     id: string;
@@ -49,22 +51,20 @@ interface Operation {
   description: string;
 }
 
+interface NavItem {
+    id: string;
+    label: string;
+    href: string;
+    icon: keyof typeof LucideIcons;
+    location: 'home' | 'account';
+}
+
 const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; color: string; } } = {
   transfer_sent: { icon: ArrowUp, color: "text-red-500" },
   transfer_received: { icon: ArrowUp, color: "text-green-500" }, // Icon might need adjustment
   topup_admin: { icon: Coins, color: "text-green-500" },
   purchase: { icon: CreditCard, color: "text-blue-500" },
 };
-
-const services = [
-    { href: "/networks", icon: Wifi, label: "الشبكات" },
-    { href: "/transfer", icon: Send, label: "تحويل" },
-    { href: "/top-up", icon: Wallet, label: "تغذية الرصيد" },
-    { href: "/operations", icon: History, label: "العمليات" },
-    { href: "/favorites", icon: Heart, label: "المفضلة" },
-    { href: "/contact", icon: Phone, label: "تواصل معنا" },
-];
-
 
 export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
@@ -132,6 +132,17 @@ export default function HomePage() {
   }, [firestore]);
 
   const { data: adverts, isLoading: areAdvertsLoading } = useCollection<Advert>(advertsQuery);
+
+  const homeNavItemsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, "settings", "navigation", "items"),
+      where("location", "==", "home"),
+      orderBy("order", "asc")
+    );
+  }, [firestore]);
+
+  const { data: homeNavItems, isLoading: areNavItemsLoading } = useCollection<NavItem>(homeNavItemsQuery);
 
   const isLoading = isUserLoading || isCustomerLoading;
   const hasNotifications = !areNotificationsLoading && notifications && notifications.length > 0;
@@ -229,7 +240,7 @@ export default function HomePage() {
              {isLoading ? (
                  <Skeleton className="h-10 w-48 mt-2 bg-white/30" />
               ) : (
-                <div className="text-3xl font-bold tracking-wider mt-2 w-full text-right" dir="rtl">
+                <div className="text-3xl font-bold tracking-wider mt-2 w-full text-left" dir="ltr">
                   {balanceVisible ? (
                     <div className="flex items-baseline gap-x-2 justify-start">
                        <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US', {useGrouping: true})}</span>
@@ -245,9 +256,15 @@ export default function HomePage() {
 
         {/* Services Grid */}
         <div className="grid grid-cols-3 gap-3 text-center">
-            {services.map((service, index) => (
-                 <ServiceGridItem key={index} {...service} />
-            ))}
+            {areNavItemsLoading ? (
+                [...Array(6)].map((_, i) => <ServiceGridSkeleton key={i} />)
+            ) : homeNavItems && homeNavItems.length > 0 ? (
+                homeNavItems.map((service) => (
+                    <ServiceGridItem key={service.id} {...service} />
+                ))
+            ) : (
+                <p>لا توجد خدمات متاحة.</p>
+            )}
         </div>
         
         {/* Adverts Carousel */}
@@ -259,7 +276,7 @@ export default function HomePage() {
                 plugins={[autoplay.current]}
                 onMouseEnter={autoplay.current.stop}
                 onMouseLeave={autoplay.current.reset}
-                opts={{ loop: true }}
+                opts={{ loop: true, direction: "rtl" }}
             >
                 <CarouselContent>
                     {adverts.map((ad) => (
@@ -326,7 +343,8 @@ export default function HomePage() {
   );
 }
 
-function ServiceGridItem({ href, icon: Icon, label }: { href: string; icon: React.ElementType, label: string }) {
+function ServiceGridItem({ href, icon, label }: Omit<NavItem, 'id' | 'location'>) {
+    const Icon = LucideIcons[icon as keyof typeof LucideIcons] || LucideIcons.HelpCircle;
     return (
         <Link href={href} className="block">
             <Card className="shadow-md rounded-xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card">
@@ -340,6 +358,18 @@ function ServiceGridItem({ href, icon: Icon, label }: { href: string; icon: Reac
         </Link>
     );
 }
+
+function ServiceGridSkeleton() {
+    return (
+        <Card className="shadow-md rounded-xl bg-card">
+            <CardContent className="p-2 flex flex-col items-center justify-center gap-2 aspect-square">
+                <Skeleton className="h-12 w-12 rounded-lg" />
+                <Skeleton className="h-4 w-16 mt-1" />
+            </CardContent>
+        </Card>
+    );
+}
+
 
 function LastOperationItem({ operation }: { operation: Operation }) {
     const config = operationConfig[operation.type];
@@ -369,5 +399,4 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
-
     
