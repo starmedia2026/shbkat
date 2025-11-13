@@ -89,7 +89,7 @@ export default function LoginPage() {
                   dir="ltr"
                   className="text-right"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
                   disabled={isLoading}
                 />
               </div>

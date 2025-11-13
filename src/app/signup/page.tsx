@@ -144,7 +144,7 @@ export default function SignupPage() {
                   required
                   dir="ltr"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
                 />
               </div>
               <div className="grid gap-2 text-right">
