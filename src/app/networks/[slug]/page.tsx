@@ -180,7 +180,8 @@ function PackageCard({ category, networkName, isClient }: { category: Category, 
                     amount: -category.price,
                     date: now,
                     description: `شراء: ${category.name} - ${networkName}`,
-                    status: "completed"
+                    status: "completed",
+                    cardNumber: cardDoc.id, // Store the card number
                 };
                 transaction.set(operationDocRef, operationData);
 
@@ -318,28 +319,26 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
                     <DialogHeader>
                         <DialogTitle>تم الشراء بنجاح!</DialogTitle>
                         <DialogDescription>
-                            هذه هي تفاصيل الكرت الذي قمت بشرائه.
+                            اضغط على رقم الكرت لنسخه.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
                         <Label htmlFor="card-number">رقم الكرت</Label>
-                        <div className="flex items-center space-x-2 space-x-reverse mt-2">
+                        <div className="mt-2">
                             <Input
                                 id="card-number"
                                 value={card.cardNumber}
                                 readOnly
-                                className="text-lg font-mono tracking-wider"
+                                className="text-lg font-mono tracking-wider text-center cursor-pointer"
                                 dir="ltr"
+                                onClick={copyToClipboard}
                             />
-                            <Button variant="outline" size="icon" onClick={copyToClipboard}>
-                                <Copy className="h-4 w-4" />
-                            </Button>
                         </div>
                     </div>
                     <DialogFooter className="flex-col sm:flex-row gap-2">
                         <Button type="button" variant="secondary" onClick={() => { onClose(); setShowSmsDialog(true); }}>
                            <Send className="ml-2 h-4 w-4"/>
-                           إرسال عبر SMS
+                           ارسال الى SMS
                         </Button>
                         <Button type="button" onClick={onClose}>إغلاق</Button>
                     </DialogFooter>
@@ -356,7 +355,7 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
     );
 }
 
-function SendSmsDialog({ card, isOpen, onClose }: { card: PurchasedCardInfo, isOpen: boolean, onClose: () => void }) {
+export function SendSmsDialog({ card, isOpen, onClose }: { card: PurchasedCardInfo, isOpen: boolean, onClose: () => void }) {
     const [phoneNumber, setPhoneNumber] = useState("");
     const { toast } = useToast();
 
@@ -374,7 +373,7 @@ function SendSmsDialog({ card, isOpen, onClose }: { card: PurchasedCardInfo, isO
          <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>إرسال معلومات الكرت</DialogTitle>
+                    <DialogTitle>ارسال معلومات الكرت</DialogTitle>
                     <DialogDescription>
                         يمكنك ارسال معلومات الكرت برسالة نصية SMS الى اي رقم. يرجى إدخال رقم الجوال الذي تريد إرسال الكرت اليه.
                     </DialogDescription>
@@ -390,9 +389,11 @@ function SendSmsDialog({ card, isOpen, onClose }: { card: PurchasedCardInfo, isO
                         dir="ltr"
                     />
                 </div>
-                <DialogFooter>
-                    <AlertDialogCancel onClick={onClose}>إلغاء</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleSendSms} disabled={phoneNumber.length < 9}>تأكيد</AlertDialogAction>
+                <DialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-2">
+                    <Button type="button" onClick={handleSendSms} disabled={phoneNumber.length < 9}>تأكيد</Button>
+                    <DialogClose asChild>
+                         <Button type="button" variant="secondary">إلغاء</Button>
+                    </DialogClose>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -411,5 +412,7 @@ function BackButton() {
         </button>
     );
 }
+
+    
 
     

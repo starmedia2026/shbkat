@@ -3,12 +3,15 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ArrowUp, ArrowDown, ShoppingCart, History, Coins } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, ShoppingCart, History, Coins, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { SendSmsDialog } from "@/app/networks/[slug]/page";
 
 interface Operation {
   id: string;
@@ -17,6 +20,7 @@ interface Operation {
   date: string; // ISO string
   description: string;
   status: "completed" | "pending" | "failed";
+  cardNumber?: string;
 }
 
 const operationConfig = {
@@ -44,14 +48,7 @@ export default function OperationsPage() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute left-4"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="h-6 w-6" />
-        </Button>
+        <BackButton />
         <h1 className="text-lg font-bold text-center flex-grow">العمليات</h1>
       </header>
       <main className="p-4 space-y-4">
@@ -76,29 +73,54 @@ function OperationCard({ operation }: { operation: Operation }) {
   const config = operationConfig[operation.type];
   const Icon = config.icon;
   const isIncome = operation.amount > 0;
+  const [showSmsDialog, setShowSmsDialog] = useState(false);
   
   return (
-    <Card className="w-full shadow-md rounded-2xl bg-card/50">
-      <CardContent className="p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3 space-x-reverse">
-          <div className={`p-2 rounded-full bg-muted ${isIncome ? 'text-green-500' : 'text-red-500'}`}>
-            <Icon className="h-5 w-5" />
+    <>
+      <Card className="w-full shadow-md rounded-2xl bg-card/50">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3 space-x-reverse">
+              <div className={`p-2 rounded-full bg-muted ${isIncome ? 'text-green-500' : 'text-red-500'}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">{config.label}</p>
+                <p className="text-xs text-muted-foreground">{operation.description}</p>
+                {operation.cardNumber && (
+                   <p className="text-xs text-muted-foreground mt-1 font-mono" dir="ltr">
+                    {operation.cardNumber}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="text-left flex-shrink-0">
+              <p className={`font-bold text-sm ${isIncome ? 'text-green-500' : 'text-red-500'}`} dir="ltr">
+                {isIncome ? '+' : ''}{operation.amount.toLocaleString('ar-EG')} ريال
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {format(new Date(operation.date), "d MMM yyyy, h:mm a", { locale: ar })}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-semibold text-sm">{config.label}</p>
-            <p className="text-xs text-muted-foreground">{operation.description}</p>
-          </div>
-        </div>
-        <div className="text-left">
-          <p className={`font-bold text-sm ${isIncome ? 'text-green-500' : 'text-red-500'}`} dir="ltr">
-            {isIncome ? '+' : ''}{operation.amount.toLocaleString('ar-EG')} ريال
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {format(new Date(operation.date), "d MMM yyyy, h:mm a", { locale: ar })}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+          {operation.type === 'purchase' && operation.cardNumber && (
+            <div className="mt-3 pt-3 border-t flex justify-end">
+                <Button variant="secondary" size="sm" onClick={() => setShowSmsDialog(true)}>
+                    <Send className="ml-2 h-4 w-4"/>
+                    ارسال SMS
+                </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      {operation.cardNumber && (
+        <SendSmsDialog
+            card={{ cardNumber: operation.cardNumber }}
+            isOpen={showSmsDialog}
+            onClose={() => setShowSmsDialog(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -122,9 +144,16 @@ function OperationSkeleton() {
     )
 }
 
-// Simple Button to avoid importing the whole button component just for a back button
-const Button = ({ onClick, children, className, ...props }: any) => (
-  <button onClick={onClick} className={className} {...props}>
-    {children}
-  </button>
-);
+function BackButton() {
+  const router = useRouter();
+  return (
+    <button
+      onClick={() => router.back()}
+      className="absolute left-4 top-1/2 -translate-y-1/2 p-2"
+    >
+      <ArrowLeft className="h-6 w-6" />
+    </button>
+  );
+}
+
+    
