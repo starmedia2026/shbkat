@@ -245,6 +245,49 @@
           "description": "The phone number for customer support."
         }
       }
+    },
+    "HomeService": {
+      "title": "Home Page Service",
+      "description": "Represents a service item on the home page grid.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string",
+          "description": "Name of a lucide-react icon."
+        },
+        "href": {
+          "type": "string"
+        },
+        "order": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "icon",
+        "href",
+        "order"
+      ]
+    },
+    "HomeSettings": {
+      "title": "Home Page Settings",
+      "description": "Stores settings for the home page, like the service grid.",
+      "type": "object",
+      "properties": {
+        "services": {
+          "type": "array",
+          "items": {
+            "$ref": "#/backend/entities/HomeService"
+          }
+        }
+      }
     }
   },
   "auth": {
@@ -359,7 +402,17 @@
           "schema": {
             "$ref": "#/backend/entities/AppSettings"
           },
-          "description": "Stores global app settings like the logo. There should only be one document in this collection named 'app'."
+          "description": "Stores global app settings like the logo, share link, and support phone number. There should only be one document in this collection named 'app'."
+        }
+      },
+      {
+        "path": "/settings/home",
+        "definition": {
+          "entityName": "HomeSettings",
+          "schema": {
+            "$ref": "#/backend/entities/HomeSettings"
+          },
+          "description": "Stores home page settings like the service grid configuration. There should only be one document in this collection named 'config'."
         }
       }
     ],
