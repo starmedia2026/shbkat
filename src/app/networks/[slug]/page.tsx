@@ -204,6 +204,7 @@ function PackageCard({ category, networkId, networkName }: { category: Category,
                     amount: -category.price,
                     date: now,
                     read: false,
+                    cardNumber: cardDoc.id,
                 };
                 transaction.set(notificationDocRef, notificationData);
 

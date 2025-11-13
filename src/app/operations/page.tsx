@@ -3,7 +3,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ArrowUp, ArrowDown, ShoppingCart, History, Coins, Send } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, CreditCard, History, Coins, Send, Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
@@ -18,7 +18,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +38,7 @@ const operationConfig = {
   transfer_sent: { icon: ArrowUp, color: "text-red-500", label: "تحويل مرسل" },
   transfer_received: { icon: ArrowDown, color: "text-green-500", label: "تحويل مستلم" },
   topup_admin: { icon: Coins, color: "text-green-500", label: "تعبئة رصيد" },
-  purchase: { icon: ShoppingCart, color: "text-red-500", label: "شراء باقة" },
+  purchase: { icon: CreditCard, color: "text-red-500", label: "شراء باقة" },
 };
 
 export default function OperationsPage() {
@@ -86,6 +85,15 @@ function OperationCard({ operation }: { operation: Operation }) {
   const Icon = config.icon;
   const isIncome = operation.amount > 0;
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "تم النسخ!",
+      description: `${label} تم نسخه إلى الحافظة.`,
+    });
+  };
   
   return (
     <>
@@ -99,24 +107,30 @@ function OperationCard({ operation }: { operation: Operation }) {
               <div>
                 <p className="font-semibold text-sm">{config.label}</p>
                 <p className="text-xs text-muted-foreground">{operation.description}</p>
-                {operation.cardNumber && (
-                   <p className="text-xs text-muted-foreground mt-1 font-mono" dir="ltr">
-                    {operation.cardNumber}
-                  </p>
-                )}
               </div>
             </div>
             <div className="text-left flex-shrink-0">
               <p className={`font-bold text-sm ${isIncome ? 'text-green-500' : 'text-red-500'}`}>
-                {isIncome ? '+' : ''}{operation.amount.toLocaleString('en-US')} ريال
+                {operation.amount.toLocaleString('en-US')} {isIncome ? '+' : ''}ريال يمني
               </p>
               <p className="text-xs text-muted-foreground">
                 {format(new Date(operation.date), "d MMM yyyy, h:mm a", { locale: ar })}
               </p>
             </div>
           </div>
-          {operation.type === 'purchase' && operation.cardNumber && (
-            <div className="mt-3 pt-3 border-t flex justify-end">
+           {operation.cardNumber && (
+            <div className="mt-3 pt-3 border-t flex justify-between items-center">
+                 <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-muted-foreground">
+                        كرت الشحن:
+                    </p>
+                    <p className="text-sm text-muted-foreground font-mono" dir="ltr">
+                        {operation.cardNumber}
+                    </p>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(operation.cardNumber!, "رقم الكرت")}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                </div>
                 <Button variant="secondary" size="sm" onClick={() => setSmsDialogOpen(true)}>
                     <Send className="ml-2 h-4 w-4"/>
                     ارسال SMS
@@ -161,7 +175,7 @@ function SendSmsDialog({ isOpen, onClose, operation }: { isOpen: boolean, onClos
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[425px] rounded-2xl bg-card">
+             <DialogContent className="sm:max-w-[425px] rounded-2xl bg-card">
                 <DialogHeader>
                      <DialogTitle className="text-center">ارسال معلومات الكرت</DialogTitle>
                      <DialogDescription className="text-center text-muted-foreground p-4 pt-2">

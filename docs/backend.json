@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Card": {
@@ -174,6 +175,10 @@
         "read": {
           "type": "boolean",
           "description": "Indicates if the notification has been read by the user."
+        },
+        "cardNumber": {
+          "type": "string",
+          "description": "The scratch card number if the notification is for a purchase."
         }
       },
       "required": [
@@ -268,5 +273,3 @@
     "reasoning": "The database structure is designed to store customer information, including their account details, contact number, and balance, and to allow the application to update their balance. To ensure security and proper data segregation, each customer's data is stored under a collection named 'customers'. This structure offers a clear separation of customer records, making it easy to manage and scale customer-related operations. Furthermore, to enhance security and maintain data integrity, consider implementing Firestore security rules that restrict access to customer data based on user roles or authentication status.\n\n**Authorization Independence:**  Since all customer data is self-contained within the `customers` collection, there is no reliance on data from other collections for authorization. Security rules can be applied directly to the `customers` collection based on the user's authentication status.\n\n**QAPs Support:** The segregation strategy ensures that listing customers is secure, as the rules applied to `/customers/{customerId}` govern access to each individual customer's document. There is no mixing of different access needs within the same collection."
   }
 }
-
-    
