@@ -132,14 +132,14 @@ export default function AccountPage() {
               </div>
             ) : (
               <div className="flex-grow">
-                <h2 className="text-base font-bold">{customer?.name}</h2>
+                <h2 className="text-base font-bold">{customer?.name ?? '...'}</h2>
                 <div className="flex items-center space-x-2 space-x-reverse mt-2 text-xs text-primary-foreground/90">
                   <Phone className="h-3 w-3" />
-                  <span dir="ltr">{customer?.phoneNumber}</span>
+                  <span dir="ltr">{customer?.phoneNumber ?? '...'}</span>
                 </div>
                 <div className="flex items-center space-x-2 space-x-reverse mt-1 text-xs text-primary-foreground/90">
                   <MapPin className="h-3 w-3" />
-                  <span>حضرموت - {getArabicLocation(customer?.location)}</span>
+                  <span>حضرموت - {customer?.location ? getArabicLocation(customer.location) : '...'}</span>
                 </div>
               </div>
             )}

@@ -96,7 +96,7 @@ export default function HomePage() {
           {isLoading ? (
             <Skeleton className="h-7 w-40 mt-1" />
           ) : (
-            <h1 className="text-lg font-bold">{formatDisplayName(customer?.name)}</h1>
+            <h1 className="text-lg font-bold">{customer?.name ? formatDisplayName(customer.name) : '...'}</h1>
           )}
         </div>
         <div className="relative">
@@ -125,7 +125,7 @@ export default function HomePage() {
                 <div className="text-3xl font-bold tracking-wider mt-1">
                   {balanceVisible ? (
                     <span className="flex items-baseline gap-2">
-                       <span>{(customer?.balance || 0).toLocaleString('en-US')}</span>
+                       <span>{(customer?.balance ?? 0).toLocaleString('en-US')}</span>
                        <span className="text-sm font-normal">ريال يمني</span>
                     </span>
                   ) : (
