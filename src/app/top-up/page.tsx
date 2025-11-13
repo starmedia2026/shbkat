@@ -3,18 +3,68 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Copy, Upload, Wallet, Building, CircleDollarSign } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
-import { Skeleton } from "@/components/ui/skeleton";
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 
+interface PaymentMethod {
+    id: string;
+    name: string;
+    description: string;
+    icon: React.ElementType;
+    accountName: string;
+    accountNumber: string;
+    theme: {
+        iconBg: string;
+        iconColor: string;
+        borderColor: string;
+    };
+}
+
+const paymentMethods: PaymentMethod[] = [
+    {
+        id: "kareemi",
+        name: "خدمة حاسب | بنك الكريمي",
+        description: "تحويل بنكي عبر حاسب",
+        icon: Wallet,
+        accountName: "كافتيريا وبروست وينك امس",
+        accountNumber: "1203378#1",
+        theme: {
+            iconBg: "bg-purple-100 dark:bg-purple-900/50",
+            iconColor: "text-purple-600 dark:text-purple-400",
+            borderColor: "border-purple-500",
+        },
+    },
+    {
+        id: "amqi",
+        name: "شركة العمقي للصرافة",
+        description: "تحويل عبر العمقي",
+        icon: Building,
+        accountName: "كافتيريا وبروست وينك امس",
+        accountNumber: "2345678",
+        theme: {
+            iconBg: "bg-green-100 dark:bg-green-900/50",
+            iconColor: "text-green-600 dark:text-green-400",
+            borderColor: "border-green-500",
+        },
+    },
+    {
+        id: "busairi",
+        name: "بنك البسيري - بي كاش",
+        description: "تحويل عبر بي كاش",
+        icon: CircleDollarSign,
+        accountName: "كافتيريا وبروست وينك امس",
+        accountNumber: "3456789",
+        theme: {
+            iconBg: "bg-blue-100 dark:bg-blue-900/50",
+            iconColor: "text-blue-600 dark:text-blue-400",
+            borderColor: "border-blue-500",
+        },
+    },
+];
 
 export default function TopUpPage() {
   const [selectedPayment, setSelectedPayment] = useState("kareemi");
@@ -33,18 +83,18 @@ export default function TopUpPage() {
         <div className="w-10"></div>
       </header>
       <main className="p-4 space-y-6">
-        <h2 className="text-center font-bold text-lg">اختر طريقة الدفع</h2>
-        <RadioGroup
-          value={selectedPayment}
-          onValueChange={setSelectedPayment}
-          className="grid gap-4"
-        >
-            <PaymentOption value="kareemi" label="خدمة حاسب | بنك الكريمي" description="تحويل بنكي عبر حاسب" icon={Wallet}/>
-            <PaymentOption value="amqi" label="شركة العمقي للصرافة" description="تحويل عبر العمقي" icon={Building}/>
-            <PaymentOption value="cash" label="الدفع عند الاستلام" description="دفع نقدي عند الاستلام" icon={CircleDollarSign}/>
-        </RadioGroup>
-
-        {selectedPayment === "kareemi" && <KareemiDetailsCard />}
+        <h2 className="text-right font-bold text-lg px-2">طريقة الدفع</h2>
+        
+        <div className="grid gap-4">
+            {paymentMethods.map((method) => (
+                <PaymentOption 
+                    key={method.id}
+                    method={method}
+                    isSelected={selectedPayment === method.id}
+                    onSelect={() => setSelectedPayment(method.id)}
+                />
+            ))}
+        </div>
 
         <div className="pt-4">
           <p className="text-center text-muted-foreground text-xs max-w-sm mx-auto mb-4">
@@ -65,85 +115,59 @@ export default function TopUpPage() {
   );
 }
 
-function PaymentOption({ value, label, description, icon: Icon }: { value: string, label: string, description: string, icon: React.ElementType }) {
-    return (
-        <div>
-        <RadioGroupItem value={value} id={value} className="peer sr-only" />
-        <Label
-            htmlFor={value}
-            className={cn(
-                "flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-            )}
-        >
-            <div className="flex items-center justify-between w-full">
-                <div className="flex items-center space-x-3 space-x-reverse">
-                    <div className="p-2 bg-primary/10 rounded-full">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                        <p className="font-semibold text-sm">{label}</p>
-                        <p className="text-xs text-muted-foreground">{description}</p>
-                    </div>
-                </div>
-                <div className="w-5 h-5 rounded-full border-2 border-muted-foreground flex items-center justify-center peer-data-[state=checked]:border-primary">
-                    <div className="w-2.5 h-2.5 rounded-full peer-data-[state=checked]:bg-primary transition-all"></div>
-                </div>
-            </div>
-        </Label>
-        </div>
-    )
-}
-
-function KareemiDetailsCard() {
+function PaymentOption({ method, isSelected, onSelect }: { method: PaymentMethod; isSelected: boolean; onSelect: () => void; }) {
     const { toast } = useToast();
-    const { user, isUserLoading } = useUser();
-    const firestore = useFirestore();
 
-    const customerDocRef = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
-        return doc(firestore, "customers", user.uid);
-    }, [firestore, user?.uid]);
-
-    const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
-    const isLoading = isUserLoading || isCustomerLoading;
-
-    const copyToClipboard = (text: string | undefined, label: string) => {
-        if (!text) return;
+    const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
         toast({
-        title: "تم النسخ!",
-        description: `${label} تم نسخه إلى الحافظة.`,
+            title: "تم النسخ!",
+            description: `${label} تم نسخه إلى الحافظة.`,
         });
     };
     
     return (
-        <Card className="w-full shadow-lg rounded-xl border-primary border-2 mt-2">
-            <CardContent className="p-4 space-y-3">
-                <p className="text-sm text-muted-foreground">حول إلى حساب</p>
-                 {isLoading ? (
-                    <div className="space-y-2">
-                        <Skeleton className="h-5 w-3/4" />
-                        <Skeleton className="h-5 w-1/2" />
+        <div 
+            onClick={onSelect}
+            className={cn(
+                "rounded-lg border-2 bg-card p-4 transition-all cursor-pointer",
+                isSelected ? method.theme.borderColor : "border-muted"
+            )}
+        >
+            <div className="flex items-center justify-between w-full">
+                <div className="flex items-center space-x-3 space-x-reverse">
+                    <div className={cn("p-2 rounded-lg", method.theme.iconBg)}>
+                      <method.icon className={cn("h-6 w-6", method.theme.iconColor)} />
                     </div>
-                ) : (
-                    <>
-                        <p className="text-lg font-bold text-foreground">{customer?.name}</p>
-                        <div className="flex items-center justify-between">
-                            <p className="text-lg font-mono tracking-widest text-primary font-bold">
-                                {customer?.accountNumber}
+                    <div>
+                        <p className="font-semibold text-sm">{method.name}</p>
+                        <p className="text-xs text-muted-foreground">{method.description}</p>
+                    </div>
+                </div>
+                <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0", isSelected ? method.theme.borderColor : 'border-muted-foreground')}>
+                    {isSelected && <div className={cn("w-2.5 h-2.5 rounded-full", method.theme.borderColor.replace('border-', 'bg-'))}></div>}
+                </div>
+            </div>
+            {isSelected && (
+                 <Card className={cn("w-full rounded-xl mt-4 border-none", method.theme.borderColor.replace('border-', 'bg-').replace('500','100'), "dark:" + method.theme.borderColor.replace('border-', 'bg-').replace('500','900/30'))}>
+                    <CardContent className="p-4 space-y-3 text-center">
+                        <p className="text-sm text-muted-foreground">حول إلى حساب</p>
+                        <p className="text-lg font-bold text-foreground">{method.accountName}</p>
+                        <div className="flex items-center justify-center gap-4">
+                            <p className={cn("text-lg font-mono tracking-widest font-bold", method.theme.iconColor)}>
+                                {method.accountNumber}
                             </p>
-                            <Button variant="ghost" size="sm" onClick={() => copyToClipboard(customer?.accountNumber, "رقم الحساب")}>
+                            <Button variant="ghost" size="sm" className="bg-background rounded-md" onClick={() => copyToClipboard(method.accountNumber, "رقم الحساب")}>
                                 <Copy className="h-4 w-4 ml-2" />
                                 نسخ
                             </Button>
                         </div>
-                    </>
-                )}
-            </CardContent>
-        </Card>
+                    </CardContent>
+                </Card>
+            )}
+        </div>
     )
 }
-
 
 function BackButton() {
   const router = useRouter();
