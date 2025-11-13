@@ -60,7 +60,7 @@ service cloud.firestore {
       }
       
       match /notifications/{notificationId} {
-        allow read, list: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
+        allow read, list: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "7T70326828");
         allow create: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
         allow update: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828"); // Allow user/admin to mark notifications as read
       }
