@@ -47,8 +47,7 @@ service cloud.firestore {
       allow create: if isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId;
       
       // An owner can update their own document, or an admin can.
-      // A signed-in user can also update another user's document as part of a transfer or card purchase.
-      // This is safe because the transaction logic in the code ensures balances are handled correctly.
+      // A signed-in user can also update another user's balance as part of a transfer or card purchase.
       allow update: if isAdmin() || isOwner(customerId) || (
           isSignedIn() && request.resource.data.keys().hasOnly(['balance'])
       );
