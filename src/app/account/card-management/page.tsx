@@ -78,6 +78,8 @@ export default function CardManagementPage() {
   return <CardManagementContent />;
 }
 
+const ALL_NETWORKS_VALUE = "all";
+
 function CardManagementContent() {
   const router = useRouter();
   const firestore = useFirestore();
@@ -94,16 +96,24 @@ function CardManagementContent() {
   } | null>(null);
 
   const availableCategories = useMemo(() => {
+    if (selectedNetworkId === ALL_NETWORKS_VALUE) return [];
     const network = networks.find((n) => n.id === selectedNetworkId);
     return network ? network.categories : [];
   }, [selectedNetworkId]);
+  
+  useEffect(() => {
+    // Reset category when network changes
+    setSelectedCategoryId("");
+  }, [selectedNetworkId]);
+
 
   const handleSaveCards = () => {
-    if (!selectedNetworkId || !selectedCategoryId || !cardsInput.trim()) {
+    const isSelectAll = selectedNetworkId === ALL_NETWORKS_VALUE;
+    if ((!selectedNetworkId || (!selectedCategoryId && !isSelectAll)) || !cardsInput.trim()) {
       toast({
         variant: "destructive",
         title: "بيانات ناقصة",
-        description: "الرجاء اختيار الشبكة والفئة وإدخال أرقام الكروت.",
+        description: "الرجاء اختيار الشبكة (والفئة إذا لم تختر الكل) وإدخال أرقام الكروت.",
       });
       return;
     }
@@ -137,28 +147,49 @@ function CardManagementContent() {
     const batch = writeBatch(firestore);
     const cardsCollection = collection(firestore, "cards");
     const batchData: Record<string, any> = {};
+    let totalCardsAdded = 0;
 
     cardsToSave.forEach((card) => {
-        const cardRef = doc(cardsCollection, card.cardNumber);
-        const cardData = {
-          networkId: selectedNetworkId,
-          categoryId: selectedCategoryId,
-          status: "available",
-          createdAt: new Date().toISOString(),
-        };
-        batch.set(cardRef, cardData);
-        batchData[card.cardNumber] = cardData;
+        if (isSelectAll) {
+            // Add card to all categories in all networks
+            networks.forEach(network => {
+                network.categories.forEach(category => {
+                    const cardRef = doc(cardsCollection, `${card.cardNumber}-${network.id}-${category.id}`);
+                    const cardData = {
+                      networkId: network.id,
+                      categoryId: category.id,
+                      status: "available",
+                      createdAt: new Date().toISOString(),
+                    };
+                    batch.set(cardRef, cardData);
+                    batchData[cardRef.path] = cardData;
+                    totalCardsAdded++;
+                });
+            });
+        } else {
+            // Add card to the selected network and category
+            const cardRef = doc(cardsCollection, card.cardNumber);
+            const cardData = {
+              networkId: selectedNetworkId,
+              categoryId: selectedCategoryId,
+              status: "available",
+              createdAt: new Date().toISOString(),
+            };
+            batch.set(cardRef, cardData);
+            batchData[cardRef.path] = cardData;
+            totalCardsAdded++;
+        }
     });
 
     batch.commit().then(() => {
         setSaveStatus({
-            total: cardsToSave.length,
-            success: cardsToSave.length,
+            total: totalCardsAdded,
+            success: totalCardsAdded,
             failed: 0,
         });
         toast({
             title: "نجاح",
-            description: `تمت إضافة ${cardsToSave.length} كرت بنجاح.`,
+            description: `تمت إضافة ${totalCardsAdded} كرت بنجاح.`,
         });
         // Clear inputs after successful save
         setCardsInput("");
@@ -170,9 +201,9 @@ function CardManagementContent() {
         });
         errorEmitter.emit('permission-error', permissionError);
         setSaveStatus({
-            total: cardsToSave.length,
+            total: totalCardsAdded,
             success: 0,
-            failed: cardsToSave.length,
+            failed: totalCardsAdded,
         });
     }).finally(() => {
         setIsSaving(false);
@@ -214,6 +245,9 @@ function CardManagementContent() {
                     <SelectValue placeholder="اختر الشبكة" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={ALL_NETWORKS_VALUE}>
+                        -- جميع الشبكات --
+                    </SelectItem>
                     {networks.map((network) => (
                       <SelectItem key={network.id} value={network.id}>
                         {network.name}
@@ -228,10 +262,10 @@ function CardManagementContent() {
                   dir="rtl"
                   onValueChange={setSelectedCategoryId}
                   value={selectedCategoryId}
-                  disabled={!selectedNetworkId}
+                  disabled={!selectedNetworkId || selectedNetworkId === ALL_NETWORKS_VALUE}
                 >
                   <SelectTrigger id="category">
-                    <SelectValue placeholder="اختر الفئة" />
+                    <SelectValue placeholder={selectedNetworkId === ALL_NETWORKS_VALUE ? "لجميع الفئات" : "اختر الفئة"} />
                   </SelectTrigger>
                   <SelectContent>
                     {availableCategories.map((cat) => (
@@ -296,3 +330,5 @@ function CardManagementContent() {
     </div>
   );
 }
+
+    

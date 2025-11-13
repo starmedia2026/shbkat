@@ -7,31 +7,38 @@
       "categories": [
         {
           "id": "100",
-          "name": "500 ميجا",
+          "name": "0.5 قيقا",
           "price": 100,
           "validity": "أسبوع",
           "capacity": "1 GB"
         },
         {
           "id": "200",
-          "name": "فئة 200",
+          "name": "1 قيقا",
           "price": 200,
-          "validity": "شهر",
-          "capacity": "2 GB"
+          "validity": "3 ايام",
+          "capacity": "1 GB"
         },
         {
           "id": "500",
-          "name": "فئة 500",
-          "price": 500,
-          "validity": "شهر",
-          "capacity": "5 GB"
+          "name": "1.5 قيقا",
+          "price": 300,
+          "validity": "4 ايام",
+          "capacity": "1.5 GB"
         },
         {
           "id": "1000",
-          "name": "فئة 1000",
+          "name": "4 قيقا",
+          "price": 500,
+          "validity": "14 يوم",
+          "capacity": "4 GB"
+        },
+        {
+          "id": "new-cat-1763032588737",
+          "name": "8 قيقا",
           "price": 1000,
-          "validity": "شهرين",
-          "capacity": "10 GB"
+          "validity": "30 يوم",
+          "capacity": "8 GB"
         }
       ]
     },
