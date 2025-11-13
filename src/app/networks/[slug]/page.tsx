@@ -134,113 +134,100 @@ function PackageCard({ category, network }: { category: Category, network: typeo
         
         setIsPurchasing(true);
 
-        try {
-            // Find an available card outside the transaction
-            const cardsRef = collection(firestore, "cards");
-            const q = query(
-                cardsRef,
-                where("networkId", "==", network.id),
-                where("categoryId", "==", category.id),
-                where("status", "==", "available"),
-                limit(1)
-            );
-            const availableCardsSnapshot = await getDocs(q);
-             if (availableCardsSnapshot.empty) {
-                toast({
-                    variant: "destructive",
-                    title: "نفدت الكروت",
-                    description: "عذراً، لا توجد كروت متاحة من هذه الفئة حالياً. يرجى المحاولة لاحقاً.",
-                });
-                setIsPurchasing(false);
-                return;
+        // Find an available card outside the transaction
+        const cardsRef = collection(firestore, "cards");
+        const q = query(
+            cardsRef,
+            where("networkId", "==", network.id),
+            where("categoryId", "==", category.id),
+            where("status", "==", "available"),
+            limit(1)
+        );
+        const availableCardsSnapshot = await getDocs(q);
+        
+        if (availableCardsSnapshot.empty) {
+            toast({
+                variant: "destructive",
+                title: "نفدت الكروت",
+                description: "عذراً، لا توجد كروت متاحة من هذه الفئة حالياً. يرجى المحاولة لاحقاً.",
+            });
+            setIsPurchasing(false);
+            return;
+        }
+        const cardToPurchaseDoc = availableCardsSnapshot.docs[0];
+        const cardRef = cardToPurchaseDoc.ref;
+        
+        // Find the network owner outside the transaction
+        let ownerRef: any = null;
+        if (network.ownerPhone) {
+            const ownerQuery = query(collection(firestore, "customers"), where("phoneNumber", "==", network.ownerPhone), limit(1));
+            const ownerSnapshot = await getDocs(ownerQuery);
+            if (!ownerSnapshot.empty) {
+                ownerRef = ownerSnapshot.docs[0].ref;
             }
-            const cardToPurchaseDoc = availableCardsSnapshot.docs[0];
-            const cardRef = cardToPurchaseDoc.ref;
+        }
 
-            // Find the network owner outside the transaction
-            let ownerRef: any = null;
-            if (network.ownerPhone) {
-                const ownerQuery = query(collection(firestore, "customers"), where("phoneNumber", "==", network.ownerPhone), limit(1));
-                const ownerSnapshot = await getDocs(ownerQuery);
-                if (!ownerSnapshot.empty) {
-                    ownerRef = ownerSnapshot.docs[0].ref;
+        runTransaction(firestore, async (transaction) => {
+            const senderDoc = await transaction.get(customerDocRef);
+            const cardDoc = await transaction.get(cardRef);
+            
+            if (!senderDoc.exists()) throw new Error("لم يتم العثور على حساب العميل.");
+            if (!cardDoc.exists() || cardDoc.data().status !== 'available') throw new Error("هذا الكرت لم يعد متاحًا. الرجاء المحاولة مرة أخرى.");
+            
+            const senderBalance = senderDoc.data().balance;
+            if (senderBalance < category.price) throw new Error("رصيد غير كافٍ.");
+
+            const now = new Date().toISOString();
+            const ownerAmount = category.price * 0.90; // 90% for the owner
+
+            // 1. Update card status
+            transaction.update(cardRef, { status: "used", usedAt: now, usedBy: user.uid });
+
+            // 2. Update customer balance
+            const newSenderBalance = senderBalance - category.price;
+            transaction.update(customerDocRef, { balance: newSenderBalance });
+            
+            // 3. Update network owner balance (if owner exists)
+            if (ownerRef) {
+                const ownerDoc = await transaction.get(ownerRef);
+                if (ownerDoc.exists()) {
+                    const newOwnerBalance = ownerDoc.data().balance + ownerAmount;
+                    transaction.update(ownerRef, { balance: newOwnerBalance });
+
+                    // Network owner's operation & notification
+                    const ownerId = ownerDoc.id;
+                    transaction.set(doc(collection(firestore, `customers/${ownerId}/operations`)), { type: 'transfer_received', amount: ownerAmount, date: now, description: `أرباح بيع كرت: ${category.name}`, status: 'completed' });
+                    transaction.set(doc(collection(firestore, `customers/${ownerId}/notifications`)), { type: 'transfer_received', title: 'إيداع أرباح', body: `تم إيداع ${ownerAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: ownerAmount, date: now, read: false });
                 }
             }
             
-            // Run the transaction
-            const purchasedCardNumber = await runTransaction(firestore, async (transaction) => {
-                const senderDoc = await transaction.get(customerDocRef);
-                const cardDoc = await transaction.get(cardRef);
-                
-                if (!senderDoc.exists()) throw new Error("لم يتم العثور على حساب العميل.");
-                if (!cardDoc.exists() || cardDoc.data().status !== 'available') throw new Error("هذا الكرت لم يعد متاحًا. الرجاء المحاولة مرة أخرى.");
-                
-                const senderBalance = senderDoc.data().balance;
-                if (senderBalance < category.price) throw new Error("رصيد غير كافٍ.");
+            // --- Create Customer Logs and Notifications ---
+            const baseOpData = { amount: -category.price, date: now, status: 'completed', cardNumber: cardDoc.id };
+            transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name} - ${network.name}` });
+            transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseOpData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح. رقم الكرت: ${cardDoc.id}`, read: false });
 
-                const now = new Date().toISOString();
-                const ownerAmount = category.price * 0.90; // 90% for the owner
-
-                // 1. Update card status
-                transaction.update(cardRef, { status: "used", usedAt: now, usedBy: user.uid });
-
-                // 2. Update customer balance
-                const newSenderBalance = senderBalance - category.price;
-                transaction.update(customerDocRef, { balance: newSenderBalance });
-                
-                // 3. Update network owner balance (if owner exists)
-                if (ownerRef) {
-                    const ownerDoc = await transaction.get(ownerRef);
-                    if (ownerDoc.exists()) {
-                        const newOwnerBalance = ownerDoc.data().balance + ownerAmount;
-                        transaction.update(ownerRef, { balance: newOwnerBalance });
-
-                        // Network owner's operation & notification
-                        const ownerId = ownerDoc.id;
-                        transaction.set(doc(collection(firestore, `customers/${ownerId}/operations`)), { type: 'transfer_received', amount: ownerAmount, date: now, description: `أرباح بيع كرت: ${category.name}`, status: 'completed' });
-                        transaction.set(doc(collection(firestore, `customers/${ownerId}/notifications`)), { type: 'transfer_received', title: 'إيداع أرباح', body: `تم إيداع ${ownerAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: ownerAmount, date: now, read: false });
-                    }
-                }
-                
-                // --- Create Customer Logs and Notifications ---
-                const baseOpData = { amount: -category.price, date: now, status: 'completed', cardNumber: cardDoc.id };
-                transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name} - ${network.name}` });
-                transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseOpData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح. رقم الكرت: ${cardDoc.id}`, read: false });
-
-                return cardDoc.id; // Return the card number
-            });
-
-            setPurchasedCard({ 
+            return cardDoc.id; // Return the card number
+        }).then((purchasedCardNumber) => {
+             setPurchasedCard({ 
                 cardNumber: purchasedCardNumber,
                 categoryName: category.name,
                 networkName: network.name
             });
-
-        } catch (serverError: any) {
-             const isPermissionError = serverError.code && (serverError.code === 'permission-denied' || serverError.code === 'unauthenticated' || serverError.message.includes('permission'));
-             if (isPermissionError) {
-                const contextualError = new FirestorePermissionError({
-                    operation: 'write',
-                    path: 'Transaction for card purchase',
-                    requestResourceData: { 
-                        note: "A transaction involving multiple document writes failed during a card purchase.",
-                        userId: user.uid,
-                        categoryId: category.id,
-                        price: category.price
-                    }
-                });
-                errorEmitter.emit('permission-error', contextualError);
-            } else {
-                console.error("Purchase failed: ", serverError);
-                toast({
-                    variant: "destructive",
-                    title: "فشل الشراء",
-                    description: serverError.message || "حدث خطأ أثناء محاولة شراء الكرت.",
-                });
-            }
-        } finally {
-            setIsPurchasing(false);
-        }
+        }).catch((serverError) => {
+            const contextualError = new FirestorePermissionError({
+                operation: 'write',
+                path: 'Transaction for card purchase',
+                requestResourceData: { 
+                    note: "A transaction involving multiple document writes failed during a card purchase.",
+                    userId: user.uid,
+                    categoryId: category.id,
+                    price: category.price
+                }
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        }).finally(() => {
+             setIsPurchasing(false);
+        });
     };
     
     return (
@@ -425,3 +412,6 @@ function BackButton() {
     );
 }
 
+
+
+    
