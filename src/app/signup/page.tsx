@@ -26,9 +26,10 @@ import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, 
 import { doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { networks as initialNetworks } from "@/lib/networks";
 
 
 interface AppSettings {
@@ -42,7 +43,11 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [location, setLocation] = useState("");
   const [accountType, setAccountType] = useState("user");
+  const [networkName, setNetworkName] = useState("");
+  const [networkAddress, setNetworkAddress] = useState("");
+
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
@@ -58,52 +63,48 @@ export default function SignupPage() {
 
   const { data: appSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(appSettingsDocRef);
 
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     if (name.trim().split(/\s+/).length < 3) {
-      const nameError = "الرجاء إدخال اسمك الثلاثي على الأقل.";
-      setError(nameError);
-      toast({
-        variant: "destructive",
-        title: "خطأ في الإدخال",
-        description: nameError,
-      });
+      const msg = "الرجاء إدخال اسمك الثلاثي على الأقل.";
+      setError(msg);
+      toast({ variant: "destructive", title: "خطأ في الإدخال", description: msg });
+      setIsLoading(false);
       return;
+    }
+    
+    if (phone.length !== 9) {
+        const msg = "رقم الهاتف يجب أن يتكون من 9 أرقام بالضبط.";
+        setError(msg);
+        toast({ variant: "destructive", title: "خطأ في رقم الهاتف", description: msg });
+        setIsLoading(false);
+        return;
     }
 
     if (password !== confirmPassword) {
-      const passwordError = "كلمتا المرور غير متطابقتين";
-      setError(passwordError);
-      toast({
-        variant: "destructive",
-        title: "خطأ",
-        description: passwordError,
-      });
+      const msg = "كلمتا المرور غير متطابقتين";
+      setError(msg);
+      toast({ variant: "destructive", title: "خطأ", description: msg });
+      setIsLoading(false);
       return;
     }
     
     if (!location) {
-      const locationError = "الرجاء اختيار موقعك";
-      setError(locationError);
-      toast({
-        variant: "destructive",
-        title: "خطأ",
-        description: locationError,
-      });
+      const msg = "الرجاء اختيار موقعك";
+      setError(msg);
+      toast({ variant: "destructive", title: "خطأ", description: msg });
+      setIsLoading(false);
       return;
     }
     
-    if (!accountType) {
-      const accountTypeError = "الرجاء اختيار نوع الحساب";
-      setError(accountTypeError);
-      toast({
-        variant: "destructive",
-        title: "خطأ",
-        description: accountTypeError,
-      });
+    if (accountType === 'network-owner' && (!networkName || !networkAddress)) {
+      const msg = "الرجاء إدخال اسم وعنوان الشبكة.";
+      setError(msg);
+      toast({ variant: "destructive", title: "بيانات الشبكة ناقصة", description: msg });
+      setIsLoading(false);
       return;
     }
 
@@ -120,27 +121,36 @@ export default function SignupPage() {
           phoneNumber: phone,
           location: location,
           balance: 0,
-          accountNumber: Math.random().toString().slice(2, 12), // Generate a random account number
+          accountNumber: Math.random().toString().slice(2, 12),
           accountType: accountType,
         };
         
         const userDocRef = doc(firestore, "customers", user.uid);
+        await setDoc(userDocRef, customerData);
+
+        if (accountType === 'network-owner') {
+             const newNetwork = {
+                id: `network-${Date.now()}`,
+                name: networkName,
+                address: networkAddress,
+                logo: "",
+                ownerPhone: phone,
+                categories: [],
+            };
+            const updatedNetworks = [...initialNetworks, newNetwork];
+
+            await fetch('/api/save-networks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ networks: updatedNetworks }),
+            });
+        }
         
-        // Use setDoc with proper error handling
-        setDoc(userDocRef, customerData).then(() => {
-            toast({
-              title: "تم إنشاء الحساب بنجاح!",
-              description: "يتم تسجيل دخولك الآن...",
-            });
-            router.push("/home");
-        }).catch((serverError) => {
-             const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'create',
-                requestResourceData: customerData
-            });
-            errorEmitter.emit('permission-error', permissionError);
+        toast({
+          title: "تم إنشاء الحساب بنجاح!",
+          description: "يتم تسجيل دخولك الآن...",
         });
+        router.push("/home");
       }
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -153,11 +163,13 @@ export default function SignupPage() {
         errorMessage = "كلمة المرور ضعيفة جدا. يجب أن تتكون من 6 أحرف على الأقل.";
       }
       setError(errorMessage);
-       toast({
+      toast({
         variant: "destructive",
         title: "خطأ في إنشاء الحساب",
         description: errorMessage,
       });
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -194,7 +206,7 @@ export default function SignupPage() {
                 <Input id="name" placeholder="الاسم الثلاثي الكامل" required value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="grid gap-2 text-right">
-                <Label htmlFor="phone">رقم الهاتف</Label>
+                <Label htmlFor="phone">رقم الهاتف (9 أرقام)</Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -203,6 +215,7 @@ export default function SignupPage() {
                   dir="ltr"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                  maxLength={9}
                 />
               </div>
               <div className="grid gap-2 text-right">
@@ -245,7 +258,7 @@ export default function SignupPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2 text-right">
-                  <Label htmlFor="location">الموقع</Label>
+                  <Label htmlFor="location">موقعك</Label>
                   <Select dir="rtl" onValueChange={setLocation} value={location} required>
                     <SelectTrigger id="location">
                       <SelectValue placeholder="اختر موقعك" />
@@ -274,11 +287,23 @@ export default function SignupPage() {
                   </Select>
                 </div>
               </div>
+              {accountType === 'network-owner' && (
+                  <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2 text-right">
+                          <Label htmlFor="networkName">اسم الشبكة</Label>
+                          <Input id="networkName" placeholder="مثال: شبكة ببحم" required={accountType === 'network-owner'} value={networkName} onChange={(e) => setNetworkName(e.target.value)} />
+                      </div>
+                      <div className="grid gap-2 text-right">
+                          <Label htmlFor="networkAddress">عنوان الشبكة</Label>
+                          <Input id="networkAddress" placeholder="مثال: مديرية شبام" required={accountType === 'network-owner'} value={networkAddress} onChange={(e) => setNetworkAddress(e.target.value)} />
+                      </div>
+                  </div>
+              )}
                {error && <p className="text-red-500 text-sm">{error}</p>}
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button className="w-full" type="submit">
-                إنشاء حساب
+              <Button className="w-full" type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : "إنشاء حساب"}
               </Button>
               <div className="text-sm text-muted-foreground">
                 لديك حساب بالفعل؟{" "}

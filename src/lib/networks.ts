@@ -49,5 +49,13 @@ export const networks: Network[] = [
         "capacity": ""
       }
     ]
+  },
+  {
+    "id": "new-network-1763069353286",
+    "name": "شبكة بيحم",
+    "logo": "",
+    "address": "شبام",
+    "ownerPhone": "",
+    "categories": []
   }
 ];

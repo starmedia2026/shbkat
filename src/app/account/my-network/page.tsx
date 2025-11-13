@@ -13,7 +13,6 @@ import {
   MapPin,
   UploadCloud,
   ChevronDown,
-  ChevronUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -108,15 +107,15 @@ function MyNetworkContent() {
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
   const [isSaving, setIsSaving] = useState(false);
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
-  const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string, ownerPhone: string}>({name: "", logo: "", address: "", ownerPhone: ""});
+  const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string}>({name: "", logo: "", address: ""});
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   const { user } = useUser();
   
   const ownerNetwork = useMemo(() => {
     if (!user?.phoneNumber) return null;
-    return networks.find(n => n.ownerPhone === user.phoneNumber);
-  }, [networks, user?.phoneNumber]);
+    return initialNetworks.find(n => n.ownerPhone === user.phoneNumber);
+  }, [user?.phoneNumber]);
 
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
     setIsSaving(true);
@@ -165,14 +164,14 @@ function MyNetworkContent() {
     const newNetworks = [...networks, newNetwork];
     setNetworks(newNetworks);
     setEditingNetworkId(newId);
-    setEditingNetworkData({name: "", logo: "", address: "", ownerPhone: user?.phoneNumber || ""});
+    setEditingNetworkData({name: "", logo: "", address: ""});
   };
 
   const handleUpdateNetwork = (networkId: string) => {
-    const newNetworks = networks.map(n => n.id === networkId ? { ...n, ...editingNetworkData } : n);
+    const newNetworks = networks.map(n => n.id === networkId ? { ...n, ...editingNetworkData, ownerPhone: n.ownerPhone || user?.phoneNumber } : n);
     updateAndSave(newNetworks);
     setEditingNetworkId(null);
-    setEditingNetworkData({name: "", logo: "", address: "", ownerPhone: ""});
+    setEditingNetworkData({name: "", logo: "", address: ""});
   };
   
   const handleAddCategory = (networkId: string) => {
@@ -268,7 +267,7 @@ function MyNetworkContent() {
                     )}
                     {editingNetworkId !== networkToDisplay.id && (
                         <div className="flex items-center gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(networkToDisplay.id); setEditingNetworkData({name: networkToDisplay.name, logo: networkToDisplay.logo || "", address: networkToDisplay.address || "", ownerPhone: networkToDisplay.ownerPhone || ""}); }}>
+                            <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(networkToDisplay.id); setEditingNetworkData({name: networkToDisplay.name, logo: networkToDisplay.logo || "", address: networkToDisplay.address || ""}); }}>
                                 <Edit className="h-4 w-4" />
                             </Button>
                         </div>
@@ -317,7 +316,6 @@ function MyNetworkContent() {
 }
 
 const CategoryCard = ({ category, networkId, onEdit, onDelete }: { category: Category, networkId: string, onEdit: () => void, onDelete: () => void }) => {
-    const [isAddCardsOpen, setIsAddCardsOpen] = useState(false);
     
     return (
         <Collapsible className="p-3 border rounded-lg bg-background">
@@ -350,10 +348,10 @@ const CategoryCard = ({ category, networkId, onEdit, onDelete }: { category: Cat
                 </div>
             </div>
             <CollapsibleTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full mt-3">
-                    <UploadCloud className="ml-2 h-4 w-4" />
-                    إضافة كروت لهذه الباقة
-                    <ChevronDown className="h-4 w-4 mr-auto transition-transform data-[state=open]:rotate-180" />
+                 <Button variant="outline" size="sm" className="w-full mt-3 flex items-center justify-center gap-2">
+                    <UploadCloud className="h-4 w-4" />
+                    <span>إضافة كروت لهذه الباقة</span>
+                    <ChevronDown className="h-4 w-4 ml-auto transition-transform data-[state=open]:rotate-180" />
                 </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -498,5 +496,3 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
-
-    
