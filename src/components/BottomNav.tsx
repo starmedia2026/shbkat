@@ -58,7 +58,6 @@ export function BottomNav() {
     ];
     if (isAdmin) {
       items.push({ href: "/account/user-management", icon: Users, label: "المستخدمين" });
-      items.push({ href: "/account/create-user", icon: UserPlus, label: "إضافة" });
     }
     items.push({ href: "/account", icon: User, label: "حسابي" });
     return items;

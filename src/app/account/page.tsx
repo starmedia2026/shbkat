@@ -185,11 +185,6 @@ export default function AccountPage() {
               {isAdmin && (
                 <>
                   <AccountItem
-                    icon={UserPlus}
-                    label="إنشاء حساب عميل"
-                    href="/account/create-user"
-                  />
-                  <AccountItem
                     icon={Users}
                     label="إدارة المستخدمين"
                     href="/account/user-management"
