@@ -51,7 +51,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={cn("font-tajawal")}>
+      <body className={cn("font-almarai")}>
         <FirebaseClientProvider>
           <ThemeProvider>
             {children}
