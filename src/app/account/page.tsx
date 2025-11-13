@@ -194,6 +194,12 @@ export default function AccountPage() {
       });
     }
   };
+  
+  const handleHelpClick = () => {
+    const supportPhoneNumber = "967770326828";
+    const message = encodeURIComponent("مرحباً، أحتاج إلى مساعدة.");
+    window.open(`https://wa.me/${supportPhoneNumber}?text=${message}`, "_blank");
+  };
 
 
   return (
@@ -329,7 +335,11 @@ export default function AccountPage() {
                         icon={item.icon} 
                         label={item.label} 
                         href={item.href}
-                        onClick={item.id === 'share' ? handleShare : undefined}
+                        onClick={
+                            item.id === 'share' ? handleShare :
+                            item.id === 'help' ? handleHelpClick :
+                            undefined
+                        }
                     />
                  ))
               )}
@@ -407,3 +417,5 @@ function AccountItem({
 
   return <li>{content}</li>;
 }
+
+    
