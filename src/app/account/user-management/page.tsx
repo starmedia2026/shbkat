@@ -351,7 +351,6 @@ function CustomerCard({ customer }: { customer: Customer }) {
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
-                        <PasswordResetInfoDialog customer={customer} />
                     </div>
                 </div>
             </CardContent>
@@ -449,111 +448,5 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
         </Dialog>
     );
 }
-
-function PasswordResetInfoDialog({ customer }: { customer: Customer }) {
-    const [passwordResetInitiated, setPasswordResetInitiated] = useState(false);
-    const [newTempPassword, setNewTempPassword] = useState('');
-    const { toast } = useToast();
-    const firestore = useFirestore();
-  
-    const handleInitiatePasswordReset = async () => {
-        if (!customer || !firestore) {
-            toast({ variant: "destructive", title: "خطأ", description: "لا يمكن بدء إعادة التعيين." });
-            return;
-        }
-        
-        const tempPassword = Math.random().toString(36).slice(-8);
-        setNewTempPassword(tempPassword);
-        
-        const customerDocRef = doc(firestore, "customers", customer.id);
-        try {
-            await updateDoc(customerDocRef, { requiresPasswordChange: true });
-            setPasswordResetInitiated(true);
-            toast({ title: "تم بدء العملية", description: "تم وضع علامة على الحساب. يرجى إكمال الخطوات التالية." });
-        } catch (error) {
-            const contextualError = new FirestorePermissionError({
-                operation: 'update',
-                path: `customers/${customer.id}`,
-                requestResourceData: { requiresPasswordChange: true }
-            });
-            errorEmitter.emit('permission-error', contextualError);
-            toast({ variant: "destructive", title: "فشل", description: "لم يتم وضع علامة على الحساب." });
-        }
-    };
-  
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(newTempPassword);
-        toast({ title: "تم النسخ", description: "تم نسخ كلمة المرور المؤقتة." });
-    };
-  
-    const resetState = () => {
-      setPasswordResetInitiated(false);
-      setNewTempPassword('');
-    }
-  
-    return (
-      <AlertDialog onOpenChange={(open) => !open && resetState()}>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" className="flex-grow">
-            <KeyRound className="h-4 w-4 ml-2" />
-            إعادة تعيين
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Info className="h-5 w-5" />
-              تعليمات إعادة تعيين كلمة المرور
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3 pt-2 text-right">
-                {passwordResetInitiated ? (
-                   <>
-                      <p className="font-bold">الخطوة 1: انسخ كلمة المرور المؤقتة الجديدة.</p>
-                      <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
-                          <Input readOnly value={newTempPassword} className="font-mono" dir="ltr"/>
-                          <Button variant="ghost" size="icon" onClick={copyToClipboard}><Copy className="h-4 w-4"/></Button>
-                      </div>
-                       <p className="font-bold">الخطوة 2: اذهب إلى لوحة تحكم Firebase.</p>
-                       <p className="text-sm">
-                          اذهب إلى قسم <code className="font-mono bg-muted p-1 rounded-sm">Authentication</code>، ابحث عن المستخدم، وأعد تعيين كلمة المرور الخاصة به باستخدام الكلمة التي نسختها.
-                       </p>
-                        <p className="text-xs text-muted-foreground pt-2">
-                          بعد ذلك، أرسل كلمة المرور هذه للعميل ليتمكن من تسجيل الدخول وتعيين كلمة مرور جديدة.
-                       </p>
-                   </>
-                ) : (
-                  <>
-                    <p>
-                      هذه العملية من خطوتين. أولاً، سنضع علامة على حساب المستخدم لإجباره على تغيير كلمة المرور عند تسجيل الدخول التالي.
-                    </p>
-                     <ol className="list-decimal list-inside space-y-2 text-sm bg-muted p-3 rounded-md">
-                        <li>اضغط على "تأكيد وبدء العملية" لإنشاء كلمة مرور مؤقتة ووضع علامة على الحساب.</li>
-                        <li><strong>انسخ</strong> كلمة المرور المؤقتة التي ستظهر لك.</li>
-                        <li>اذهب إلى لوحة تحكم Firebase وأعد تعيين كلمة مرور العميل يدويًا.</li>
-                        <li>أرسل كلمة المرور المؤقتة للعميل.</li>
-                     </ol>
-                    <p className="text-xs text-muted-foreground pt-2">
-                      هل أنت متأكد أنك تريد بدء عملية إعادة تعيين كلمة المرور لحساب "{customer.name}"؟
-                    </p>
-                  </>
-                )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-              {passwordResetInitiated ? (
-                   <AlertDialogCancel>إغلاق</AlertDialogCancel>
-              ) : (
-                  <>
-                      <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleInitiatePasswordReset}>تأكيد وبدء العملية</AlertDialogAction>
-                  </>
-              )}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    );
-}
-
     
+
