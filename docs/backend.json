@@ -1,5 +1,53 @@
 {
   "entities": {
+    "Card": {
+      "title": "Card",
+      "description": "Represents a scratch card for top-up.",
+      "type": "object",
+      "properties": {
+        "pin": {
+          "type": "string",
+          "description": "The PIN of the card."
+        },
+        "networkId": {
+          "type": "string",
+          "description": "The ID of the network this card belongs to."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "The ID of the category/value of this card."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the card.",
+          "enum": [
+            "available",
+            "used"
+          ]
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp of when the card was added."
+        },
+        "usedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp of when the card was used."
+        },
+        "usedBy": {
+          "type": "string",
+          "description": "The UID of the user who used the card."
+        }
+      },
+      "required": [
+        "pin",
+        "networkId",
+        "categoryId",
+        "status",
+        "createdAt"
+      ]
+    },
     "Customer": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Customer",
@@ -145,6 +193,22 @@
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/cards/{cardId}",
+        "definition": {
+          "entityName": "Card",
+          "schema": {
+            "$ref": "#/backend/entities/Card"
+          },
+          "description": "Stores scratch card data.",
+          "params": [
+            {
+              "name": "cardId",
+              "description": "The card number, used as the document ID."
+            }
+          ]
+        }
+      },
       {
         "path": "/customers/{customerId}",
         "definition": {

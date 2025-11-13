@@ -14,7 +14,7 @@ import {
   MapPin,
   Users,
   Wifi,
-  UserPlus,
+  CreditCard,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -193,6 +193,11 @@ export default function AccountPage() {
                     icon={Wifi}
                     label="إدارة الشبكات"
                     href="/account/network-management"
+                  />
+                   <AccountItem
+                    icon={CreditCard}
+                    label="إدارة الكروت"
+                    href="/account/card-management"
                   />
                 </>
               )}

@@ -9,6 +9,7 @@
  * - /customers/{customerId}: Stores public and private data for each customer.
  * - /customers/{customerId}/operations/{operationId}: A log of financial transactions for a customer.
  * - /customers/{customerId}/notifications/{notificationId}: Notifications for a customer.
+ * - /cards/{cardId}: Stores scratch card information.
  *
  * Key Security Decisions:
  * - Customers can only access their own data (documents and subcollections).
@@ -16,6 +17,7 @@
  * - Admin users can update any customer's data, and can also delete any customer's data.
  * - The `id` field within a customer document must match the `customerId` in the path to ensure data consistency.
  * - Users can create their own documents and subcollection documents.
+ * - Admins have full read/write access to the cards collection.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -56,6 +58,10 @@ service cloud.firestore {
         allow create: if isOwner(customerId) || isAdmin();
         allow update: if isOwner(customerId) || isAdmin(); // Allow user/admin to mark notifications as read
       }
+    }
+
+    match /cards/{cardId} {
+        allow read, write: if isAdmin();
     }
   }
 }
