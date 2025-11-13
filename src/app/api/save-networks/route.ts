@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     }
 
     const filePath = path.join(process.cwd(), 'src', 'lib', 'networks.json');
+    // The data is wrapped in a 'networks' object to match the original structure.
     const fileContent = JSON.stringify({ networks }, null, 2);
 
     fs.writeFileSync(filePath, fileContent, 'utf-8');
