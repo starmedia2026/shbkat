@@ -91,14 +91,14 @@ export default function LoginPage() {
 
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 relative">
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-6 flex flex-col items-center gap-2">
             <Image
                 src="https://i.postimg.cc/76FCwnKs/44.png"
                 alt="Shabakat Logo"
-                width={200}
-                height={100}
+                width={150}
+                height={75}
                 priority
             />
           <p className="text-lg text-muted-foreground mt-2">مرحباً بك</p>
@@ -174,6 +174,9 @@ export default function LoginPage() {
           </form>
         </Card>
       </div>
+      <footer className="absolute bottom-4 text-center text-xs text-muted-foreground">
+        <p>تم التطوير بواسطة محمد راضي باشادي</p>
+      </footer>
     </main>
   );
 }

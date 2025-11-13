@@ -10,8 +10,8 @@ export default function Loading() {
         <Image
           src="https://i.postimg.cc/76FCwnKs/44.png"
           alt="Shabakat Logo"
-          width={200}
-          height={100}
+          width={150}
+          height={75}
           priority
         />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
