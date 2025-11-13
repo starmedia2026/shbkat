@@ -1,5 +1,5 @@
 
-import data from './networks.json';
+import data from '../../public/networks.json';
 
 // In a real app, you'd fetch this from a server or have an API endpoint to update it.
 // For now, we'll read from the JSON file.
@@ -20,4 +20,3 @@ interface Network {
 }
 
 export const networks: Network[] = data.networks;
-
