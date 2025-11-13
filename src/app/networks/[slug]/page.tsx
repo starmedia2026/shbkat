@@ -28,7 +28,7 @@ import {
 import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { doc, collection, writeBatch, getDocs, query, where, limit, runTransaction } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { networks } from "@/lib/networks";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,6 +64,12 @@ export default function NetworkDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
   const network = networkData[slug];
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   if (!network) {
     return (
@@ -84,14 +90,14 @@ export default function NetworkDetailPage() {
       </header>
       <main className="p-4 space-y-4">
         {network.categories.map((category) => (
-          <PackageCard key={category.id} category={category} networkName={network.name} />
+          <PackageCard key={category.id} category={category} networkName={network.name} isClient={isClient} />
         ))}
       </main>
     </div>
   );
 }
 
-function PackageCard({ category, networkName }: { category: Category, networkName: string }) {
+function PackageCard({ category, networkName, isClient }: { category: Category, networkName: string, isClient: boolean }) {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -129,7 +135,6 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
                     limit(1)
                 );
                 
-                // Note: We perform the get within the transaction to ensure atomicity
                 const cardSnapshot = await getDocs(q);
 
                 if (cardSnapshot.empty) {
@@ -191,13 +196,30 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
             setPurchasedCard({ cardNumber: purchasedCardNumber });
 
         } catch (error: any) {
-            console.error("Purchase failed: ", error);
-            toast({
-                variant: "destructive",
-                title: "فشل الشراء",
-                description: error.message || "حدث خطأ أثناء محاولة شراء الكرت.",
-            });
-            // This is a complex transaction, so a generic error is acceptable for now.
+            // If the error is a permission error from Firestore, it will be caught here.
+            // We create a detailed, contextual error object and emit it globally.
+            // This allows our central error listener to catch it and display it in the dev overlay.
+             if (error.code && (error.code === 'permission-denied' || error.code === 'unauthenticated')) {
+                const permissionError = new FirestorePermissionError({
+                    path: 'Transaction for card purchase', // General path for a transaction
+                    operation: 'write',
+                    requestResourceData: {
+                        note: 'This was a transaction involving multiple steps (reading card, updating card, updating customer, creating operation). The exact failing step is not provided by the transaction error, but it was a permission issue.',
+                        categoryId: category.id,
+                        price: category.price,
+                        customerId: user.uid
+                    },
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            } else {
+                // For other types of errors (e.g., card not available), show a toast.
+                console.error("Purchase failed: ", error);
+                toast({
+                    variant: "destructive",
+                    title: "فشل الشراء",
+                    description: error.message || "حدث خطأ أثناء محاولة شراء الكرت.",
+                });
+            }
         } finally {
             setIsPurchasing(false);
         }
@@ -222,7 +244,7 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
                         <div>
                             <p className="font-semibold text-base">{category.name}</p>
                             <p className="text-sm font-bold text-primary mt-1">
-                                {category.price.toLocaleString('ar-EG')} ريال يمني
+                                {isClient ? category.price.toLocaleString('ar-EG') : category.price} ريال يمني
                             </p>
                         </div>
                         <AlertDialog>
@@ -238,7 +260,7 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>تأكيد عملية الشراء</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        هل أنت متأكد من رغبتك في شراء "{category.name}" بمبلغ <span className="font-bold text-primary">{category.price.toLocaleString('ar-EG')}</span> ريال؟
+                                        هل أنت متأكد من رغبتك في شراء "{category.name}" بمبلغ <span className="font-bold text-primary">{isClient ? category.price.toLocaleString('ar-EG') : category.price}</span> ريال؟
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
