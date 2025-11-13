@@ -4,6 +4,9 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Phone, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // WhatsApp icon component for the button
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -17,10 +20,24 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+const DEFAULT_SUPPORT_PHONE = "770326828";
+
+interface AppSettings {
+  supportPhoneNumber?: string;
+}
 
 export default function ContactPage() {
   const router = useRouter();
-  const phoneNumber = "770326828";
+  const firestore = useFirestore();
+
+  const appSettingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "app");
+  }, [firestore]);
+
+  const { data: appSettings, isLoading } = useDoc<AppSettings>(appSettingsDocRef);
+
+  const phoneNumber = appSettings?.supportPhoneNumber || DEFAULT_SUPPORT_PHONE;
   const whatsappMessage = encodeURIComponent("مرحباً، أود التواصل معكم.");
 
   const handleWhatsAppRedirect = () => {
@@ -47,6 +64,7 @@ export default function ContactPage() {
                 className="w-full py-7 text-base font-bold flex items-center justify-center gap-3 bg-card border-2 border-transparent hover:border-primary hover:bg-primary/10 hover:text-primary transition-all text-foreground"
                 variant="outline"
                 size="lg"
+                disabled={isLoading}
             >
                 <Phone className="h-6 w-6"/>
                 اتصال
@@ -56,14 +74,19 @@ export default function ContactPage() {
                 className="w-full py-7 text-base font-bold flex items-center justify-center gap-3 bg-card border-2 border-transparent hover:border-primary hover:bg-primary/10 hover:text-primary transition-all text-foreground"
                 variant="outline"
                 size="lg"
+                disabled={isLoading}
             >
                 <WhatsAppIcon className="h-6 w-6"/>
                 واتساب
             </Button>
         </div>
-        <p className="font-mono text-xl tracking-widest text-primary font-semibold mt-4">
-            {phoneNumber}
-        </p>
+        {isLoading ? (
+            <Skeleton className="h-8 w-40" />
+        ) : (
+            <p className="font-mono text-xl tracking-widest text-primary font-semibold mt-4">
+                {phoneNumber}
+            </p>
+        )}
       </main>
     </div>
   );

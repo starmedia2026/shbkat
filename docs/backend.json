@@ -239,6 +239,10 @@
         "shareLink": {
           "type": "string",
           "description": "The URL to be shared when a user clicks the 'Share App' button."
+        },
+        "supportPhoneNumber": {
+          "type": "string",
+          "description": "The phone number for customer support."
         }
       }
     }

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -13,10 +14,28 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
+import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const DEFAULT_SUPPORT_PHONE = "770326828";
+
+interface AppSettings {
+  supportPhoneNumber?: string;
+}
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const supportPhoneNumber = "770326828";
+  const firestore = useFirestore();
+
+  const appSettingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "app");
+  }, [firestore]);
+
+  const { data: appSettings, isLoading } = useDoc<AppSettings>(appSettingsDocRef);
+
+  const supportPhoneNumber = appSettings?.supportPhoneNumber || DEFAULT_SUPPORT_PHONE;
   const whatsappMessage = encodeURIComponent("أرغب في إعادة تعيين كلمة المرور الخاصة بي.");
 
   const handleWhatsAppRedirect = () => {
@@ -39,13 +58,17 @@ export default function ForgotPasswordPage() {
           <CardContent className="grid gap-4">
             <div className="grid gap-2 text-right">
               <Label htmlFor="support-number">رقم الدعم الفني</Label>
-              <div className="flex h-10 w-full items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-lg font-bold tracking-widest text-foreground mt-2" dir="ltr">
-                {supportPhoneNumber}
-              </div>
+              {isLoading ? (
+                  <Skeleton className="h-10 w-full mt-2" />
+              ) : (
+                <div className="flex h-10 w-full items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-lg font-bold tracking-widest text-foreground mt-2" dir="ltr">
+                  {supportPhoneNumber}
+                </div>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full" onClick={handleWhatsAppRedirect}>
+            <Button className="w-full" onClick={handleWhatsAppRedirect} disabled={isLoading}>
               إرسال طلب إعادة التعيين
             </Button>
             <div className="text-sm text-muted-foreground">

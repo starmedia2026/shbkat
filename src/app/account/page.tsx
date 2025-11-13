@@ -90,11 +90,12 @@ const adminAccountItems = [
   { id: "app-settings", href: "/account/app-settings", icon: Settings, label: "إعدادات التطبيق" },
   { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
   { id: "share", icon: Share2, label: "شارك التطبيق" },
-  { id: "help", href: "#", icon: HelpCircle, label: "مركز المساعدة" },
+  { id: "help", icon: HelpCircle, label: "مركز المساعدة" },
 ];
 
 interface AppSettings {
   shareLink?: string;
+  supportPhoneNumber?: string;
 }
 
 export default function AccountPage() {
@@ -196,7 +197,7 @@ export default function AccountPage() {
   };
   
   const handleHelpClick = () => {
-    const supportPhoneNumber = "967770326828";
+    const supportPhoneNumber = appSettings?.supportPhoneNumber || "770326828";
     const message = encodeURIComponent("مرحباً، أحتاج إلى مساعدة.");
     window.open(`https://wa.me/${supportPhoneNumber}?text=${message}`, "_blank");
   };

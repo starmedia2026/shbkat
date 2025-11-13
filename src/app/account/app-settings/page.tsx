@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
   Save,
   Link as LinkIcon,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface AppSettings {
   logoUrl?: string;
   shareLink?: string;
+  supportPhoneNumber?: string;
 }
 
 export default function AppSettingsPage() {
@@ -74,6 +76,7 @@ function AppSettingsContent() {
 
   const [logoUrl, setLogoUrl] = useState("");
   const [shareLink, setShareLink] = useState("");
+  const [supportPhoneNumber, setSupportPhoneNumber] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   
   const appSettingsDocRef = useMemoFirebase(() => {
@@ -87,6 +90,7 @@ function AppSettingsContent() {
     if (appSettings) {
       setLogoUrl(appSettings.logoUrl || "");
       setShareLink(appSettings.shareLink || "");
+      setSupportPhoneNumber(appSettings.supportPhoneNumber || "");
     }
   }, [appSettings]);
 
@@ -99,8 +103,9 @@ function AppSettingsContent() {
 
     setIsSaving(true);
     const newSettings = {
-        logoUrl,
-        shareLink,
+        logoUrl: logoUrl.trim(),
+        shareLink: shareLink.trim(),
+        supportPhoneNumber: supportPhoneNumber.trim(),
     };
 
     try {
@@ -140,12 +145,13 @@ function AppSettingsContent() {
           <CardHeader>
             <CardTitle>إعدادات التطبيق العامة</CardTitle>
             <CardDescription>
-              تغيير الشعار ورابط المشاركة الخاص بالتطبيق.
+              تغيير الشعار ورابط المشاركة ورقم الدعم الخاص بالتطبيق.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {isLoading ? (
                 <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-40 w-full" />
@@ -166,6 +172,13 @@ function AppSettingsContent() {
                             <span>رابط مشاركة التطبيق</span>
                         </Label>
                         <Input id="shareLink" placeholder="https://play.google.com/store/apps/..." value={shareLink} onChange={(e) => setShareLink(e.target.value)} dir="ltr" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="supportPhoneNumber" className="flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            <span>رقم الدعم الفني</span>
+                        </Label>
+                        <Input id="supportPhoneNumber" placeholder="77..." value={supportPhoneNumber} onChange={(e) => setSupportPhoneNumber(e.target.value)} dir="ltr" />
                     </div>
                     {logoUrl && (
                         <div>
