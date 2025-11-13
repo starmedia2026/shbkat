@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   description: "تطبيق شبكات للتواصل والاتصال",
 };
 
+// This script now only handles dark mode, as primary color is handled by the ThemeProvider after hydration
 const ThemeScript = () => (
   <script
     dangerouslySetInnerHTML={{
@@ -20,10 +21,8 @@ const ThemeScript = () => (
             if (darkMode) {
               document.documentElement.classList.add('dark');
             }
-            const primaryColor = localStorage.getItem('primaryColor');
-            if (primaryColor) {
-              document.documentElement.style.setProperty('--primary', primaryColor);
-            }
+            // Primary color is removed from here to prevent a flash of the default color.
+            // It will be set by the ThemeProvider once the app hydrates.
           } catch (e) {}
         })();
       `,
@@ -62,5 +61,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    

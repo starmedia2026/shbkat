@@ -10,15 +10,7 @@
  * - /customers/{customerId}/operations/{operationId}: A log of financial transactions for a customer.
  * - /customers/{customerId}/notifications/{notificationId}: Notifications for a customer.
  * - /cards/{cardId}: Stores scratch card information.
- *
- * Key Security Decisions:
- * - Customers can only access their own data (documents and subcollections).
- * - The Admin user can read any customer's data and list all customers.
- * - The Admin user can update any customer's data, and can also delete any customer's data.
- * - The `id` field within a customer document must match the `customerId` in the path to ensure data consistency.
- * - Users can create their own documents and subcollection documents.
- * - The Admin has full create/delete access to the cards collection.
- * - Authenticated users can read cards and update a card's status to 'used' during a purchase.
+ * - /settings/theme: Stores global theme settings.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -89,6 +81,12 @@ service cloud.firestore {
           resource.data.status == 'available' &&
           request.resource.data.usedBy == request.auth.uid) || isAdmin();
     }
+
+    match /settings/theme {
+        // Any signed-in user can read the theme.
+        allow get: if isSignedIn();
+        // Only the admin can change the theme.
+        allow write: if isAdmin();
+    }
   }
 }
-

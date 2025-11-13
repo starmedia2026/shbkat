@@ -197,34 +197,36 @@ export default function AccountPage() {
           </CardContent>
         </Card>
 
-         <Card className="w-full shadow-lg rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Palette className="h-5 w-5 text-muted-foreground"/>
-              <h3 className="font-semibold text-center text-sm text-muted-foreground">
-                اللون الأساسي
-              </h3>
-            </div>
-            {isClient ? (
-              <div className="flex justify-center gap-3 mt-4">
-                {colorOptions.map((color) => (
-                  <div key={color.name}
-                    onClick={() => setPrimaryColor(color.hsl)}
-                    style={{ backgroundColor: `hsl(${color.hsl})` }}
-                    className={cn(
-                      "cursor-pointer h-8 w-8 rounded-full border-2 transition-all transform hover:scale-110",
-                      primaryColor === color.hsl ? 'border-card' : 'border-transparent'
-                    )}
-                  />
-                ))}
+        {isAdmin && (
+          <Card className="w-full shadow-lg rounded-xl">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Palette className="h-5 w-5 text-muted-foreground"/>
+                <h3 className="font-semibold text-center text-sm text-muted-foreground">
+                  اللون الأساسي للتطبيق
+                </h3>
               </div>
-            ) : (
-              <div className="flex justify-center gap-3 mt-4">
-                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-8 rounded-full" />)}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              {isClient ? (
+                <div className="flex justify-center gap-3 mt-4">
+                  {colorOptions.map((color) => (
+                    <div key={color.name}
+                      onClick={() => setPrimaryColor(color.hsl)}
+                      style={{ backgroundColor: `hsl(${color.hsl})` }}
+                      className={cn(
+                        "cursor-pointer h-8 w-8 rounded-full border-2 transition-all transform hover:scale-110",
+                        primaryColor === color.hsl ? 'border-card' : 'border-transparent'
+                      )}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex justify-center gap-3 mt-4">
+                  {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-8 rounded-full" />)}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-0">
