@@ -2,7 +2,7 @@
 "use client";
 
 import {
-  ArrowLeft,
+  ArrowRight,
   Search,
   User,
   Phone,
@@ -77,7 +77,7 @@ export default function UserManagementPage() {
             size="icon"
             onClick={() => router.back()}
           >
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowRight className="h-6 w-6" />
           </Button>
           <h1 className="text-lg font-normal text-right flex-grow">
             إدارة المستخدمين
@@ -123,7 +123,7 @@ function UserManagementContent() {
             size="icon"
             onClick={() => router.back()}
           >
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowRight className="h-6 w-6" />
           </Button>
           <h1 className="text-lg font-normal text-right flex-grow">
             إدارة المستخدمين

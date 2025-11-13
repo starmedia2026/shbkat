@@ -20,7 +20,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { ArrowLeft, Save, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Save, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -116,7 +116,7 @@ export default function ChangePasswordPage() {
           size="icon"
           onClick={() => router.back()}
         >
-          <ArrowLeft className="h-6 w-6" />
+          <ArrowRight className="h-6 w-6" />
         </Button>
         <h1 className="text-lg font-normal text-right flex-grow">
           تغيير كلمة المرور

@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ChevronLeft, Heart } from "lucide-react";
+import { ArrowRight, ChevronLeft, Heart } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -19,7 +19,7 @@ export default function FavoritesPage() {
           size="icon"
           onClick={() => router.back()}
         >
-          <ArrowLeft className="h-6 w-6" />
+          <ArrowRight className="h-6 w-6" />
         </Button>
         <h1 className="text-lg font-normal text-right flex-grow">المفضلة</h1>
       </header>

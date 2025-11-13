@@ -2,7 +2,7 @@
 "use client";
 
 import {
-  ArrowLeft,
+  ArrowRight,
   Loader2,
   CheckCircle,
   XCircle,
@@ -62,7 +62,7 @@ export default function CardManagementPage() {
             size="icon"
             onClick={() => router.back()}
           >
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowRight className="h-6 w-6" />
           </Button>
           <h1 className="text-lg font-normal text-right flex-grow">
             إدارة الكروت
@@ -181,7 +181,7 @@ function CardManagementContent() {
           size="icon"
           onClick={() => router.back()}
         >
-          <ArrowLeft className="h-6 w-6" />
+          <ArrowRight className="h-6 w-6" />
         </Button>
         <h1 className="text-lg font-normal text-right flex-grow">
           إدارة الكروت

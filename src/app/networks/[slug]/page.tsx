@@ -4,7 +4,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Clock, Package, Calendar, Tag, Copy, Send, Loader2 } from "lucide-react";
+import { ArrowRight, Clock, Package, Calendar, Tag, Copy, Send, Loader2 } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import {
     AlertDialog,
@@ -189,7 +189,7 @@ function PackageCard({ category, networkId, networkName }: { category: Category,
                     type: "purchase",
                     amount: -category.price,
                     date: now,
-                    description: `شراء: ${category.name} - ${networkName}`,
+                    description: `شراء كرت: ${category.name} - ${networkName}`,
                     status: "completed",
                     cardNumber: cardDoc.id, // Store the card number
                 };
@@ -421,7 +421,7 @@ function BackButton() {
             onClick={() => router.back()}
             className="p-2"
         >
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowRight className="h-6 w-6" />
         </button>
     );
 }

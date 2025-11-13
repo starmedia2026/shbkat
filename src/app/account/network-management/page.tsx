@@ -2,7 +2,7 @@
 "use client";
 
 import {
-  ArrowLeft,
+  ArrowRight,
   PlusCircle,
   Edit,
   Trash2,
@@ -71,7 +71,7 @@ export default function NetworkManagementPage() {
             size="icon"
             onClick={() => router.back()}
           >
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowRight className="h-6 w-6" />
           </Button>
           <h1 className="text-lg font-normal text-right flex-grow">
             إدارة الشبكات
@@ -172,21 +172,19 @@ function NetworkManagementContent() {
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
       <header className="p-4 flex items-center justify-between relative border-b">
-        <div className="flex items-center gap-2">
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? "جاري الحفظ..." : "حفظ"}
-            </Button>
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.back()}
-            >
-                <ArrowLeft className="h-6 w-6" />
-            </Button>
-        </div>
+        <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+        >
+            <ArrowRight className="h-6 w-6" />
+        </Button>
         <h1 className="text-lg font-normal text-right flex-grow">
           إدارة الشبكات
         </h1>
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? "جاري الحفظ..." : "حفظ"}
+        </Button>
       </header>
       <main className="p-4">
         <div className="space-y-6">

@@ -2,7 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, MessageCircle } from "lucide-react";
+import { ArrowRight, Phone, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // WhatsApp icon component for the button
@@ -76,7 +76,7 @@ function BackButton() {
       onClick={() => router.back()}
       className="p-2"
     >
-      <ArrowLeft className="h-6 w-6" />
+      <ArrowRight className="h-6 w-6" />
     </button>
   );
 }

@@ -3,7 +3,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ArrowUp, ArrowDown, CreditCard, History, Coins, Send, Copy } from "lucide-react";
+import { ArrowRight, ArrowUp, ArrowDown, CreditCard, History, Coins, Send, Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
@@ -165,7 +165,7 @@ function SendSmsDialog({ isOpen, onClose, operation }: { isOpen: boolean, onClos
         }
         if (!operation.cardNumber) return;
 
-        const [purchaseType, networkName] = operation.description.replace('شراء: ', '').split(' - ');
+        const [purchaseType, networkName] = operation.description.replace('شراء كرت: ', '').split(' - ');
         const messageBody = encodeURIComponent(`تم شراء ${purchaseType} من ${networkName}.\nرقم الكرت: ${operation.cardNumber}`);
         
         window.location.href = `sms:${smsRecipient}?body=${messageBody}`;
@@ -231,7 +231,7 @@ function BackButton() {
       onClick={() => router.back()}
       className="p-2"
     >
-      <ArrowLeft className="h-6 w-6" />
+      <ArrowRight className="h-6 w-6" />
     </button>
   );
 }

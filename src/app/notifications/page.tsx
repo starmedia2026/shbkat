@@ -3,7 +3,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ArrowUp, ArrowDown, CreditCard, BellRing, Coins, Copy } from "lucide-react";
+import { ArrowRight, ArrowUp, ArrowDown, CreditCard, BellRing, Coins, Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
@@ -55,7 +55,7 @@ export default function NotificationsPage() {
           size="icon"
           onClick={() => router.back()}
         >
-          <ArrowLeft className="h-6 w-6" />
+          <ArrowRight className="h-6 w-6" />
         </Button>
         <h1 className="text-lg font-normal text-right flex-grow">الإشعارات</h1>
       </header>

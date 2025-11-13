@@ -3,7 +3,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Copy, Upload, Wallet, Building, CircleDollarSign } from "lucide-react";
+import { ArrowRight, Copy, Upload, Wallet, Building, CircleDollarSign } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState } from "react";
@@ -175,7 +175,7 @@ function BackButton() {
       onClick={() => router.back()}
       className="p-2"
     >
-      <ArrowLeft className="h-6 w-6" />
+      <ArrowRight className="h-6 w-6" />
     </button>
   );
 }
