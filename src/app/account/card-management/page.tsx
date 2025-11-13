@@ -45,51 +45,59 @@ interface CardInput {
   cardNumber: string;
 }
 
+function LoadingScreen() {
+    const router = useRouter();
+    return (
+        <div className="flex flex-col min-h-screen">
+            <header className="p-4 flex items-center justify-between relative border-b">
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.back()}
+            >
+                <ArrowRight className="h-6 w-6" />
+            </Button>
+            <h1 className="text-lg font-normal text-right flex-grow mr-4">
+                إدارة الكروت
+            </h1>
+            </header>
+            <main className="flex-grow flex items-center justify-center">
+            <p>جاري التحميل والتحقق...</p>
+            </main>
+        </div>
+    );
+}
+
+
 export default function CardManagementPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
   const { isOwner, isLoading: isOwnerLoading } = useNetworkOwner();
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   const isAuthorizing = isAdminLoading || isOwnerLoading;
 
   useEffect(() => {
-    if (!isAuthorizing && !isAdmin && !isOwner) {
-      router.replace("/account");
+    if (isAuthorizing) {
+        setIsAuthorized(null); // Still checking
+        return;
+    }
+
+    if (isAdmin || isOwner) {
+        setIsAuthorized(true);
+    } else {
+        setIsAuthorized(false);
+        router.replace("/account");
     }
   }, [isAdmin, isOwner, isAuthorizing, router]);
 
-  if (isAuthorizing) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <header className="p-4 flex items-center justify-between relative border-b">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-          >
-            <ArrowRight className="h-6 w-6" />
-          </Button>
-          <h1 className="text-lg font-normal text-right flex-grow mr-4">
-            إدارة الكروت
-          </h1>
-        </header>
-        <main className="flex-grow flex items-center justify-center">
-          <p>جاري التحميل والتحقق...</p>
-        </main>
-      </div>
-    );
-  }
-  
-  // Render content only when authorization is complete and user is authorized
-  if (isAdmin || isOwner) {
-    return <CardManagementContent />;
+  if (isAuthorized === null || isAuthorized === false) {
+    return <LoadingScreen />;
   }
 
-  // Fallback for unauthorized users, though the useEffect should handle redirection.
-  return null;
+  return <CardManagementContent />;
 }
 
-const ALL_NETWORKS_VALUE = "all";
 
 function CardManagementContent() {
   const router = useRouter();
@@ -237,6 +245,8 @@ function CardManagementContent() {
     });
   };
 
+  const ALL_NETWORKS_VALUE = "all";
+
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
@@ -360,3 +370,5 @@ function CardManagementContent() {
     </div>
   );
 }
+
+    
