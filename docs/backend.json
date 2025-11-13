@@ -257,9 +257,9 @@
         "label": {
           "type": "string"
         },
-        "icon": {
+        "iconUrl": {
           "type": "string",
-          "description": "Name of a lucide-react icon."
+          "description": "URL for the service icon image."
         },
         "href": {
           "type": "string"
@@ -271,7 +271,6 @@
       "required": [
         "id",
         "label",
-        "icon",
         "href",
         "order"
       ]

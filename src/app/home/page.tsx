@@ -43,6 +43,18 @@ interface Advert {
     linkUrl?: string;
 }
 
+interface HomeService {
+    id: string;
+    label: string;
+    iconUrl?: string;
+    href: string;
+    order: number;
+}
+
+interface HomeSettings {
+    services?: HomeService[];
+}
+
 interface Operation {
   id: string;
   type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase";
@@ -50,15 +62,6 @@ interface Operation {
   date: string; // ISO string
   description: string;
 }
-
-const services = [
-  { href: "/networks", icon: Wifi, label: "الشبكات" },
-  { href: "/transfer", icon: Send, label: "تحويل لمشترك" },
-  { href: "/top-up", icon: Wallet, label: "غذي حسابك" },
-  { href: "/operations", icon: History, label: "العمليات" },
-  { href: "/favorites", icon: Heart, label: "المفضلة" },
-  { href: "/contact", icon: Phone, label: "تواصل معنا" },
-];
 
 const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; color: string; } } = {
   transfer_sent: { icon: ArrowUp, color: "text-red-500" },
@@ -97,8 +100,13 @@ export default function HomePage() {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, "customers", user.uid);
   }, [firestore, user?.uid]);
-
   const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
+
+  const homeSettingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "home");
+  }, [firestore]);
+  const { data: homeSettings, isLoading: isHomeLoading } = useDoc<HomeSettings>(homeSettingsDocRef);
   
   useEffect(() => {
     if (!isCustomerLoading && user && customer?.requiresPasswordChange) {
@@ -134,8 +142,23 @@ export default function HomePage() {
 
   const { data: adverts, isLoading: areAdvertsLoading } = useCollection<Advert>(advertsQuery);
 
-  const isLoading = isUserLoading || isCustomerLoading;
+  const isLoading = isUserLoading || isCustomerLoading || isHomeLoading;
   const hasNotifications = !areNotificationsLoading && notifications && notifications.length > 0;
+  
+  const services = useMemo(() => {
+    if (homeSettings?.services && homeSettings.services.length > 0) {
+      return [...homeSettings.services].sort((a, b) => a.order - b.order);
+    }
+    // Default services if none are set in firestore
+    return [
+      { id: "networks", href: "/networks", iconUrl: '', label: "الشبكات", order: 1 },
+      { id: "transfer", href: "/transfer", iconUrl: '', label: "تحويل لمشترك", order: 2 },
+      { id: "top-up", href: "/top-up", iconUrl: '', label: "غذي حسابك", order: 3 },
+      { id: "operations", href: "/operations", iconUrl: '', label: "العمليات", order: 4 },
+      { id: "favorites", href: "/favorites", iconUrl: '', label: "المفضلة", order: 5 },
+      { id: "contact", href: "/contact", iconUrl: '', label: "تواصل معنا", order: 6 },
+    ];
+  }, [homeSettings]);
 
   const formatDisplayName = (fullName?: string): string => {
     if (!fullName) return "مستخدم جديد";
@@ -234,7 +257,7 @@ export default function HomePage() {
                   {balanceVisible ? (
                     <div className="flex items-baseline gap-x-2 justify-end">
                        <span className="text-sm font-normal">ريال يمني</span>
-                       <span>{(customer?.balance ?? 0).toLocaleString('en-US', {useGrouping: true})}</span>
+                       <span className="font-sans">{(customer?.balance ?? 0).toLocaleString('en-US', {useGrouping: true})}</span>
                     </div>
                   ) : (
                     <div className="text-right">******</div>
@@ -246,9 +269,20 @@ export default function HomePage() {
 
         {/* Services Grid */}
         <div className="grid grid-cols-3 gap-3 text-center">
-          {services.map((service) => (
-            <ServiceGridItem key={service.href} {...service} />
-          ))}
+          {isLoading ? (
+            [...Array(6)].map((_, i) => (
+                <Card key={i} className="shadow-md rounded-xl bg-card">
+                    <CardContent className="p-2 flex flex-col items-center justify-center gap-2 aspect-square">
+                        <Skeleton className="h-10 w-10 rounded-lg" />
+                        <Skeleton className="h-4 w-16" />
+                    </CardContent>
+                </Card>
+            ))
+          ) : (
+            services.map((service) => (
+              <ServiceGridItem key={service.id} {...service} />
+            ))
+          )}
         </div>
         
         {/* Adverts Carousel */}
@@ -327,13 +361,28 @@ export default function HomePage() {
   );
 }
 
-function ServiceGridItem({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string; }) {
+const DefaultIconMap: { [key: string]: React.ElementType } = {
+  networks: Wifi,
+  transfer: Send,
+  "top-up": Wallet,
+  operations: History,
+  favorites: Heart,
+  contact: Phone,
+};
+
+function ServiceGridItem({ href, iconUrl, label, id }: HomeService) {
+    const Icon = DefaultIconMap[id] || LucideIcons.HelpCircle;
+    
     return (
         <Link href={href} className="block">
             <Card className="shadow-md rounded-xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card">
                 <CardContent className="p-2 flex flex-col items-center justify-center gap-2 aspect-square">
-                    <div className="p-3 rounded-lg bg-muted">
-                        <Icon className="h-6 w-6 text-primary" />
+                    <div className="p-3 rounded-lg bg-muted flex items-center justify-center h-12 w-12">
+                        {iconUrl ? (
+                            <Image src={iconUrl} alt={label} width={28} height={28} className="object-contain"/>
+                        ) : (
+                            <Icon className="h-7 w-7 text-primary" />
+                        )}
                     </div>
                     <p className="text-xs font-semibold mt-1 text-center">{label}</p>
                 </CardContent>
@@ -370,8 +419,3 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
-    
-
-    
-
-    

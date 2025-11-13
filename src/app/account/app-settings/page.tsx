@@ -16,6 +16,9 @@ import {
   Phone,
   GripVertical,
   Edit,
+  Trash2,
+  PlusCircle,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +37,6 @@ import { doc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
-import * as LucideIcons from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -42,16 +44,18 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogClose,
 } from "@/components/ui/dialog";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 interface AppSettings {
@@ -63,7 +67,7 @@ interface AppSettings {
 interface Service {
     id: string;
     label: string;
-    icon: keyof typeof LucideIcons;
+    iconUrl?: string;
     href: string;
     order: number;
 }
@@ -73,18 +77,13 @@ interface HomeSettings {
 }
 
 const initialServices: Service[] = [
-    { id: "networks", href: "/networks", icon: 'Wifi', label: "الشبكات", order: 1 },
-    { id: "transfer", href: "/transfer", icon: 'Send', label: "تحويل لمشترك", order: 2 },
-    { id: "top-up", href: "/top-up", icon: 'Wallet', label: "غذي حسابك", order: 3 },
-    { id: "operations", href: "/operations", icon: 'History', label: "العمليات", order: 4 },
-    { id: "favorites", href: "/favorites", icon: 'Heart', label: "المفضلة", order: 5 },
-    { id: "contact", href: "/contact", icon: 'Phone', label: "تواصل معنا", order: 6 },
+    { id: "networks", href: "/networks", iconUrl: '', label: "الشبكات", order: 1 },
+    { id: "transfer", href: "/transfer", iconUrl: '', label: "تحويل لمشترك", order: 2 },
+    { id: "top-up", href: "/top-up", iconUrl: '', label: "غذي حسابك", order: 3 },
+    { id: "operations", href: "/operations", iconUrl: '', label: "العمليات", order: 4 },
+    { id: "favorites", href: "/favorites", iconUrl: '', label: "المفضلة", order: 5 },
+    { id: "contact", href: "/contact", iconUrl: '', label: "تواصل معنا", order: 6 },
 ];
-
-// Get all icon names from lucide-react, excluding specific ones
-const lucideIconNames = Object.keys(LucideIcons).filter(
-  (name) => typeof (LucideIcons as any)[name] === 'object' && (LucideIcons as any)[name].displayName
-) as (keyof typeof LucideIcons)[];
 
 
 export default function AppSettingsPage() {
@@ -149,6 +148,7 @@ function AppSettingsContent() {
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [isNewService, setIsNewService] = useState(false);
 
   useEffect(() => {
     if (!isAppLoading && appSettings) {
@@ -227,16 +227,41 @@ function AppSettingsContent() {
     _services.splice(dragOverItem.current, 0, draggedItemContent);
     dragItem.current = null;
     dragOverItem.current = null;
-    setServices(_services);
-    handleSaveHomeSettings(_services);
+    const sortedServices = _services.map((s, index) => ({ ...s, order: index + 1 }));
+    setServices(sortedServices);
+    handleSaveHomeSettings(sortedServices);
   };
   
   const handleServiceUpdate = (updatedService: Service) => {
     const newServices = services.map(s => s.id === updatedService.id ? updatedService : s);
     setServices(newServices);
     handleSaveHomeSettings(newServices);
-    setEditingService(null); // Close dialog
+    setEditingService(null);
   }
+  
+  const handleAddNewService = (newService: Service) => {
+      const newServices = [...services, newService];
+      setServices(newServices);
+      handleSaveHomeSettings(newServices);
+      setEditingService(null);
+  }
+
+  const handleDeleteService = (serviceId: string) => {
+    const newServices = services.filter(s => s.id !== serviceId);
+    setServices(newServices);
+    handleSaveHomeSettings(newServices);
+  }
+
+  const openNewServiceDialog = () => {
+    setIsNewService(true);
+    setEditingService({
+      id: `service_${Date.now()}`,
+      label: '',
+      href: '',
+      iconUrl: '',
+      order: services.length + 1,
+    });
+  };
 
   const isLoading = isAppLoading || isHomeLoading;
 
@@ -320,15 +345,15 @@ function AppSettingsContent() {
         <Card className="w-full shadow-lg rounded-2xl">
             <CardHeader>
                 <CardTitle>تخصيص خدمات الصفحة الرئيسية</CardTitle>
-                <CardDescription>قم بسحب الخدمات لتغيير ترتيبها أو اضغط "تعديل" لتغيير الاسم والأيقونة.</CardDescription>
+                <CardDescription>اسحب الخدمات لتغيير ترتيبها، أو اضغط "تعديل" لتغييرها، أو أضف خدمة جديدة.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-2">
                 {isLoading ? (
                     <div className="space-y-2">
                         {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
                     </div>
                 ) : (
-                    <div className="space-y-2">
+                    <>
                         {services.map((service, index) => (
                             <div 
                                 key={service.id} 
@@ -340,24 +365,53 @@ function AppSettingsContent() {
                                 onDragOver={(e) => e.preventDefault()}
                             >
                                 <GripVertical className="h-5 w-5 text-muted-foreground" />
-                                {service.icon && React.createElement(LucideIcons[service.icon] || LucideIcons.HelpCircle, { className: "h-5 w-5 text-primary" })}
+                                {service.iconUrl ? (
+                                    <Image src={service.iconUrl} alt={service.label} width={20} height={20} className="object-contain" />
+                                ) : (
+                                    <HelpCircle className="h-5 w-5 text-primary" />
+                                )}
                                 <span className="flex-grow font-semibold">{service.label}</span>
-                                <Button variant="ghost" size="icon" onClick={() => setEditingService(service)}>
+                                <Button variant="ghost" size="icon" onClick={() => { setIsNewService(false); setEditingService(service); }}>
                                     <Edit className="h-4 w-4" />
                                 </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" size="icon">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                هل أنت متأكد من رغبتك في حذف خدمة "{service.label}"؟
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteService(service.id)}>تأكيد الحذف</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
                         ))}
-                    </div>
+                    </>
                 )}
+                <Button variant="outline" className="w-full mt-4" onClick={openNewServiceDialog}>
+                    <PlusCircle className="ml-2 h-4 w-4" />
+                    إضافة خدمة جديدة
+                </Button>
             </CardContent>
         </Card>
 
         {editingService && (
             <EditServiceDialog 
+                key={editingService.id} // Add key to force re-mount
                 service={editingService} 
                 isOpen={!!editingService}
+                isNew={isNewService}
                 onClose={() => setEditingService(null)}
-                onSave={handleServiceUpdate}
+                onSave={isNewService ? handleAddNewService : handleServiceUpdate}
             />
         )}
 
@@ -367,50 +421,36 @@ function AppSettingsContent() {
 }
 
 
-function EditServiceDialog({ service, isOpen, onClose, onSave }: { service: Service, isOpen: boolean, onClose: () => void, onSave: (service: Service) => void }) {
+function EditServiceDialog({ service, isOpen, isNew, onClose, onSave }: { service: Service, isOpen: boolean, isNew: boolean, onClose: () => void, onSave: (service: Service) => void }) {
     const [label, setLabel] = useState(service.label);
-    const [icon, setIcon] = useState(service.icon);
+    const [iconUrl, setIconUrl] = useState(service.iconUrl || '');
+    const [href, setHref] = useState(service.href);
     
     const handleSave = () => {
-        onSave({ ...service, label, icon });
+        onSave({ ...service, label, iconUrl, href });
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>تعديل خدمة: {service.label}</DialogTitle>
+                    <DialogTitle>{isNew ? "إضافة خدمة جديدة" : `تعديل خدمة: ${service.label}`}</DialogTitle>
                     <DialogDescription>
-                        غيّر الاسم أو الأيقونة الخاصة بالخدمة.
+                        {isNew ? "أدخل تفاصيل الخدمة الجديدة." : "غيّر تفاصيل الخدمة."}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="service-label">اسم الخدمة</Label>
-                        <Input id="service-label" value={label} onChange={(e) => setLabel(e.target.value)} />
+                        <Input id="service-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="مثال: الشبكات"/>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="service-href">رابط الانتقال (href)</Label>
+                        <Input id="service-href" value={href} onChange={(e) => setHref(e.target.value)} placeholder="مثال: /networks"/>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="service-icon">أيقونة الخدمة</Label>
-                        <Select dir="rtl" value={icon} onValueChange={(value) => setIcon(value as keyof typeof LucideIcons)}>
-                            <SelectTrigger id="service-icon">
-                                <div className="flex items-center gap-2">
-                                   {React.createElement(LucideIcons[icon] || LucideIcons.HelpCircle, { className: "h-4 w-4" })}
-                                   <SelectValue placeholder="اختر أيقونة" />
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <ScrollArea className="h-72">
-                                {lucideIconNames.map(iconName => (
-                                    <SelectItem key={iconName} value={iconName}>
-                                        <div className="flex items-center gap-2">
-                                            {React.createElement(LucideIcons[iconName], { className: "h-4 w-4" })}
-                                            <span>{iconName}</span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                                </ScrollArea>
-                            </SelectContent>
-                        </Select>
+                        <Label htmlFor="service-icon-url">رابط صورة الأيقونة</Label>
+                        <Input id="service-icon-url" value={iconUrl} onChange={(e) => setIconUrl(e.target.value)} placeholder="https://example.com/icon.png"/>
                     </div>
                 </div>
                 <DialogFooter>
