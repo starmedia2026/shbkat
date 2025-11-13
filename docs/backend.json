@@ -221,15 +221,10 @@
         "primaryColor": {
           "type": "string",
           "description": "The HSL value for the primary theme color."
-        },
-        "font": {
-          "type": "string",
-          "description": "The CSS class name for the global font (e.g., 'font-tajawal')."
         }
       },
       "required": [
-        "primaryColor",
-        "font"
+        "primaryColor"
       ]
     }
   },

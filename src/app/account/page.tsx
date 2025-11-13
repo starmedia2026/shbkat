@@ -71,20 +71,12 @@ const colorOptions = [
   { name: 'gray', hsl: '215 14% 47%' },
 ];
 
-const fontOptions = [
-    { name: 'Tajawal', className: 'font-tajawal' },
-    { name: 'Cairo', className: 'font-cairo' },
-    { name: 'Almarai', className: 'font-almarai' },
-];
-
 export default function AccountPage() {
   const { 
     darkMode, 
     setTheme, 
     primaryColor, 
     setPrimaryColor, 
-    font, 
-    setFont 
   } = useTheme();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -253,42 +245,6 @@ export default function AccountPage() {
                 </CardContent>
             </Card>
 
-            <Card className="w-full shadow-lg rounded-xl">
-              <CardContent className="p-4">
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                      <Type className="h-5 w-5 text-muted-foreground"/>
-                      <h3 className="font-semibold text-center text-sm text-muted-foreground">
-                          الخط المفضل للتطبيق
-                      </h3>
-                  </div>
-                  {isClient ? (
-                      <div className="grid grid-cols-3 gap-2 mt-4">
-                          {fontOptions.map((fontOption) => (
-                              <div
-                                  key={fontOption.className}
-                                  onClick={() => setFont(fontOption.className)}
-                                  className={cn(
-                                      "cursor-pointer rounded-lg p-3 text-center border-2 transition-all",
-                                      font === fontOption.className
-                                          ? "bg-primary/10 border-primary"
-                                          : "border-transparent bg-muted/50 hover:bg-muted"
-                                  )}
-                              >
-                                  <span className={cn("text-sm font-semibold", fontOption.className)}>
-                                      {fontOption.name}
-                                  </span>
-                              </div>
-                          ))}
-                      </div>
-                  ) : (
-                      <div className="grid grid-cols-3 gap-2 mt-4">
-                          <Skeleton className="h-[48px] w-full" />
-                          <Skeleton className="h-[48px] w-full" />
-                          <Skeleton className="h-[48px] w-full" />
-                      </div>
-                  )}
-              </CardContent>
-            </Card>
             </>
         )}
 

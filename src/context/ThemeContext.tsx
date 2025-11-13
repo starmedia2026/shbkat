@@ -13,14 +13,13 @@ interface ThemeContextType {
   primaryColor: string;
   setPrimaryColor: (hslColor: string) => void;
   font: string;
-  setFont: (fontClass: string) => void;
   isMounted: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const DEFAULT_PRIMARY_COLOR = "210 100% 56%"; // Default blue
-const DEFAULT_FONT = "font-tajawal";
+const DEFAULT_FONT = "font-cairo";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkMode] = useState(false);
@@ -36,7 +35,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { data: themeData, isLoading: isThemeLoading } = useDoc(themeDocRef);
   
   const primaryColor = themeData?.primaryColor || DEFAULT_PRIMARY_COLOR;
-  const font = themeData?.font || DEFAULT_FONT;
+  const font = DEFAULT_FONT; // Always use Cairo
   
   useEffect(() => {
     setIsMounted(true);
@@ -44,30 +43,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isMounted) {
-      if (primaryColor) {
-        document.documentElement.style.setProperty('--primary', primaryColor);
-      }
-      
-      // Remove all other font classes and add the correct one
-      const fontClasses = ['font-tajawal', 'font-cairo', 'font-almarai', 'font-ibm-plex-sans-arabic'];
-      document.body.classList.remove(...fontClasses);
-      if (font) {
-        document.body.classList.add(font);
-      } else {
-        document.body.classList.add(DEFAULT_FONT);
-      }
+      document.documentElement.style.setProperty('--primary', primaryColor);
+      // Font is now applied directly on the body in layout.tsx
     }
-  }, [primaryColor, font, isMounted]);
+  }, [primaryColor, isMounted]);
 
   useEffect(() => {
-    const storedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setDarkMode(storedDarkMode);
-    if (storedDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    if (isMounted) {
+        const storedDarkMode = localStorage.getItem('darkMode') === 'true';
+        setDarkMode(storedDarkMode);
+        if (storedDarkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
     }
-  }, []);
+  }, [isMounted]);
 
   const setTheme = useCallback((theme: 'dark' | 'light') => {
     const isDark = theme === 'dark';
@@ -91,15 +82,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAdmin, themeDocRef, primaryColor]);
 
-  const setFont = useCallback((fontClass: string) => {
-    if (isAdmin && themeDocRef) {
-      setDoc(themeDocRef, { font: fontClass }, { merge: true }).catch(error => {
-          console.error("Failed to save font:", error);
-      });
-    }
-  }, [isAdmin, themeDocRef]);
 
-  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor, font, setFont, isMounted };
+  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor, font, isMounted };
 
   return (
     <ThemeContext.Provider value={contextValue}>
