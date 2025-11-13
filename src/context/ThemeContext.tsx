@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
@@ -5,24 +6,33 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 interface ThemeContextType {
   darkMode: boolean;
   setTheme: (theme: 'dark' | 'light') => void;
+  primaryColor: string;
+  setPrimaryColor: (hslColor: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const DEFAULT_PRIMARY_COLOR = "210 100% 56%"; // Default blue
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark');
-    }
-    return false;
-  });
+  const [darkMode, setDarkMode] = useState(false);
+  const [primaryColor, setPrimaryColorState] = useState(DEFAULT_PRIMARY_COLOR);
 
   useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    if (isDarkMode !== darkMode) {
-      setDarkMode(isDarkMode);
+    // Initialize theme from localStorage
+    const storedDarkMode = localStorage.getItem('darkMode') === 'true';
+    const storedPrimaryColor = localStorage.getItem('primaryColor') || DEFAULT_PRIMARY_COLOR;
+
+    setDarkMode(storedDarkMode);
+    if (storedDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
-  }, [darkMode]);
+
+    setPrimaryColorState(storedPrimaryColor);
+    document.documentElement.style.setProperty('--primary', storedPrimaryColor);
+  }, []);
 
   const setTheme = useCallback((theme: 'dark' | 'light') => {
     const isDark = theme === 'dark';
@@ -36,8 +46,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const setPrimaryColor = useCallback((hslColor: string) => {
+    setPrimaryColorState(hslColor);
+    document.documentElement.style.setProperty('--primary', hslColor);
+    localStorage.setItem('primaryColor', hslColor);
+  }, []);
+
+  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor };
+
   return (
-    <ThemeContext.Provider value={{ darkMode, setTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   );
@@ -50,3 +68,5 @@ export function useTheme() {
   }
   return context;
 }
+
+    

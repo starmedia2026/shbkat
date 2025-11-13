@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,6 +19,10 @@ const ThemeScript = () => (
             const darkMode = localStorage.getItem('darkMode') === 'true';
             if (darkMode) {
               document.documentElement.classList.add('dark');
+            }
+            const primaryColor = localStorage.getItem('primaryColor');
+            if (primaryColor) {
+              document.documentElement.style.setProperty('--primary', primaryColor);
             }
           } catch (e) {}
         })();
@@ -57,3 +62,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

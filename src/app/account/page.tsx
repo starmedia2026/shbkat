@@ -17,6 +17,7 @@ import {
   Wifi,
   CreditCard,
   BarChart3,
+  Palette,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -27,7 +28,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
@@ -53,8 +53,17 @@ const locationMap: { [key: string]: string } = {
   alaqad: "العقاد",
 };
 
+const colorOptions = [
+  { name: 'blue', hsl: '210 100% 56%' },
+  { name: 'red', hsl: '0 84.2% 60.2%' },
+  { name: 'green', hsl: '142 76% 36%' },
+  { name: 'purple', hsl: '262 80% 58%' },
+  { name: 'orange', hsl: '25 95% 53%' },
+  { name: 'yellow', hsl: '45 93% 47%' },
+];
+
 export default function AccountPage() {
-  const { darkMode, setTheme } = useTheme();
+  const { darkMode, setTheme, primaryColor, setPrimaryColor } = useTheme();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
@@ -187,6 +196,35 @@ export default function AccountPage() {
           </CardContent>
         </Card>
 
+         <Card className="w-full shadow-lg rounded-xl">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Palette className="h-5 w-5 text-muted-foreground"/>
+              <h3 className="font-semibold text-center text-sm text-muted-foreground">
+                اللون الأساسي
+              </h3>
+            </div>
+            {isClient ? (
+              <div className="flex justify-center gap-3 mt-4">
+                {colorOptions.map((color) => (
+                  <div key={color.name}
+                    onClick={() => setPrimaryColor(color.hsl)}
+                    style={{ backgroundColor: `hsl(${color.hsl})` }}
+                    className={cn(
+                      "cursor-pointer h-8 w-8 rounded-full border-2 transition-all transform hover:scale-110",
+                      primaryColor === color.hsl ? 'border-card' : 'border-transparent'
+                    )}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex justify-center gap-3 mt-4">
+                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-8 rounded-full" />)}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
@@ -291,3 +329,5 @@ function AccountItem({
     </li>
   );
 }
+
+    
