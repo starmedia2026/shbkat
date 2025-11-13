@@ -17,7 +17,8 @@
  * - The Admin user can update any customer's data, and can also delete any customer's data.
  * - The `id` field within a customer document must match the `customerId` in the path to ensure data consistency.
  * - Users can create their own documents and subcollection documents.
- * - The Admin has full read/write access to the cards collection.
+ * - The Admin has full create/delete access to the cards collection.
+ * - Authenticated users can read cards and update a card's status to 'used' during a purchase.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -36,38 +37,50 @@ service cloud.firestore {
     }
 
     // The admin is a specific user identified by their phone number.
-    // We get the user document for the requesting user, and check if their phone number matches.
     function isAdmin() {
        return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
     }
 
     match /customers/{customerId} {
-      allow get: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
-      allow list: if isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
+      allow get: if isOwner(customerId) || isAdmin();
+      allow list: if isAdmin();
 
       // Any signed in user can create their own customer document.
       allow create: if isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId;
       
       // An owner can update their own document, or an admin can.
-      allow update: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
+      allow update: if isOwner(customerId) || isAdmin();
 
       // An owner can delete their own document, or an admin can.
-      allow delete: if isExistingOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
+      allow delete: if isExistingOwner(customerId) || isAdmin();
 
       match /operations/{operationId} {
-        allow read, list: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
-        allow create: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
+        allow read, list: if isOwner(customerId) || isAdmin();
+        allow create: if isOwner(customerId) || isAdmin();
       }
       
       match /notifications/{notificationId} {
-        allow read, list: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "7T70326828");
-        allow create: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
-        allow update: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828"); // Allow user/admin to mark notifications as read
+        allow read, list: if isOwner(customerId) || isAdmin();
+        allow create: if isOwner(customerId) || isAdmin();
+        allow update: if isOwner(customerId) || isAdmin(); // Allow user/admin to mark notifications as read
       }
     }
 
     match /cards/{cardId} {
-        allow read, write: if isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
+        // Admin can do anything.
+        allow create, delete: if isAdmin();
+        // Any signed-in user can read card data (needed to find an available card).
+        allow read: if isSignedIn();
+        // Allow updates only for the specific 'purchase' transaction.
+        // User must be signed in.
+        // Card must be transitioning from 'available' to 'used'.
+        // The 'usedBy' field must be the user's own UID.
+        allow update: if isAdmin() || (
+          isSignedIn() && 
+          request.resource.data.status == 'used' &&
+          resource.data.status == 'available' &&
+          request.resource.data.usedBy == request.auth.uid
+        );
     }
   }
 }
