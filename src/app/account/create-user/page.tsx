@@ -24,7 +24,8 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { ArrowLeft, Save, Eye, EyeOff } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ArrowLeft, Save, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -63,6 +64,7 @@ function CreateUserPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
+  const [uid, setUid] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -92,16 +94,24 @@ function CreateUserPage() {
         });
         return;
     }
+    if (!uid.trim()) {
+        toast({
+            variant: "destructive",
+            title: "UID مطلوب",
+            description: "الرجاء إدخال معرّف المستخدم (UID) من لوحة تحكم Firebase."
+        });
+        return;
+    }
+
 
     setIsSaving(true);
     
     try {
-      // The goal is to only create the Firestore document. The admin will create the Auth user manually.
-      // We will use the phone number as the document ID to ensure uniqueness and easy lookup.
-      const userDocRef = doc(firestore, "customers", phone);
+      // The Firestore document ID will be the UID from Firebase Auth.
+      const userDocRef = doc(firestore, "customers", uid);
       
       const newCustomerData = {
-          id: phone, // The admin MUST create an auth user with this UID.
+          id: uid,
           name: name,
           phoneNumber: phone,
           location: location,
@@ -115,7 +125,7 @@ function CreateUserPage() {
 
       toast({
         title: "تم إنشاء سجل العميل بنجاح",
-        description: `تم حفظ بيانات ${name}. يجب الآن إنشاء حساب مصادقة له يدويًا في لوحة تحكم Firebase باستخدام رقم الهاتف كمعرّف (UID).`,
+        description: `تم حفظ بيانات ${name}.`,
         duration: 9000,
       });
 
@@ -123,9 +133,8 @@ function CreateUserPage() {
 
     } catch (error: any) {
       console.error("User document creation error:", error);
-      // Even if the UI uses setDocumentNonBlocking, we can still prepare for errors for debugging.
       const permissionError = new FirestorePermissionError({
-          path: `customers/${phone}`,
+          path: `customers/${uid}`,
           operation: 'create',
           requestResourceData: { name, phone, location }
       });
@@ -164,17 +173,28 @@ function CreateUserPage() {
           <CardHeader>
             <CardTitle className="text-xl">بيانات العميل</CardTitle>
             <CardDescription>
-              أدخل معلومات العميل لإنشاء سجله في قاعدة البيانات. ستقوم بإنشاء حساب المصادقة الخاص به وكلمة المرور لاحقًا من لوحة تحكم Firebase.
+             الخطوة 1: أنشئ مستخدمًا في لوحة تحكم Firebase وانسخ الـ UID. الخطوة 2: املأ النموذج أدناه.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleCreateUser}>
             <CardContent className="space-y-6">
+                <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>تعليمات هامة</AlertTitle>
+                    <AlertDescription>
+                        قبل ملء هذا النموذج، اذهب إلى لوحة تحكم Firebase &gt; قسم Authentication، وأنشئ مستخدمًا جديدًا. بعد ذلك، انسخ معرّف المستخدم (UID) وألصقه في الحقل المخصص أدناه.
+                    </AlertDescription>
+                </Alert>
+                 <div className="space-y-2 text-right">
+                    <Label htmlFor="uid">معرف المستخدم (UID)</Label>
+                    <Input id="uid" placeholder="الصق الـ UID المنسوخ من Firebase" required value={uid} onChange={(e) => setUid(e.target.value)} dir="ltr" />
+                </div>
                 <div className="space-y-2 text-right">
                     <Label htmlFor="name">اسم العميل الكامل</Label>
                     <Input id="name" placeholder="الاسم الثلاثي" required value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                 <div className="space-y-2 text-right">
-                    <Label htmlFor="phone">رقم الهاتف (سيكون هو الـ UID)</Label>
+                    <Label htmlFor="phone">رقم الهاتف</Label>
                     <Input
                     id="phone"
                     type="tel"
@@ -219,6 +239,8 @@ function CreateUserPage() {
     </div>
   );
 }
+    
+
     
 
     
