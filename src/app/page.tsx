@@ -95,8 +95,8 @@ export default function LoginPage() {
           <h1 className="text-4xl font-bold tracking-tight text-primary">
             شبكات
           </h1>
-          <p className="text-muted-foreground">مرحباً بك</p>
-          {displayName && <p className="text-muted-foreground font-semibold">{displayName}</p>}
+          <p className="text-lg text-muted-foreground">مرحباً بك</p>
+          {displayName && <p className="text-lg text-muted-foreground font-semibold">{displayName}</p>}
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
           <CardHeader className="space-y-1 text-center">
@@ -155,7 +155,7 @@ export default function LoginPage() {
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base" disabled={isLoading}>
                 {isLoading ? "جاري الدخول..." : "دخول"}
               </Button>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-sm text-muted-foreground">
                 ليس لديك حساب؟{" "}
                 <Link
                   href="/signup"
