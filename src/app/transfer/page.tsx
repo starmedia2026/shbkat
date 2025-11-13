@@ -128,10 +128,10 @@ export default function TransferPage() {
     }
 
     try {
-        await runTransaction(firestore, async (transaction) => {
-            const senderRef = doc(firestore, "customers", user.uid);
-            const recipientRef = doc(firestore, "customers", recipient.id);
+        const senderRef = doc(firestore, "customers", user.uid);
+        const recipientRef = doc(firestore, "customers", recipient.id);
 
+        await runTransaction(firestore, async (transaction) => {
             const senderDoc = await transaction.get(senderRef);
             const recipientDoc = await transaction.get(recipientRef);
 
@@ -171,17 +171,33 @@ export default function TransferPage() {
         setRecipient(null);
         setRecipientError(null);
 
-    } catch (error) {
-        const contextualError = new FirestorePermissionError({
-            operation: 'write',
-            path: `customers collection (sender: ${user.uid}, recipient: ${recipient.id})`,
-            requestResourceData: { 
-                note: "This was a transaction. See below for intended updates.",
-                senderUpdate: { path: `customers/${user.uid}`, data: { balance: sender.balance - transferAmount } },
-                recipientUpdate: { path: `customers/${recipient.id}`, data: { balance: recipient.balance + transferAmount } }
-            }
-        });
-        errorEmitter.emit('permission-error', contextualError);
+    } catch (error: any) {
+        // This logic ensures that if the error is a permission error, we emit a detailed contextual error.
+        // Otherwise, we show a generic toast.
+        const isPermissionError = error.code && (error.code === 'permission-denied' || error.code === 'unauthenticated');
+
+        if (isPermissionError) {
+             const contextualError = new FirestorePermissionError({
+                operation: 'write',
+                path: `Transaction failed for customers: ${user.uid} -> ${recipient.id}`,
+                requestResourceData: { 
+                    note: "A transaction involving multiple document writes failed. The updates below were attempted.",
+                    senderUpdate: { path: `customers/${user.uid}`, data: { balance: sender.balance - transferAmount } },
+                    recipientUpdate: { path: `customers/${recipient.id}`, data: { balance: recipient.balance + transferAmount } },
+                    senderOperation: { path: `customers/${user.uid}/operations/...` },
+                    recipientOperation: { path: `customers/${recipient.id}/operations/...` },
+                    senderNotification: { path: `customers/${user.uid}/notifications/...` },
+                    recipientNotification: { path: `customers/${recipient.id}/notifications/...` }
+                }
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        } else {
+             toast({
+                variant: "destructive",
+                title: "فشل التحويل",
+                description: error.message || "حدث خطأ غير متوقع أثناء عملية التحويل."
+            });
+        }
     }
   };
   
@@ -297,5 +313,7 @@ export default function TransferPage() {
     </div>
   );
 }
+
+    
 
     
