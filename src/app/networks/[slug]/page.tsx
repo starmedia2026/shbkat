@@ -348,29 +348,31 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
             <Dialog open={isOpen && !smsDialogOpen} onOpenChange={(open) => !open && onClose()}>
                 <DialogContent className="sm:max-w-[425px] rounded-2xl">
                     <DialogHeader>
-                        <DialogTitle className="text-center text-lg">تم الشراء بنجاح!</DialogTitle>
+                        <DialogTitle className="sr-only">تم الشراء بنجاح!</DialogTitle>
                     </DialogHeader>
-                    <div className="py-4 space-y-4 flex flex-col items-center">
+                    <div className="py-2 flex flex-col items-center">
                         <Image src="https://smartgum.com.br/wp-content/uploads/2020/03/ok.png" alt="Success" width={120} height={120} />
-                        <div className="w-full space-y-2">
-                            <Label htmlFor="card-number" className="text-right sr-only">رقم الكرت</Label>
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    id="card-number"
-                                    value={card.cardNumber}
-                                    readOnly
-                                    className="text-base font-mono tracking-wider text-center bg-muted"
-                                    dir="ltr"
-                                />
-                                <Button type="button" size="icon" variant="outline" onClick={copyToClipboard}>
-                                    <Copy className="h-4 w-4" />
-                                </Button>
+                        <div className="w-full space-y-4 mt-2">
+                            <div className="w-full space-y-2">
+                                <Label htmlFor="card-number" className="text-right sr-only">رقم الكرت</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        id="card-number"
+                                        value={card.cardNumber}
+                                        readOnly
+                                        className="text-base font-mono tracking-wider text-center bg-muted"
+                                        dir="ltr"
+                                    />
+                                    <Button type="button" size="icon" variant="outline" onClick={copyToClipboard}>
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
+                            <Button type="button" variant="secondary" className="w-full" onClick={() => setSmsDialogOpen(true)}>
+                                <Send className="ml-2 h-4 w-4"/>
+                                ارسال SMS
+                            </Button>
                         </div>
-                        <Button type="button" variant="secondary" className="w-full" onClick={() => setSmsDialogOpen(true)}>
-                            <Send className="ml-2 h-4 w-4"/>
-                            ارسال SMS
-                        </Button>
                     </div>
                     <DialogFooter>
                         <DialogClose asChild>
@@ -423,4 +425,3 @@ function BackButton() {
         </button>
     );
 }
-
