@@ -215,14 +215,14 @@ export default function HomePage() {
              {isLoading ? (
                  <Skeleton className="h-10 w-48 mt-2 bg-white/30" />
               ) : (
-                <div className="text-3xl font-bold tracking-wider mt-2" dir="rtl">
+                <div className="text-3xl font-bold tracking-wider mt-2 w-full" dir="rtl">
                   {balanceVisible ? (
-                    <span className="flex items-baseline gap-2 justify-end">
+                    <div className="flex items-baseline gap-2 justify-end">
                        <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US')}</span>
                        <span className="text-sm font-normal">ريال يمني</span>
-                    </span>
+                    </div>
                   ) : (
-                    "******"
+                    <div className="text-right">******</div>
                   )}
                 </div>
               )}
@@ -323,3 +323,4 @@ function LastOperationItem({ operation }: { operation: Operation }) {
     );
 }
 
+    
