@@ -11,6 +11,7 @@ import {
   Copy,
   Wifi,
   Tag,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,8 +23,8 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
+import { useCollection, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
+import { collection, query, orderBy, doc, deleteDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -32,6 +33,18 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { FirestorePermissionError } from "@/firebase/errors";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 // WhatsApp icon component for the button
@@ -200,6 +213,7 @@ function CardSalesContent() {
 }
 
 function SoldCardItem({ card, customer }: { card: CardData; customer?: Customer }) {
+    const firestore = useFirestore();
     const networkName = networkLookup[card.networkId]?.name || 'شبكة غير معروفة';
     const categoryInfo = networkLookup[card.networkId]?.categories[card.categoryId];
     const categoryName = categoryInfo?.name || 'فئة غير معروفة';
@@ -237,6 +251,24 @@ ${customer.balance.toLocaleString('en-US')} ريال
         const whatsappUrl = `https://wa.me/${customer.phoneNumber}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, "_blank");
     };
+    
+    const handleDeleteCard = async () => {
+        if (!firestore) return;
+        const cardRef = doc(firestore, 'cards', card.id);
+        try {
+            await deleteDoc(cardRef);
+            toast({
+                title: "تم الحذف",
+                description: `تم حذف الكرت رقم ${card.id} بنجاح.`
+            });
+        } catch (serverError) {
+             const permissionError = new FirestorePermissionError({
+                path: cardRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
+    };
 
 
     return (
@@ -263,11 +295,30 @@ ${customer.balance.toLocaleString('en-US')} ريال
                          <p className="flex items-center justify-end gap-2" dir="ltr"><span className="font-mono">{customer?.phoneNumber || 'لا يوجد رقم'}</span> <Phone className="h-4 w-4 text-primary"/> </p>
                     </div>
                 </div>
-                <div className="mt-3 pt-3 border-t">
+                <div className="mt-4 pt-3 border-t flex gap-2">
                     <Button onClick={handleWhatsAppRedirect} variant="outline" className="w-full bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
                         <WhatsAppIcon className="h-5 w-5 ml-2"/>
                         إرسال عبر واتساب
                     </Button>
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon">
+                                <Trash2 className="h-4 w-4"/>
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                هل أنت متأكد من رغبتك في حذف سجل هذا الكرت المباع؟ هذا الإجراء لا يمكن التراجع عنه.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteCard}>تأكيد الحذف</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
             </CardContent>
         </Card>

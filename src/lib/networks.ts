@@ -14,6 +14,7 @@ interface Category {
 interface Network {
   id: string;
   name: string;
+  logo?: string;
   categories: Category[];
 }
 

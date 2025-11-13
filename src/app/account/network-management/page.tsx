@@ -7,6 +7,7 @@ import {
   Trash2,
   Save,
   X,
+  Image as ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,7 @@ import {
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog";
 import { useAdmin } from "@/hooks/useAdmin";
+import Image from "next/image";
 
 interface Category {
   id: string;
@@ -45,6 +47,7 @@ interface Category {
 interface Network {
   id: string;
   name: string;
+  logo?: string;
   categories: Category[];
 }
 
@@ -90,7 +93,7 @@ function NetworkManagementContent() {
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
   const [isSaving, setIsSaving] = useState(false);
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
-  const [editingNetworkName, setEditingNetworkName] = useState("");
+  const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string}>({name: "", logo: ""});
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
 
@@ -103,7 +106,7 @@ function NetworkManagementContent() {
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       toast({
         title: "تم الحفظ",
-        description: "تم حفظ تغييرات الشبكات بنجاح.",
+        description: "تم حفظ تغييرات الشبكات بنجاح. (محاكاة)",
       });
     } catch (error) {
       toast({
@@ -118,16 +121,16 @@ function NetworkManagementContent() {
 
   const handleAddNetwork = () => {
     const newId = `new-network-${Date.now()}`;
-    const newNetwork: Network = { id: newId, name: "شبكة جديدة", categories: [] };
+    const newNetwork: Network = { id: newId, name: "شبكة جديدة", logo: "", categories: [] };
     setNetworks([...networks, newNetwork]);
     setEditingNetworkId(newId);
-    setEditingNetworkName("شبكة جديدة");
+    setEditingNetworkData({name: "شبكة جديدة", logo: ""});
   };
 
-  const handleUpdateNetworkName = (networkId: string) => {
-    setNetworks(networks.map(n => n.id === networkId ? { ...n, name: editingNetworkName } : n));
+  const handleUpdateNetwork = (networkId: string) => {
+    setNetworks(networks.map(n => n.id === networkId ? { ...n, name: editingNetworkData.name, logo: editingNetworkData.logo } : n));
     setEditingNetworkId(null);
-    setEditingNetworkName("");
+    setEditingNetworkData({name: "", logo: ""});
   };
 
   const handleDeleteNetwork = (networkId: string) => {
@@ -191,15 +194,20 @@ function NetworkManagementContent() {
               <CardHeader className="flex-row items-center justify-between">
                 {editingNetworkId === network.id ? (
                   <div className="flex items-center gap-2 flex-grow">
-                    <Input value={editingNetworkName} onChange={e => setEditingNetworkName(e.target.value)} className="flex-grow"/>
-                    <Button size="icon" variant="ghost" onClick={() => handleUpdateNetworkName(network.id)}><Save className="h-4 w-4"/></Button>
+                    <Input placeholder="اسم الشبكة" value={editingNetworkData.name} onChange={e => setEditingNetworkData(prev => ({...prev, name: e.target.value}))} className="flex-grow"/>
+                    <Input placeholder="رابط الشعار" value={editingNetworkData.logo} onChange={e => setEditingNetworkData(prev => ({...prev, logo: e.target.value}))} className="flex-grow"/>
+                    <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(network.id)}><Save className="h-4 w-4"/></Button>
                     <Button size="icon" variant="ghost" onClick={() => setEditingNetworkId(null)}><X className="h-4 w-4"/></Button>
                   </div>
                 ) : (
-                  <CardTitle className="text-lg">{network.name}</CardTitle>
+                    <div className="flex items-center gap-3">
+                        {network.logo && <Image src={network.logo} alt={network.name} width={40} height={40} className="rounded-full"/>}
+                        {!network.logo && <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center"><ImageIcon className="h-5 w-5 text-muted-foreground"/></div>}
+                        <CardTitle className="text-lg">{network.name}</CardTitle>
+                    </div>
                 )}
                 <div className="flex items-center gap-1">
-                   <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(network.id); setEditingNetworkName(network.name); }}>
+                   <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(network.id); setEditingNetworkData({name: network.name, logo: network.logo || ""}); }}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <AlertDialog>

@@ -245,7 +245,9 @@ function CardManagementContent() {
               </Label>
               <Textarea
                 id="cards-input"
-                placeholder="1234567890123\n5678901234567\n..."
+                placeholder="1234567890123
+5678901234567
+..."
                 className="min-h-[200px] text-left"
                 dir="ltr"
                 value={cardsInput}
