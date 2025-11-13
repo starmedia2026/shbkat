@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
           <CardContent className="grid gap-4">
             <div className="grid gap-2 text-right">
               <Label htmlFor="support-number">رقم الدعم الفني</Label>
-              <div className="flex h-10 w-full items-center justify-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-bold tracking-widest text-primary" dir="ltr">
+              <div className="flex h-10 w-full items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-lg font-bold tracking-widest text-foreground mt-2" dir="ltr">
                 {supportPhoneNumber}
               </div>
             </div>
