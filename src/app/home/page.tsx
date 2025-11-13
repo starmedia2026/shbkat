@@ -53,7 +53,7 @@ interface Operation {
 
 const services = [
   { href: "/networks", icon: Wifi, label: "الشبكات" },
-  { href: "/transfer", icon: Send, label: "تحويل رصيد" },
+  { href: "/transfer", icon: Send, label: "تحويل لمشترك" },
   { href: "/top-up", icon: Wallet, label: "غذي حسابك" },
   { href: "/operations", icon: History, label: "العمليات" },
   { href: "/favorites", icon: Heart, label: "المفضلة" },
@@ -370,4 +370,6 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
+    
+
     
