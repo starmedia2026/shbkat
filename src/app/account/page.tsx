@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -75,6 +76,12 @@ export default function AccountPage() {
     useDoc(customerDocRef);
   const isLoading = isUserLoading || isCustomerLoading;
   
+  useEffect(() => {
+    if (!isLoading && user && customer?.requiresPasswordChange) {
+      router.replace('/force-password-change');
+    }
+  }, [isLoading, user, customer, router]);
+
   const handleLogout = async () => {
     try {
       if (customer?.name) {

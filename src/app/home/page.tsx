@@ -17,8 +17,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
+import { doc, collection, query, where, writeBatch } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
+
 
 interface Notification {
     id: string;
@@ -29,6 +31,8 @@ export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
+
 
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -37,6 +41,12 @@ export default function HomePage() {
 
   const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
   
+  useEffect(() => {
+    if (!isCustomerLoading && user && customer?.requiresPasswordChange) {
+      router.replace('/force-password-change');
+    }
+  }, [isCustomerLoading, user, customer, router]);
+
   const notificationsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(

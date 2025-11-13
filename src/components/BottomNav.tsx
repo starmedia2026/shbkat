@@ -7,44 +7,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useMemo, useEffect } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
-
-interface Customer {
-  id: string;
-  name: string;
-  phoneNumber: string;
-  balance: number;
-  requiresPasswordChange?: boolean;
-}
+import { useUser } from "@/firebase";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
   const { isAdmin } = useAdmin();
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
-
-  const customerDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, "customers", user.uid);
-  }, [firestore, user?.uid]);
-
-  const { data: customer, isLoading: isCustomerLoading } = useDoc<Customer>(customerDocRef);
-  const isLoading = isUserLoading || isCustomerLoading;
-
-
-  useEffect(() => {
-    // Don't run this logic on the force-password-change page itself
-    if (pathname === '/force-password-change') {
-      return;
-    }
-
-    if (!isLoading && user && customer?.requiresPasswordChange) {
-      router.replace('/force-password-change');
-    }
-  }, [isLoading, user, customer, router, pathname]);
-  
 
   // Hide BottomNav on these pages
   const hiddenPaths = ["/", "/signup", "/forgot-password", "/force-password-change"];
