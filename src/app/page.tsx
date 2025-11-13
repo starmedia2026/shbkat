@@ -154,7 +154,7 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pr-10 text-right"
+                    className="pr-10 placeholder:text-right"
                     dir="ltr"
                     disabled={isLoading}
                   />
