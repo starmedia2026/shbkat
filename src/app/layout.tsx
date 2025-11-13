@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/context/ThemeContext";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { FirebaseClientProvider } from "@/firebase";
 import { cn } from "@/lib/utils";
 
@@ -22,14 +22,23 @@ const ThemeScript = () => (
             if (darkMode) {
               document.documentElement.classList.add('dark');
             }
-            // Primary color and font are removed from here to prevent a flash of the default color.
-            // They will be set by the ThemeProvider once the app hydrates.
           } catch (e) {}
         })();
       `,
     }}
   />
 );
+
+function AppBody({ children }: { children: React.ReactNode }) {
+  const { font, isMounted } = useTheme();
+
+  return (
+    <body className={cn("font-tajawal", isMounted ? font : "")}>
+      {children}
+      <Toaster />
+    </body>
+  );
+}
 
 export default function RootLayout({
   children,
@@ -51,14 +60,11 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={cn("font-tajawal")}>
-        <FirebaseClientProvider>
-          <ThemeProvider>
-            {children}
-            <Toaster />
-          </ThemeProvider>
-        </FirebaseClientProvider>
-      </body>
+      <FirebaseClientProvider>
+        <ThemeProvider>
+          <AppBody>{children}</AppBody>
+        </ThemeProvider>
+      </FirebaseClientProvider>
     </html>
   );
 }

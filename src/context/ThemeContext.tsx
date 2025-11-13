@@ -14,6 +14,7 @@ interface ThemeContextType {
   setPrimaryColor: (hslColor: string) => void;
   font: string;
   setFont: (fontClass: string) => void;
+  isMounted: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -23,9 +24,9 @@ const DEFAULT_FONT = "font-tajawal";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkMode] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const firestore = useFirestore();
   const { isAdmin } = useAdmin();
-  const { user, isUserLoading } = useUser();
 
   const themeDocRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -36,17 +37,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   
   const primaryColor = themeData?.primaryColor || DEFAULT_PRIMARY_COLOR;
   const font = themeData?.font || DEFAULT_FONT;
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
 
   useEffect(() => {
-    if (primaryColor) {
-      document.documentElement.style.setProperty('--primary', primaryColor);
+    if (isMounted) {
+      if (primaryColor) {
+        document.documentElement.style.setProperty('--primary', primaryColor);
+      }
     }
-    // Remove all other font classes and add the current one
-    document.body.classList.remove('font-tajawal', 'font-cairo', 'font-almarai');
-    if (font) {
-      document.body.classList.add(font);
-    }
-  }, [primaryColor, font]);
+  }, [primaryColor, isMounted]);
 
   useEffect(() => {
     const storedDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -82,24 +85,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setFont = useCallback((fontClass: string) => {
     if (isAdmin && themeDocRef) {
-      // Optimistic update
-      document.body.classList.remove('font-tajawal', 'font-cairo', 'font-almarai');
-      document.body.classList.add(fontClass);
-      
       setDoc(themeDocRef, { font: fontClass }, { merge: true }).catch(error => {
           console.error("Failed to save font:", error);
-          // Revert on failure
-          document.body.classList.remove('font-tajawal', 'font-cairo', 'font-almarai');
-          document.body.classList.add(font);
       });
     }
-  }, [isAdmin, themeDocRef, font]);
+  }, [isAdmin, themeDocRef]);
 
-  if (isUserLoading && isThemeLoading) {
-      return null;
-  }
-
-  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor, font, setFont };
+  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor, font, setFont, isMounted };
 
   return (
     <ThemeContext.Provider value={contextValue}>
