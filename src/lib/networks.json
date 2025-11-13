@@ -1,3 +1,18 @@
 {
-  "networks": []
+  "networks": [
+    {
+      "id": "new-network-1763035543820",
+      "name": "شبكة جديدة",
+      "logo": "",
+      "categories": [
+        {
+          "id": "new-cat-1763035554217",
+          "name": "",
+          "price": 0,
+          "validity": "",
+          "capacity": ""
+        }
+      ]
+    }
+  ]
 }
