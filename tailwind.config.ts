@@ -11,7 +11,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'ibm-plex-sans-arabic': ['"IBM Plex Sans Arabic"', 'sans-serif'],
+        'tajawal': ['"Tajawal"', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
