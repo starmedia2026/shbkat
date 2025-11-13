@@ -11,11 +11,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'tajawal': ['"Tajawal"', 'sans-serif'],
-        'cairo': ['"Cairo"', 'sans-serif'],
-        'almarai': ['"Almarai"', 'sans-serif'],
-        'ibm-plex-sans-arabic': ['"IBM Plex Sans Arabic"', 'sans-serif'],
-        'readex-pro': ['"Readex Pro"', 'sans-serif'],
+        'tajawal': ['var(--font-tajawal)', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

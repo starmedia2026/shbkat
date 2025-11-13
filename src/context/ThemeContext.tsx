@@ -5,7 +5,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useAdmin } from "@/hooks/useAdmin";
-import { cn } from "@/lib/utils";
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -18,8 +17,8 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const DEFAULT_PRIMARY_COLOR = "210 100% 56%"; // Default blue
-const DEFAULT_FONT = "font-readex-pro";
+const DEFAULT_PRIMARY_COLOR = "210 100% 56%";
+const DEFAULT_FONT = "font-tajawal";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkMode] = useState(false);
@@ -32,7 +31,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return doc(firestore, "settings", "theme");
   }, [firestore]);
 
-  const { data: themeData, isLoading: isThemeLoading } = useDoc(themeDocRef);
+  const { data: themeData } = useDoc(themeDocRef);
   
   const primaryColor = themeData?.primaryColor || DEFAULT_PRIMARY_COLOR;
   

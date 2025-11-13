@@ -3,12 +3,19 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { FirebaseClientProvider } from "@/firebase";
+import { Tajawal } from "next/font/google";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Shabakat",
   description: "تطبيق شبكات للتواصل والاتصال",
 };
+
+const tajawal = Tajawal({
+  subsets: ["arabic"],
+  weight: ["200", "300", "400", "500", "700", "800", "900"],
+  variable: "--font-tajawal",
+});
 
 // This script now only handles dark mode, as primary color is handled by the ThemeProvider after hydration
 const ThemeScript = () => (
@@ -37,18 +44,8 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
         <ThemeScript />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200..700&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body>
+      <body className={cn(tajawal.variable)}>
         <FirebaseClientProvider>
           <ThemeProvider>
             {children}
