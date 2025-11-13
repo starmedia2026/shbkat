@@ -23,7 +23,7 @@ export const networks: Network[] = [
     "name": "شبكة الخير",
     "logo": "",
     "categories": [],
-    "address": "أمانة العاصمة - مديرية معين",
+    "address": "مديرية شبام",
     "ownerPhone": "770000001"
   },
   {
@@ -31,7 +31,7 @@ export const networks: Network[] = [
     "name": "شبكة بيحم",
     "logo": "",
     "categories": [],
-    "address": "أمانة العاصمة - مديرية معين",
+    "address": "مديرية شبام",
     "ownerPhone": "770000002"
   },
   {
@@ -39,7 +39,7 @@ export const networks: Network[] = [
     "name": "شبكة وناسة",
     "logo": "",
     "categories": [],
-    "address": "أمانة العاصمة - مديرية معين",
+    "address": "مديرية شبام",
     "ownerPhone": "770000003"
   },
   {
@@ -47,7 +47,7 @@ export const networks: Network[] = [
     "name": "شبكة الرشيدي",
     "logo": "",
     "categories": [],
-    "address": "أمانة العاصمة - مديرية معين",
+    "address": "مديرية شبام",
     "ownerPhone": "770000004"
   },
   {
@@ -55,7 +55,7 @@ export const networks: Network[] = [
     "name": "شبكة الدار",
     "logo": "",
     "categories": [],
-    "address": "أمانة العاصمة - مديرية معين",
+    "address": "مديرية شبام",
     "ownerPhone": "770000005"
   }
 ];
