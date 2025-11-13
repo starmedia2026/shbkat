@@ -104,7 +104,7 @@ export default function SignupPage() {
               description: "يتم تسجيل دخولك الآن...",
             });
             router.push("/home");
-        }).catch(async (serverError) => {
+        }).catch((serverError) => {
              const permissionError = new FirestorePermissionError({
                 path: userDocRef.path,
                 operation: 'create',

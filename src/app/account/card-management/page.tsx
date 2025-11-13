@@ -29,7 +29,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { networks } from "@/lib/networks";
-import { useFirestore } from "@/firebase";
+import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { writeBatch, collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
@@ -98,7 +98,7 @@ function CardManagementContent() {
     return network ? network.categories : [];
   }, [selectedNetworkId]);
 
-  const handleSaveCards = async () => {
+  const handleSaveCards = () => {
     if (!selectedNetworkId || !selectedCategoryId || !cardsInput.trim()) {
       toast({
         variant: "destructive",
@@ -127,50 +127,56 @@ function CardManagementContent() {
 
     setIsSaving(true);
     setSaveStatus(null);
+    
+    if (!firestore) {
+        toast({ variant: "destructive", title: "خطأ", description: "خدمة قاعدة البيانات غير متوفرة." });
+        setIsSaving(false);
+        return;
+    }
 
-    try {
-      const batch = writeBatch(firestore);
-      const cardsCollection = collection(firestore, "cards");
+    const batch = writeBatch(firestore);
+    const cardsCollection = collection(firestore, "cards");
+    const batchData: Record<string, any> = {};
 
-      cardsToSave.forEach((card) => {
+    cardsToSave.forEach((card) => {
         const cardRef = doc(cardsCollection, card.cardNumber);
-        batch.set(cardRef, {
+        const cardData = {
           networkId: selectedNetworkId,
           categoryId: selectedCategoryId,
           status: "available",
           createdAt: new Date().toISOString(),
+        };
+        batch.set(cardRef, cardData);
+        batchData[card.cardNumber] = cardData;
+    });
+
+    batch.commit().then(() => {
+        setSaveStatus({
+            total: cardsToSave.length,
+            success: cardsToSave.length,
+            failed: 0,
         });
-      });
-
-      await batch.commit();
-
-      setSaveStatus({
-        total: cardsToSave.length,
-        success: cardsToSave.length,
-        failed: 0,
-      });
-      toast({
-        title: "نجاح",
-        description: `تمت إضافة ${cardsToSave.length} كرت بنجاح.`,
-      });
-      // Clear inputs after successful save
-      setCardsInput("");
-    } catch (error: any) {
-      console.error("Error saving cards:", error);
-      toast({
-        variant: "destructive",
-        title: "فشل الحفظ",
-        description:
-          "حدث خطأ أثناء حفظ الكروت. قد يكون بسبب مشكلة في الأذونات أو الاتصال.",
-      });
-      setSaveStatus({
-        total: cardsToSave.length,
-        success: 0,
-        failed: cardsToSave.length,
-      });
-    } finally {
-      setIsSaving(false);
-    }
+        toast({
+            title: "نجاح",
+            description: `تمت إضافة ${cardsToSave.length} كرت بنجاح.`,
+        });
+        // Clear inputs after successful save
+        setCardsInput("");
+    }).catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: 'cards collection (batch write)',
+            operation: 'write',
+            requestResourceData: batchData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setSaveStatus({
+            total: cardsToSave.length,
+            success: 0,
+            failed: cardsToSave.length,
+        });
+    }).finally(() => {
+        setIsSaving(false);
+    });
   };
 
   return (
