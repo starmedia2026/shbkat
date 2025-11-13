@@ -7,7 +7,7 @@ import {
   Phone,
   Ticket,
   Clock,
-  Calendar,
+  Calendar as CalendarIcon,
   Copy,
   Wifi,
   Tag,
@@ -45,6 +45,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 
 // WhatsApp icon component for the button
@@ -129,6 +132,9 @@ export default function CardSalesPage() {
 function CardSalesContent() {
   const router = useRouter();
   const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // Fetch all cards
   const cardsCollectionRef = useMemoFirebase(() => {
@@ -150,14 +156,67 @@ function CardSalesContent() {
     return new Map(customers.map(c => [c.id, c]));
   }, [customers]);
 
-  const { soldCards, availableCards } = useMemo(() => {
-    if (!cards) return { soldCards: [], availableCards: [] };
+  const { soldCards, availableCards, filteredSoldCards } = useMemo(() => {
+    if (!cards) return { soldCards: [], availableCards: [], filteredSoldCards: [] };
     const sold = cards.filter(card => card.status === 'used');
     const available = cards.filter(card => card.status === 'available');
-    return { soldCards: sold, availableCards: available };
-  }, [cards]);
+
+    const filtered = sold.filter(card => {
+        if (!dateRange || !card.usedAt) return true;
+        const cardDate = new Date(card.usedAt);
+        const from = dateRange.from ? new Date(dateRange.from) : null;
+        const to = dateRange.to ? new Date(dateRange.to) : null;
+
+        if (from) from.setHours(0, 0, 0, 0); // Start of the day
+        if (to) to.setHours(23, 59, 59, 999); // End of the day
+        
+        if (from && to) return cardDate >= from && cardDate <= to;
+        if (from) return cardDate >= from;
+        if (to) return cardDate <= to;
+
+        return true;
+    });
+
+    return { soldCards: sold, availableCards: available, filteredSoldCards: filtered };
+  }, [cards, dateRange]);
 
   const isLoading = areCardsLoading || areCustomersLoading;
+
+  const handleCopyToClipboard = () => {
+    const headers = "رقم الكرت\tالشبكة\tالفئة\tالسعر\tتاريخ البيع\tاسم المشتري\tرقم المشتري";
+    const rows = filteredSoldCards.map(card => {
+      const customer = card.usedBy ? customerMap.get(card.usedBy) : undefined;
+      const networkName = networkLookup[card.networkId]?.name || 'غير معروف';
+      const categoryInfo = networkLookup[card.networkId]?.categories[card.categoryId];
+      const categoryName = categoryInfo?.name || 'غير معروف';
+      const categoryPrice = categoryInfo?.price || 0;
+      const usedDate = card.usedAt ? format(new Date(card.usedAt), "yyyy-MM-dd HH:mm:ss") : 'N/A';
+      
+      return [
+        card.id,
+        networkName,
+        categoryName,
+        categoryPrice,
+        usedDate,
+        customer?.name || 'N/A',
+        customer?.phoneNumber || 'N/A'
+      ].join('\t');
+    }).join('\n');
+
+    const tsv = `${headers}\n${rows}`;
+    navigator.clipboard.writeText(tsv).then(() => {
+      toast({
+        title: "تم النسخ!",
+        description: `تم نسخ ${filteredSoldCards.length} سجل إلى الحافظة. يمكنك لصقها في Excel.`
+      });
+    }, () => {
+      toast({
+        variant: "destructive",
+        title: "فشل النسخ",
+        description: "لم نتمكن من نسخ البيانات إلى الحافظة."
+      });
+    });
+  };
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -185,14 +244,59 @@ function CardSalesContent() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="sold" className="mt-4 space-y-4">
+             <Card>
+                <CardContent className="p-4 flex flex-col sm:flex-row gap-4 items-center">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant={"outline"}
+                            className={cn(
+                            "w-full sm:w-[300px] justify-start text-left font-normal",
+                            !dateRange && "text-muted-foreground"
+                            )}
+                        >
+                            <CalendarIcon className="ml-2 h-4 w-4" />
+                            {dateRange?.from ? (
+                            dateRange.to ? (
+                                <>
+                                {format(dateRange.from, "LLL dd, y", { locale: ar })} -{" "}
+                                {format(dateRange.to, "LLL dd, y", { locale: ar })}
+                                </>
+                            ) : (
+                                format(dateRange.from, "LLL dd, y", { locale: ar })
+                            )
+                            ) : (
+                            <span>اختر نطاق التاريخ</span>
+                            )}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                            initialFocus
+                            mode="range"
+                            defaultMonth={dateRange?.from}
+                            selected={dateRange}
+                            onSelect={setDateRange}
+                            numberOfMonths={2}
+                            locale={ar}
+                        />
+                        </PopoverContent>
+                    </Popover>
+                    <Button onClick={handleCopyToClipboard} className="w-full sm:w-auto" disabled={filteredSoldCards.length === 0}>
+                        <Copy className="ml-2 h-4 w-4" />
+                        نسخ البيانات ({filteredSoldCards.length})
+                    </Button>
+                </CardContent>
+            </Card>
+
             {isLoading ? (
                 [...Array(3)].map((_, i) => <CardSkeleton key={i} />)
-            ) : soldCards.length > 0 ? (
-                soldCards.map((card) => (
+            ) : filteredSoldCards.length > 0 ? (
+                filteredSoldCards.map((card) => (
                     <SoldCardItem key={card.id} card={card} customer={card.usedBy ? customerMap.get(card.usedBy) : undefined} />
                 ))
             ) : (
-                <p className="text-center text-muted-foreground pt-10">لا توجد كروت مباعة.</p>
+                <p className="text-center text-muted-foreground pt-10">{soldCards.length > 0 ? "لا توجد مبيعات في هذا النطاق الزمني." : "لا توجد كروت مباعة."}</p>
             )}
           </TabsContent>
           <TabsContent value="available" className="mt-4 space-y-4">
@@ -344,7 +448,7 @@ function AvailableCardItem({ card }: { card: CardData }) {
                     </Button>
                  </CardTitle>
                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
+                    <CalendarIcon className="h-3 w-3" />
                     <span>{format(new Date(card.createdAt), "d MMM yyyy", { locale: ar })}</span>
                  </div>
             </CardHeader>
@@ -382,3 +486,4 @@ function CardSkeleton() {
 }
 
     
+
