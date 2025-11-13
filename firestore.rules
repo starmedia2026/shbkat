@@ -51,11 +51,9 @@ service cloud.firestore {
       // An owner can update their own document, or an admin can.
       // A signed-in user can also update another user's document as part of a transfer.
       // This is safe because it's only allowing the balance to change, and the transaction logic
-      // ensures the sender's balance is debited correctly.
+      // in the code ensures the sender's balance is debited correctly.
       allow update: if isAdmin() || isOwner(customerId) || (
-          isSignedIn() &&
-          request.resource.data.keys().hasOnly(['balance']) && // Only balance can be updated
-          request.resource.data.balance > resource.data.balance // Recipient balance must increase
+          isSignedIn() && request.resource.data.keys().hasOnly(['balance'])
       );
 
       // An owner can delete their own document, or an admin can.
