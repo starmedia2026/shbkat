@@ -226,19 +226,6 @@
       "required": [
         "primaryColor"
       ]
-    },
-    "NavItem": {
-        "title": "Navigation Item",
-        "description": "Represents a configurable navigation item for UI menus.",
-        "type": "object",
-        "properties": {
-            "label": { "type": "string", "description": "The display text for the navigation item." },
-            "href": { "type": "string", "description": "The URL path for the navigation link." },
-            "icon": { "type": "string", "description": "The name of the lucide-react icon to display." },
-            "location": { "type": "string", "enum": ["home", "account", "admin_account"], "description": "Where the item appears in the UI." },
-            "order": { "type": "number", "description": "The display order for the item." }
-        },
-        "required": ["label", "href", "icon", "location", "order"]
     }
   },
   "auth": {
@@ -344,14 +331,6 @@
             "$ref": "#/backend/entities/ThemeSettings"
           },
           "description": "Stores the global theme settings for the application, like the primary color. There should only be one document in this collection named 'theme'."
-        }
-      },
-      {
-        "path": "/nav_items/{itemId}",
-        "definition": {
-            "entityName": "NavItem",
-            "schema": { "$ref": "#/backend/entities/NavItem" },
-            "description": "Stores individual navigation items for dynamic menus in the app. This is a root-level collection for simpler security rules."
         }
       }
     ],

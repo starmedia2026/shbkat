@@ -51,14 +51,14 @@ interface Operation {
   description: string;
 }
 
-interface NavItem {
-    id: string;
-    label: string;
-    href: string;
-    icon: keyof typeof LucideIcons;
-    location: 'home' | 'account';
-    order: number;
-}
+const services = [
+  { href: "/networks", icon: Wifi, label: "الشبكات" },
+  { href: "/transfer", icon: Send, label: "تحويل رصيد" },
+  { href: "/top-up", icon: Wallet, label: "غذي حسابك" },
+  { href: "/operations", icon: History, label: "العمليات" },
+  { href: "/favorites", icon: Heart, label: "المفضلة" },
+  { href: "/contact", icon: Phone, label: "تواصل معنا" },
+];
 
 const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; color: string; } } = {
   transfer_sent: { icon: ArrowUp, color: "text-red-500" },
@@ -133,17 +133,6 @@ export default function HomePage() {
   }, [firestore]);
 
   const { data: adverts, isLoading: areAdvertsLoading } = useCollection<Advert>(advertsQuery);
-
-  const homeNavItemsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(
-      collection(firestore, "nav_items"),
-      where("location", "==", "home"),
-      orderBy("order", "asc")
-    );
-  }, [firestore]);
-
-  const { data: homeNavItems, isLoading: areNavItemsLoading } = useCollection<NavItem>(homeNavItemsQuery);
 
   const isLoading = isUserLoading || isCustomerLoading;
   const hasNotifications = !areNotificationsLoading && notifications && notifications.length > 0;
@@ -241,11 +230,11 @@ export default function HomePage() {
              {isLoading ? (
                  <Skeleton className="h-10 w-48 mt-2 bg-white/30" />
               ) : (
-                <div className="text-3xl font-bold tracking-wider mt-2 w-full text-left" dir="ltr">
+                <div className="text-3xl font-bold tracking-wider mt-2 w-full" dir="ltr">
                   {balanceVisible ? (
-                    <div className="flex items-baseline gap-x-2 justify-start">
-                       <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US', {useGrouping: true})}</span>
+                    <div className="flex items-baseline gap-x-2 justify-end">
                        <span className="text-sm font-normal">ريال يمني</span>
+                       <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US', {useGrouping: true})}</span>
                     </div>
                   ) : (
                     <div className="text-right">******</div>
@@ -257,15 +246,9 @@ export default function HomePage() {
 
         {/* Services Grid */}
         <div className="grid grid-cols-3 gap-3 text-center">
-            {areNavItemsLoading ? (
-                [...Array(6)].map((_, i) => <ServiceGridSkeleton key={i} />)
-            ) : homeNavItems && homeNavItems.length > 0 ? (
-                homeNavItems.map((service) => (
-                    <ServiceGridItem key={service.id} {...service} />
-                ))
-            ) : (
-                <p>لا توجد خدمات متاحة.</p>
-            )}
+          {services.map((service) => (
+            <ServiceGridItem key={service.href} {...service} />
+          ))}
         </div>
         
         {/* Adverts Carousel */}
@@ -344,8 +327,7 @@ export default function HomePage() {
   );
 }
 
-function ServiceGridItem({ href, icon, label }: Omit<NavItem, 'id' | 'location' | 'order'>) {
-    const Icon = LucideIcons[icon as keyof typeof LucideIcons] || LucideIcons.HelpCircle;
+function ServiceGridItem({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string; }) {
     return (
         <Link href={href} className="block">
             <Card className="shadow-md rounded-xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card">
@@ -359,18 +341,6 @@ function ServiceGridItem({ href, icon, label }: Omit<NavItem, 'id' | 'location' 
         </Link>
     );
 }
-
-function ServiceGridSkeleton() {
-    return (
-        <Card className="shadow-md rounded-xl bg-card">
-            <CardContent className="p-2 flex flex-col items-center justify-center gap-2 aspect-square">
-                <Skeleton className="h-12 w-12 rounded-lg" />
-                <Skeleton className="h-4 w-16 mt-1" />
-            </CardContent>
-        </Card>
-    );
-}
-
 
 function LastOperationItem({ operation }: { operation: Operation }) {
     const config = operationConfig[operation.type];

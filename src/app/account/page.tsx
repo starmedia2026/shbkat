@@ -38,8 +38,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, collection, query, where, orderBy } from "firebase/firestore";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signOut } from "firebase/auth";
 import { useAuth } from "@/firebase";
@@ -47,8 +47,6 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/useAdmin";
-import * as LucideIcons from 'lucide-react';
-
 
 const locationMap: { [key: string]: string } = {
   shibam: "شبام",
@@ -74,15 +72,23 @@ const colorOptions = [
   { name: 'gray', hsl: '215 14% 47%' },
 ];
 
-interface NavItem {
-    id: string;
-    label: string;
-    href: string;
-    icon: keyof typeof LucideIcons;
-    location: 'home' | 'account' | 'admin_account';
-    order: number;
-}
+const userAccountItems = [
+  { href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
+  { href: "/contact", icon: Share2, label: "شارك التطبيق" },
+  { href: "#", icon: HelpCircle, label: "مركز المساعدة" },
+];
 
+const adminAccountItems = [
+  { href: "/account/user-management", icon: Users, label: "إدارة المستخدمين" },
+  { href: "/account/network-management", icon: Wifi, label: "إدارة الشبكات" },
+  { href: "/account/card-management", icon: CreditCard, label: "إدارة الكروت" },
+  { href: "/account/card-sales", icon: BarChart3, label: "تقرير مبيعات الكروت" },
+  { href: "/account/ad-management", icon: ImageIcon, label: "إدارة الإعلانات" },
+  { href: "/account/nav-management", icon: Navigation, label: "إدارة القوائم" },
+  { href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
+  { href: "/contact", icon: Share2, label: "شارك التطبيق" },
+  { href: "#", icon: HelpCircle, label: "مركز المساعدة" },
+];
 
 export default function AccountPage() {
   const { 
@@ -99,7 +105,6 @@ export default function AccountPage() {
   const [isClient, setIsClient] = useState(false);
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
-
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -111,22 +116,9 @@ export default function AccountPage() {
 
   const { data: customer, isLoading: isCustomerLoading } =
     useDoc(customerDocRef);
-    
-    
-  const accountNavItemsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    const itemLocation = isAdmin ? 'admin_account' : 'account';
-    return query(
-        collection(firestore, "nav_items"),
-        where("location", "==", itemLocation),
-        orderBy("order", "asc")
-    );
-  }, [firestore, isAdmin]);
-
-  const { data: accountNavItems, isLoading: areNavItemsLoading } = useCollection<NavItem>(accountNavItemsQuery);
-
 
   const isLoading = isUserLoading || isCustomerLoading;
+  const accountItems = isAdmin ? adminAccountItems : userAccountItems;
   
   useEffect(() => {
     if (!isLoading && user && customer?.requiresPasswordChange) {
@@ -279,7 +271,7 @@ export default function AccountPage() {
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
-              {areNavItemsLoading ? (
+              {isAdminLoading ? (
                   [...Array(4)].map((_, i) => (
                       <li key={i} className="flex items-center justify-between py-4 px-4">
                           <div className="flex items-center space-x-4 space-x-reverse">
@@ -290,8 +282,8 @@ export default function AccountPage() {
                       </li>
                   ))
               ) : (
-                 accountNavItems && accountNavItems.map((item) => (
-                    <AccountItem key={item.id} {...item} />
+                 accountItems.map((item) => (
+                    <AccountItem key={item.href} icon={item.icon} label={item.label} href={item.href} />
                  ))
               )}
             </ul>
@@ -332,15 +324,14 @@ export default function AccountPage() {
 }
 
 function AccountItem({
-  icon,
+  icon: Icon,
   label,
   href,
 }: {
-  icon: keyof typeof LucideIcons;
+  icon: React.ElementType;
   label: string;
   href: string;
 }) {
-  const Icon = LucideIcons[icon] || LucideIcons.HelpCircle;
   return (
     <li>
       <Link
