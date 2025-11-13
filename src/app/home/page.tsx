@@ -215,14 +215,14 @@ export default function HomePage() {
              {isLoading ? (
                  <Skeleton className="h-10 w-48 mt-2 bg-white/30" />
               ) : (
-                <div className="text-3xl font-bold tracking-wider mt-2 w-full" dir="rtl">
+                <div className="text-3xl font-bold tracking-wider mt-2 w-full" dir="ltr">
                   {balanceVisible ? (
-                    <div className="flex items-baseline gap-2 justify-end">
+                    <div className="flex items-baseline gap-2 justify-start">
                        <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US')}</span>
                        <span className="text-sm font-normal">ريال يمني</span>
                     </div>
                   ) : (
-                    <div className="text-right">******</div>
+                    <div className="text-left">******</div>
                   )}
                 </div>
               )}
