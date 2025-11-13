@@ -1,4 +1,75 @@
 
 {
-  "networks": []
+  "networks": [
+    {
+      "id": "aden-net",
+      "name": "عدن نت",
+      "logo": "/logos/aden-net.png",
+      "categories": [
+        {
+          "id": "1gb",
+          "name": "باقة 1 جيجا",
+          "price": 1200,
+          "validity": "30 يوم",
+          "capacity": "1 GB"
+        },
+        {
+          "id": "5gb",
+          "name": "باقة 5 جيجا",
+          "price": 2500,
+          "validity": "30 يوم",
+          "capacity": "5 GB"
+        },
+        {
+          "id": "10gb",
+          "name": "باقة 10 جيجا",
+          "price": 4500,
+          "validity": "30 يوم",
+          "capacity": "10 GB"
+        }
+      ]
+    },
+    {
+      "id": "yemen-mobile",
+      "name": "يمن موبايل",
+      "logo": "/logos/yemen-mobile.png",
+      "categories": [
+        {
+          "id": "mazaya-100",
+          "name": "مزايا 100",
+          "price": 550,
+          "validity": "7 أيام",
+          "capacity": "100 MB"
+        },
+        {
+          "id": "mazaya-200",
+          "name": "مزايا 200",
+          "price": 1100,
+          "validity": "15 يوم",
+          "capacity": "200 MB"
+        }
+      ]
+    },
+    {
+      "id": "sabafon",
+      "name": "سبأفون",
+      "logo": "/logos/sabafon.png",
+      "categories": [
+        {
+          "id": "saba-net-1",
+          "name": "سبأنت 1",
+          "price": 1000,
+          "validity": "30 يوم",
+          "capacity": "500 MB"
+        },
+        {
+          "id": "saba-net-2",
+          "name": "سبأنت 2",
+          "price": 2000,
+          "validity": "30 يوم",
+          "capacity": "1.2 GB"
+        }
+      ]
+    }
+  ]
 }
