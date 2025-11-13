@@ -1,40 +1,60 @@
+
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import {
   Bell,
   Eye,
   EyeOff,
-  Heart,
-  History,
-  Phone,
-  Send,
-  User,
   Wallet,
   Wifi,
-  ChevronLeft,
+  History,
+  Send,
+  Heart,
+  Phone,
+  ArrowUp,
+  CreditCard,
+  Coins,
+  ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { doc, collection, query, where, writeBatch } from "firebase/firestore";
+import { doc, collection, query, where, writeBatch, orderBy, limit } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 interface Notification {
     id: string;
     read: boolean;
 }
 
+interface Operation {
+  id: string;
+  type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase";
+  amount: number;
+  date: string; // ISO string
+  description: string;
+}
+
+const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; color: string; } } = {
+  transfer_sent: { icon: ArrowUp, color: "text-red-500" },
+  transfer_received: { icon: ArrowUp, color: "text-green-500" }, // Icon might need adjustment
+  topup_admin: { icon: Coins, color: "text-green-500" },
+  purchase: { icon: CreditCard, color: "text-blue-500" },
+};
+
+
 const services = [
-    { href: "/networks", icon: Wifi, label: "الشبكات", color: "text-blue-500", bgColor: "bg-blue-100" },
-    { href: "/operations", icon: History, label: "العمليات", color: "text-orange-500", bgColor: "bg-orange-100" },
-    { href: "/favorites", icon: Heart, label: "المفضلة", color: "text-red-500", bgColor: "bg-red-100" },
-    { href: "/top-up", icon: Wallet, label: "غذي حسابك", color: "text-green-500", bgColor: "bg-green-100" },
-    { href: "/transfer", icon: Send, label: "تحويل لمشترك", color: "text-purple-500", bgColor: "bg-purple-100" },
-    { href: "/contact", icon: Phone, label: "تواصل معنا", color: "text-indigo-500", bgColor: "bg-indigo-100" },
+    { href: "/networks", icon: Wifi, label: "الشبكات" },
+    { href: "/transfer", icon: Send, label: "تحويل" },
+    { href: "/top-up", icon: Wallet, label: "تغذية الرصيد" },
+    { href: "/operations", icon: History, label: "العمليات" },
+    { href: "/favorites", icon: Heart, label: "المفضلة" },
+    { href: "/contact", icon: Phone, label: "تواصل معنا" },
 ];
 
 
@@ -43,7 +63,6 @@ export default function HomePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-
 
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -67,6 +86,19 @@ export default function HomePage() {
   }, [firestore, user?.uid]);
 
   const { data: notifications, isLoading: areNotificationsLoading } = useCollection<Notification>(notificationsQuery);
+  
+  // Query for the last operation
+  const lastOperationQuery = useMemoFirebase(() => {
+      if (!firestore || !user?.uid) return null;
+      return query(
+          collection(firestore, `customers/${user.uid}/operations`),
+          orderBy("date", "desc"),
+          limit(1)
+      );
+  }, [firestore, user?.uid]);
+
+  const { data: lastOperation, isLoading: isLastOperationLoading } = useCollection<Operation>(lastOperationQuery);
+
 
   const isLoading = isUserLoading || isCustomerLoading;
   const hasNotifications = !areNotificationsLoading && notifications && notifications.length > 0;
@@ -74,10 +106,7 @@ export default function HomePage() {
   const formatDisplayName = (fullName?: string): string => {
     if (!fullName) return "مستخدم جديد";
     const nameParts = fullName.trim().split(" ");
-    if (nameParts.length > 1) {
-      return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
-    }
-    return fullName;
+    return nameParts[0] || "مستخدم";
   };
   
   const handleNotificationsClick = () => {
@@ -113,112 +142,154 @@ export default function HomePage() {
   };
 
   return (
-    <div className="bg-background text-foreground min-h-screen pb-24">
-       <header className="p-4 pt-6 flex justify-between items-center">
-        <div className="text-right">
-          <h2 className="text-base text-muted-foreground">مرحباً بك</h2>
-          {isLoading ? (
-            <Skeleton className="h-7 w-40 mt-1" />
-          ) : (
-            <h1 className="text-2xl font-bold">{customer?.name ? formatDisplayName(customer.name) : '...'}</h1>
-          )}
-        </div>
-        <div className="relative">
-          <Button variant="ghost" size="icon" className="rounded-full bg-card" onClick={handleNotificationsClick}>
-              <Bell className="h-6 w-6 text-primary" />
+    <div className="bg-muted/30 text-foreground min-h-screen pb-24">
+      {/* Header Section */}
+      <header className="bg-background p-4 pb-20 rounded-b-[3rem]">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+             <Button variant="ghost" size="icon" className="rounded-full bg-card relative" onClick={handleNotificationsClick}>
+              <Bell className="h-5 w-5 text-primary" />
               {hasNotifications && (
-                <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                <span className="absolute top-0 right-0 flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                 </span>
               )}
             </Button>
+          </div>
+          <div className="text-right">
+            <h2 className="text-sm text-muted-foreground">مساءك جميل</h2>
+            {isLoading ? (
+              <Skeleton className="h-6 w-32 mt-1" />
+            ) : (
+              <h1 className="text-lg font-bold">{customer?.name ? formatDisplayName(customer.name) : '...'}</h1>
+            )}
+          </div>
+          <Link href="/account">
+            <div className="w-11 h-11 bg-card rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </Link>
         </div>
       </header>
 
-      <main className="p-4 space-y-6">
-        <Card className="w-full shadow-lg rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden">
-          <CardContent className="p-6 flex justify-between items-center relative">
-            <div className="z-10">
-              <p className="text-sm text-primary-foreground/80">الرصيد الحالي</p>
-              {isLoading ? (
-                 <Skeleton className="h-10 w-40 mt-2 bg-white/30" />
+      <main className="p-4 space-y-6 -mt-16">
+        {/* Balance Card */}
+        <Card className="w-full shadow-xl rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden">
+          <CardContent className="p-5 flex flex-col justify-start">
+             <div className="flex justify-between items-center w-full">
+                <p className="text-sm font-medium">الرصيد الكلي</p>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setBalanceVisible(!balanceVisible)}
+                    className="text-primary-foreground hover:bg-white/20 hover:text-primary-foreground h-7 w-7"
+                    >
+                    {balanceVisible ? ( <Eye className="h-5 w-5" /> ) : ( <EyeOff className="h-5 w-5" /> )}
+                </Button>
+            </div>
+             {isLoading ? (
+                 <Skeleton className="h-10 w-48 mt-2 bg-white/30" />
               ) : (
-                <div className="text-3xl font-bold tracking-wider mt-1" dir="ltr">
+                <div className="text-3xl font-bold tracking-wider mt-2" dir="ltr">
                   {balanceVisible ? (
                     <span className="flex items-baseline gap-2">
                        <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US')}</span>
-                       <span className="text-sm font-normal">YER</span>
+                       <span className="text-sm font-normal">ريال يمني</span>
                     </span>
                   ) : (
-                    "********"
+                    "••••••••"
                   )}
                 </div>
               )}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setBalanceVisible(!balanceVisible)}
-              className="text-primary-foreground hover:bg-white/20 hover:text-primary-foreground self-start z-10"
-            >
-              {balanceVisible ? (
-                <Eye className="h-6 w-6" />
-              ) : (
-                <EyeOff className="h-6 w-6" />
-              )}
-            </Button>
-             <div className="absolute -right-10 -bottom-8 w-32 h-32 bg-white/20 rounded-full opacity-50"></div>
-             <div className="absolute -left-4 -top-4 w-16 h-16 bg-white/20 rounded-full opacity-50"></div>
           </CardContent>
         </Card>
 
-        <div className="space-y-3">
-            {services.slice(0, 3).map((service, index) => (
-                <ServiceListItem key={index} {...service} />
+        {/* Services Grid */}
+        <div className="grid grid-cols-3 gap-3 text-center">
+            {services.map((service, index) => (
+                 <ServiceGridItem key={index} {...service} />
             ))}
         </div>
         
-        <div className="grid grid-cols-3 gap-3 text-center">
-            {services.slice(3).map((service, index) => (
-                 <ServiceGridItem key={index} {...service} />
-            ))}
+        {/* Last Operations */}
+        <div className="space-y-3">
+            <div className="flex justify-between items-center px-2">
+                <h3 className="text-base font-bold">آخر العمليات</h3>
+                 <Link href="/operations">
+                    <Button variant="link" className="text-primary p-0 h-auto">عرض الكل</Button>
+                </Link>
+            </div>
+            {isLastOperationLoading ? (
+                <Card className="shadow-md rounded-xl bg-card">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="space-y-1">
+                                <Skeleton className="h-4 w-24" />
+                                <Skeleton className="h-3 w-20" />
+                            </div>
+                        </div>
+                        <Skeleton className="h-5 w-16" />
+                    </CardContent>
+                </Card>
+            ) : lastOperation && lastOperation.length > 0 ? (
+                <LastOperationItem operation={lastOperation[0]} />
+            ) : (
+                 <Card className="shadow-md rounded-xl bg-card">
+                    <CardContent className="p-4 text-center text-muted-foreground text-sm">
+                        لا توجد عمليات سابقة
+                    </CardContent>
+                </Card>
+            )}
+
         </div>
       </main>
     </div>
   );
 }
 
-
-function ServiceListItem({ href, icon: Icon, label, color, bgColor }: { href: string; icon: React.ElementType, label: string, color: string, bgColor: string }) {
+function ServiceGridItem({ href, icon: Icon, label }: { href: string; icon: React.ElementType, label: string }) {
     return (
         <Link href={href} className="block">
-            <Card className="shadow-md rounded-xl hover:shadow-lg transition-shadow cursor-pointer bg-card/50 hover:bg-card">
-                <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className={cn("p-3 rounded-lg dark:bg-opacity-20", bgColor)}>
-                            <Icon className={cn("h-6 w-6", color)} />
-                        </div>
-                        <p className="text-base font-semibold">{label}</p>
+            <Card className="shadow-md rounded-xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card">
+                <CardContent className="p-2 flex flex-col items-center justify-center gap-2 aspect-square">
+                    <div className="p-3 rounded-lg bg-muted">
+                        <Icon className="h-6 w-6 text-primary" />
                     </div>
-                    <ChevronLeft className="h-6 w-6 text-muted-foreground" />
+                    <p className="text-xs font-semibold mt-1 text-center">{label}</p>
                 </CardContent>
             </Card>
         </Link>
     );
 }
 
-function ServiceGridItem({ href, icon: Icon, label, color, bgColor }: { href: string; icon: React.ElementType, label: string, color: string, bgColor: string }) {
+function LastOperationItem({ operation }: { operation: Operation }) {
+    const config = operationConfig[operation.type];
+    if (!config) return null;
+
+    const Icon = config.icon;
+    const isIncome = operation.amount > 0;
+    
     return (
-        <Link href={href} className="block">
-            <Card className="shadow-md rounded-xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card/50 hover:bg-card">
-                <CardContent className="p-4 flex flex-col items-center justify-center gap-2 aspect-square">
-                    <div className={cn("p-3 rounded-full dark:bg-opacity-20", bgColor)}>
-                        <Icon className={cn("h-6 w-6", color)} />
+        <Card className="shadow-md rounded-xl bg-card">
+            <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-muted rounded-full">
+                        <Icon className={cn("h-5 w-5", config.color)} />
                     </div>
-                    <p className="text-sm font-semibold mt-1">{label}</p>
-                </CardContent>
-            </Card>
-        </Link>
+                    <div>
+                        <p className="text-sm font-bold">{operation.description}</p>
+                         <p className="text-xs text-muted-foreground">
+                            {format(new Date(operation.date), "d MMM, yyyy", { locale: ar })}
+                        </p>
+                    </div>
+                </div>
+                 <p className={`text-sm font-bold font-mono ${isIncome ? 'text-green-500' : 'text-red-500'}`}>
+                    {isIncome ? '+' : '-'}{Math.abs(operation.amount).toLocaleString('en-US')}
+                 </p>
+            </CardContent>
+        </Card>
     );
 }
+
