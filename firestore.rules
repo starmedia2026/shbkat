@@ -36,32 +36,38 @@ service cloud.firestore {
     }
 
     // The admin is a specific user identified by their phone number.
+    // We get the user document for the requesting user, and check if their phone number matches.
     function isAdmin() {
        return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
     }
 
     match /customers/{customerId} {
-      allow get: if isOwner(customerId) || isAdmin();
-      allow list: if isAdmin();
+      allow get: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
+      allow list: if isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
 
-      allow create: if (isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId) || isAdmin();
-      allow update: if isOwner(customerId) || isAdmin();
-      allow delete: if isExistingOwner(customerId) || isAdmin();
+      // Any signed in user can create their own customer document.
+      allow create: if isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId;
+      
+      // An owner can update their own document, or an admin can.
+      allow update: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
+
+      // An owner can delete their own document, or an admin can.
+      allow delete: if isExistingOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
 
       match /operations/{operationId} {
-        allow read, list: if isOwner(customerId) || isAdmin();
-        allow create: if isOwner(customerId) || isAdmin();
+        allow read, list: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
+        allow create: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
       }
       
       match /notifications/{notificationId} {
-        allow read, list: if isOwner(customerId) || isAdmin();
-        allow create: if isOwner(customerId) || isAdmin();
-        allow update: if isOwner(customerId) || isAdmin(); // Allow user/admin to mark notifications as read
+        allow read, list: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
+        allow create: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828");
+        allow update: if isOwner(customerId) || (isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828"); // Allow user/admin to mark notifications as read
       }
     }
 
     match /cards/{cardId} {
-        allow read, write: if isAdmin();
+        allow read, write: if isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
     }
   }
 }

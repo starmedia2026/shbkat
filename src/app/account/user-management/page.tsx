@@ -61,13 +61,13 @@ export default function UserManagementPage() {
 
   useEffect(() => {
     // Only redirect when loading is finished and the user is explicitly not an admin.
-    if (!isAdminLoading && !isAdmin) {
+    if (!isAdminLoading && isAdmin === false) {
       router.replace("/account");
     }
   }, [isAdmin, isAdminLoading, router]);
 
   // Render a stable loading state until admin status is confirmed.
-  if (isAdminLoading || !isAdmin) {
+  if (isAdminLoading || isAdmin === null) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="p-4 flex items-center justify-between relative">
@@ -429,6 +429,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     );
 }
     
+
 
 
 

@@ -26,33 +26,17 @@ export function useAdmin() {
   const baseIsLoading = isUserLoading || isCustomerLoading;
 
   const isAdmin = useMemo(() => {
-    // If the user's phone number is the admin number, we know immediately.
-    // This helps prevent UI flicker for the admin user.
-    if (customer?.phoneNumber === ADMIN_PHONE_NUMBER) {
-        return true;
+    // If we are not loading and have the customer data, check the phone number.
+    if (!baseIsLoading && customer) {
+        return customer.phoneNumber === ADMIN_PHONE_NUMBER;
     }
-    
-    if (baseIsLoading) {
-      return null; // Explicitly return null when loading
-    }
-    
-    // Fallback check after loading is complete
-    return customer?.phoneNumber === ADMIN_PHONE_NUMBER;
+    // While loading, we can't determine the admin status.
+    return null;
   }, [customer, baseIsLoading]);
-
-
-  const finalIsLoading = useMemo(() => {
-    // If we have determined the user is the admin, we are not loading.
-    if (isAdmin === true) {
-        return false;
-    }
-    // Otherwise, respect the base loading state.
-    return baseIsLoading;
-  }, [isAdmin, baseIsLoading]);
 
 
   return {
     isAdmin: isAdmin,
-    isLoading: finalIsLoading,
+    isLoading: baseIsLoading,
   };
 }
