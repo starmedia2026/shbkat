@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -26,9 +26,18 @@ export default function LoginPage() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [lastUserName, setLastUserName] = useState<string | null>(null);
   const router = useRouter();
   const auth = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const storedName = localStorage.getItem('lastUserName');
+    if (storedName) {
+      setLastUserName(storedName);
+    }
+  }, []);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +71,15 @@ export default function LoginPage() {
         setIsLoading(false);
     }
   };
+  
+  const formatDisplayName = (fullName?: string | null): string => {
+    if (!fullName) return "مرحبا بك";
+    const nameParts = fullName.trim().split(" ");
+    if (nameParts.length > 1) {
+      return `مرحباً بك، ${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
+    }
+    return `مرحباً بك، ${fullName}`;
+  };
 
 
   return (
@@ -71,7 +89,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-bold tracking-tight text-primary">
             شبكات
           </h1>
-          <p className="text-muted-foreground">مرحبا بك</p>
+          <p className="text-muted-foreground">{formatDisplayName(lastUserName)}</p>
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
           <CardHeader className="space-y-1 text-center">

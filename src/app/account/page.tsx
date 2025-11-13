@@ -76,6 +76,9 @@ export default function AccountPage() {
   
   const handleLogout = async () => {
     try {
+      if (customer?.name) {
+        localStorage.setItem('lastUserName', customer.name); // Store the name on logout
+      }
       await signOut(auth);
       toast({
         title: "تم تسجيل الخروج بنجاح",
