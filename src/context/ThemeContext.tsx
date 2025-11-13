@@ -11,14 +11,11 @@ interface ThemeContextType {
   setTheme: (theme: 'dark' | 'light') => void;
   primaryColor: string;
   setPrimaryColor: (hslColor: string) => void;
-  font: string;
-  setFont: (fontClass: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const DEFAULT_PRIMARY_COLOR = "210 100% 56%"; // Default blue
-const DEFAULT_FONT = "font-cairo";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkMode] = useState(false);
@@ -35,16 +32,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Use useDoc to listen for real-time theme changes
   const { data: themeData, isLoading: isThemeLoading } = useDoc(themeDocRef);
   
-  // The primary color and font states are now driven by Firestore data
+  // The primary color state is now driven by Firestore data
   const primaryColor = themeData?.primaryColor || DEFAULT_PRIMARY_COLOR;
-  const font = themeData?.font || DEFAULT_FONT;
 
-  // Apply the primary color and font to the document root whenever they change
+  // Apply the primary color to the document root whenever it changes
   useEffect(() => {
+    if(primaryColor) {
       document.documentElement.style.setProperty('--primary', primaryColor);
-      document.body.classList.remove('font-cairo', 'font-tajawal', 'font-almarai');
-      document.body.classList.add(font);
-  }, [primaryColor, font]);
+    }
+  }, [primaryColor]);
 
   // Initialize dark mode from localStorage
   useEffect(() => {
@@ -70,23 +66,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // setFont now writes to Firestore if the user is an admin
-  const setFont = useCallback((fontClass: string) => {
-    if (isAdmin && themeDocRef) {
-        // Optimistically update the UI
-        document.body.classList.remove('font-cairo', 'font-tajawal', 'font-almarai');
-        document.body.classList.add(fontClass);
-        // Write the new font to Firestore
-        setDoc(themeDocRef, { font: fontClass }, { merge: true }).catch(error => {
-            console.error("Failed to save font:", error);
-            // Revert optimistic update if write fails
-            document.body.classList.remove(fontClass);
-            document.body.classList.add(font); 
-        });
-    }
-  }, [isAdmin, themeDocRef, font]);
-
-
   // setPrimaryColor now writes to Firestore if the user is an admin
   const setPrimaryColor = useCallback((hslColor: string) => {
     if (isAdmin && themeDocRef) {
@@ -102,11 +81,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [isAdmin, themeDocRef, primaryColor]);
 
   // Wait for user to be checked before rendering children to avoid permission errors
-  if (isUserLoading) {
+  if (isUserLoading && !themeData) {
       return null;
   }
 
-  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor, font, setFont };
+  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor };
 
   return (
     <ThemeContext.Provider value={contextValue}>

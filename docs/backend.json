@@ -221,15 +221,10 @@
         "primaryColor": {
           "type": "string",
           "description": "The HSL value for the primary theme color."
-        },
-        "font": {
-            "type": "string",
-            "description": "The CSS class for the global application font."
         }
       },
       "required": [
-        "primaryColor",
-        "font"
+        "primaryColor"
       ]
     }
   },

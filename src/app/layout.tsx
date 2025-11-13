@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { FirebaseClientProvider } from "@/firebase";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Shabakat",
@@ -50,7 +51,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>
+      <body className={cn("font-cairo")}>
         <FirebaseClientProvider>
           <ThemeProvider>
             {children}
