@@ -8,7 +8,7 @@ export default function Loading() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex flex-col items-center justify-center gap-4">
         <Image
-          src="https://i.postimg.cc/0jKgvpzj/Untitled-1.jpg"
+          src="https://i.postimg.cc/76FCwnKs/44.png"
           alt="Shabakat Logo"
           width={200}
           height={100}

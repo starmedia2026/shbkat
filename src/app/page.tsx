@@ -95,7 +95,7 @@ export default function LoginPage() {
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-6 flex flex-col items-center gap-2">
             <Image
-                src="https://i.postimg.cc/0jKgvpzj/Untitled-1.jpg"
+                src="https://i.postimg.cc/76FCwnKs/44.png"
                 alt="Shabakat Logo"
                 width={200}
                 height={100}
