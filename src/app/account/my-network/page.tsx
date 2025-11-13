@@ -9,10 +9,11 @@ import {
   Save,
   X,
   ImageIcon,
-  Globe,
   Loader2,
   MapPin,
-  Phone
+  UploadCloud,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,8 +42,11 @@ import {
   } from "@/components/ui/alert-dialog";
 import { useNetworkOwner } from "@/hooks/useNetworkOwner";
 import Image from "next/image";
-import { useUser } from "@/firebase";
-import Link from 'next/link';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { Textarea } from "@/components/ui/textarea";
+import { writeBatch, collection, doc } from "firebase/firestore";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 
 interface Category {
@@ -91,7 +95,7 @@ export default function MyNetworkPage() {
     }
   }, [isOwner, isLoading, router]);
 
-  if (isLoading || isOwner === null || isOwner === false) {
+  if (isLoading || isOwner === null) {
     return <LoadingScreen />;
   }
 
@@ -129,7 +133,6 @@ function MyNetworkContent() {
         throw new Error('فشل في حفظ البيانات على الخادم');
       }
       
-      // IMPORTANT: Update local state after successful save
       setNetworks(updatedNetworks);
 
       toast({
@@ -160,7 +163,7 @@ function MyNetworkContent() {
     const newId = `new-network-${Date.now()}`;
     const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: user?.phoneNumber || "", categories: [] };
     const newNetworks = [...networks, newNetwork];
-    setNetworks(newNetworks); // Show the new network form immediately
+    setNetworks(newNetworks);
     setEditingNetworkId(newId);
     setEditingNetworkData({name: "", logo: "", address: "", ownerPhone: user?.phoneNumber || ""});
   };
@@ -242,7 +245,6 @@ function MyNetworkContent() {
                             <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(networkToDisplay.id)}><Save className="h-4 w-4"/></Button>
                             <Button size="icon" variant="ghost" onClick={() => {
                                 setEditingNetworkId(null);
-                                // If the network was new and not saved, remove it from the local state
                                 if (!initialNetworks.find(n => n.id === networkToDisplay.id)) {
                                     setNetworks(networks.filter(n => n.id !== networkToDisplay.id));
                                 }
@@ -290,6 +292,7 @@ function MyNetworkContent() {
                             <CategoryCard 
                                 key={category.id} 
                                 category={category} 
+                                networkId={networkToDisplay.id}
                                 onEdit={() => { setEditingCategoryId(category.id); setEditingCategory(category); }}
                                 onDelete={() => handleDeleteCategory(networkToDisplay.id, category.id)}
                             />
@@ -302,8 +305,8 @@ function MyNetworkContent() {
                 </CardContent>
                 </Card>
             ) : (
-                <Button variant="secondary" className="w-full" onClick={handleAddNetwork}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
+                <Button variant="secondary" className="w-full py-6 text-lg" onClick={handleAddNetwork}>
+                    <PlusCircle className="mr-2 h-5 w-5" />
                     إضافة شبكتي
                 </Button>
             )}
@@ -313,36 +316,154 @@ function MyNetworkContent() {
   );
 }
 
-const CategoryCard = ({ category, onEdit, onDelete }: { category: Category, onEdit: () => void, onDelete: () => void }) => (
-    <div className="p-3 border rounded-lg bg-background flex justify-between items-center">
-        <div>
-            <p className="font-semibold">{category.name}</p>
-            <p className="text-sm text-muted-foreground">
-                {category.price} ريال - {category.capacity} - {category.validity}
-            </p>
+const CategoryCard = ({ category, networkId, onEdit, onDelete }: { category: Category, networkId: string, onEdit: () => void, onDelete: () => void }) => {
+    const [isAddCardsOpen, setIsAddCardsOpen] = useState(false);
+    
+    return (
+        <Collapsible className="p-3 border rounded-lg bg-background">
+            <div className="flex justify-between items-center">
+                <div>
+                    <p className="font-semibold">{category.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {category.price} ريال - {category.capacity} - {category.validity}
+                    </p>
+                </div>
+                <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" onClick={onEdit}><Edit className="h-4 w-4"/></Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                هل أنت متأكد من رغبتك في حذف باقة "{category.name}"؟
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                            <AlertDialogAction onClick={onDelete}>تأكيد الحذف</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            </div>
+            <CollapsibleTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full mt-3">
+                    <UploadCloud className="ml-2 h-4 w-4" />
+                    إضافة كروت لهذه الباقة
+                    <ChevronDown className="h-4 w-4 mr-auto transition-transform data-[state=open]:rotate-180" />
+                </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <AddCardsForm networkId={networkId} categoryId={category.id} />
+            </CollapsibleContent>
+        </Collapsible>
+    );
+};
+
+const AddCardsForm = ({ networkId, categoryId }: { networkId: string, categoryId: string}) => {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [cardsInput, setCardsInput] = useState<string>("");
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+
+    const handleSaveCards = () => {
+        if (!cardsInput.trim()) {
+          toast({
+            variant: "destructive",
+            title: "بيانات ناقصة",
+            description: "الرجاء إدخال أرقام الكروت.",
+          });
+          return;
+        }
+    
+        const lines = cardsInput.trim().split("\n");
+        const cardsToSave = lines
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .map(line => ({ cardNumber: line }));
+    
+        if (cardsToSave.length === 0) {
+          toast({ variant: "destructive", title: "تنسيق غير صحيح", description: "لم يتم العثور على كروت صالحة. تأكد من أن كل سطر يحتوي على رقم كرت واحد." });
+          return;
+        }
+    
+        setIsSaving(true);
+        
+        if (!firestore) {
+            toast({ variant: "destructive", title: "خطأ", description: "خدمة قاعدة البيانات غير متوفرة." });
+            setIsSaving(false);
+            return;
+        }
+    
+        const batch = writeBatch(firestore);
+        const cardsCollection = collection(firestore, "cards");
+        const batchData: Record<string, any> = {};
+    
+        cardsToSave.forEach((card) => {
+            const cardRef = doc(cardsCollection, card.cardNumber);
+            const cardData = {
+              networkId: networkId,
+              categoryId: categoryId,
+              status: "available",
+              createdAt: new Date().toISOString(),
+            };
+            batch.set(cardRef, cardData);
+            batchData[cardRef.path] = cardData;
+        });
+    
+        batch.commit().then(() => {
+            toast({
+                title: "نجاح",
+                description: `تمت إضافة ${cardsToSave.length} كرت بنجاح.`,
+            });
+            setCardsInput("");
+        }).catch((serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: 'cards collection (batch write)',
+                operation: 'write',
+                requestResourceData: batchData
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }).finally(() => {
+            setIsSaving(false);
+        });
+      };
+
+    return (
+        <div className="mt-4 pt-4 border-t space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor={`cards-input-${categoryId}`}>
+                أرقام الكروت (كل رقم في سطر)
+              </Label>
+              <Textarea
+                id={`cards-input-${categoryId}`}
+                placeholder="1234567890123
+5678901234567
+..."
+                className="min-h-[150px] text-left bg-background"
+                dir="ltr"
+                value={cardsInput}
+                onChange={(e) => setCardsInput(e.target.value)}
+              />
+            </div>
+            <Button
+              onClick={handleSaveCards}
+              disabled={isSaving}
+              className="w-full"
+            >
+              {isSaving ? (
+                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="ml-2 h-4 w-4" />
+              )}
+              {isSaving ? "جاري الحفظ..." : `حفظ ${cardsInput.trim().split("\n").filter(Boolean).length} كروت`}
+            </Button>
         </div>
-        <div className="flex gap-1">
-            <Button size="icon" variant="ghost" onClick={onEdit}><Edit className="h-4 w-4"/></Button>
-             <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                    <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        هل أنت متأكد من رغبتك في حذف باقة "{category.name}"؟
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDelete}>تأكيد الحذف</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </div>
-    </div>
-);
+    );
+};
 
 const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { category: any, setCategory: any, onSave: () => void, onCancel: () => void }) => {
     
@@ -377,7 +498,5 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
-
-    
 
     
