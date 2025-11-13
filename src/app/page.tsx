@@ -42,8 +42,8 @@ export default function LoginPage() {
       router.push("/home");
     } catch (error: any) {
       console.error("Login error:", error);
-      let errorMessage = "فشل تسجيل الدخول. يرجى التحقق من رقم الهاتف أو كلمة المرور.";
-       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      let errorMessage = "فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.";
+      if (error.code === 'auth/invalid-credential') {
         errorMessage = "رقم الهاتف أو كلمة المرور غير صحيحة.";
       }
        setError(errorMessage);
