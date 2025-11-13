@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useAdmin } from "@/hooks/useAdmin";
 
@@ -21,15 +21,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkMode] = useState(false);
   const firestore = useFirestore();
   const { isAdmin } = useAdmin();
+  const { user, isUserLoading } = useUser(); // Get user auth state
 
   // Firestore reference to the global theme document
   const themeDocRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    // Only create the reference if firestore is available and the user is logged in
+    if (!firestore || !user) return null;
     return doc(firestore, "settings", "theme");
-  }, [firestore]);
+  }, [firestore, user]);
 
   // Use useDoc to listen for real-time theme changes
-  const { data: themeData, isLoading: isThemeLoading } = useDoc(themeDocRef);
+  const { data: themeData } = useDoc(themeDocRef);
   
   // The primary color state is now driven by Firestore data
   const primaryColor = themeData?.primaryColor || DEFAULT_PRIMARY_COLOR;
