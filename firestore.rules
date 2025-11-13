@@ -71,23 +71,24 @@ service cloud.firestore {
         // Allow creating a notification for self or for another user (as part of a transfer)
         allow create: if isSignedIn();
         // Allow user/admin to mark notifications as read
-        allow update: if isOwner(customerId) || isAdmin();
+        allow update: if (isOwner(customerId) || isAdmin()) && request.resource.data.keys().hasOnly(['read']);
       }
     }
 
     match /cards/{cardId} {
         // Admin can do anything.
-        allow create, delete, list, update: if isAdmin();
+        allow create, delete, list: if isAdmin();
         // Any signed-in user can read card data (needed to find an available card).
         allow read: if isSignedIn();
         // Allow updates only for the specific 'purchase' transaction.
         // User must be signed in.
         // Card must be transitioning from 'available' to 'used'.
         // The 'usedBy' field must be the user's own UID.
-        allow update: if isSignedIn() && 
+        allow update: if (isSignedIn() && 
           request.resource.data.status == 'used' &&
           resource.data.status == 'available' &&
-          request.resource.data.usedBy == request.auth.uid;
+          request.resource.data.usedBy == request.auth.uid) || isAdmin();
     }
   }
 }
+
