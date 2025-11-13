@@ -89,7 +89,7 @@ export default function MyNetworkPage() {
     }
   }, [isOwner, isLoading, router]);
 
-  if (isLoading || isOwner === null) {
+  if (isLoading || isOwner === null || isOwner === false) {
     return <LoadingScreen />;
   }
 
@@ -127,7 +127,7 @@ function MyNetworkContent() {
         throw new Error('فشل في حفظ البيانات على الخادم');
       }
       
-      // Update local state after successful save
+      // IMPORTANT: Update local state after successful save
       setNetworks(updatedNetworks);
 
       toast({
@@ -147,7 +147,6 @@ function MyNetworkContent() {
   }, [toast]);
   
   const updateAndSave = (newNetworks: Network[]) => {
-    // No need to call setNetworks here, handleSave will do it
     handleSave(newNetworks);
   };
   
@@ -204,7 +203,7 @@ function MyNetworkContent() {
     updateAndSave(newNetworks);
   };
   
-  const networkToDisplay = ownerNetwork || (editingNetworkId ? networks.find(n => n.id === editingNetworkId) : null);
+  const networkToDisplay = ownerNetwork;
 
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
@@ -241,8 +240,7 @@ function MyNetworkContent() {
                             <Button size="icon" variant="ghost" onClick={() => {
                                 setEditingNetworkId(null);
                                 // If the network was new and not saved, remove it from the local state
-                                const originalNetwork = initialNetworks.find(n => n.id === networkToDisplay.id);
-                                if (!originalNetwork) {
+                                if (!initialNetworks.find(n => n.id === networkToDisplay.id)) {
                                     setNetworks(networks.filter(n => n.id !== networkToDisplay.id));
                                 }
                             }}><X className="h-4 w-4"/></Button>
