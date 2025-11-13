@@ -337,28 +337,32 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
                 <DialogHeader>
                     <DialogTitle>تم الشراء بنجاح!</DialogTitle>
                     <DialogDescription>
-                        اضغط على رقم الكرت لنسخه، أو أرسله عبر رسالة نصية.
+                        يمكنك الآن نسخ رقم الكرت أو إرساله عبر رسالة نصية.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                    <Label htmlFor="card-number">رقم الكرت</Label>
-                    <div className="mt-2">
-                        <Input
-                            id="card-number"
-                            value={card.cardNumber}
-                            readOnly
-                            className="text-lg font-mono tracking-wider text-center cursor-pointer"
-                            dir="ltr"
-                            onClick={copyToClipboard}
-                        />
+                <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="card-number">رقم الكرت</Label>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                id="card-number"
+                                value={card.cardNumber}
+                                readOnly
+                                className="text-base font-mono tracking-wider text-center bg-muted"
+                                dir="ltr"
+                            />
+                            <Button type="button" size="icon" variant="outline" onClick={copyToClipboard}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
-                </div>
-                <DialogFooter className="flex-col sm:flex-row gap-2">
-                    <Button type="button" variant="secondary" onClick={handleSendSms}>
+                     <Button type="button" className="w-full" onClick={handleSendSms}>
                        <Send className="ml-2 h-4 w-4"/>
-                       ارسال الى SMS
+                       ارسال SMS
                     </Button>
-                    <Button type="button" onClick={onClose}>إغلاق</Button>
+                </div>
+                <DialogFooter>
+                    <Button type="button" variant="secondary" className="w-full" onClick={onClose}>إغلاق</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
