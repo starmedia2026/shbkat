@@ -14,6 +14,7 @@ import {
   MapPin,
   Users,
   Wifi,
+  Edit,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -195,6 +196,11 @@ export default function AccountPage() {
                   />
                 </>
               )}
+               <AccountItem
+                icon={Edit}
+                label="تعديل الملف الشخصي"
+                href="/account/edit-profile"
+              />
               <AccountItem
                 icon={Shield}
                 label="الشروط والأحكام"
