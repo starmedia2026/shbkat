@@ -8,7 +8,8 @@ import {
   Coins,
   Edit,
   RefreshCw,
-  Copy
+  Copy,
+  KeyRound
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -258,6 +259,9 @@ function CustomerCard({ customer }: { customer: Customer }) {
                             {customer.balance.toLocaleString()}
                              <span className="text-xs">ريال يمني</span>
                         </p>
+                         {customer.requiresPasswordChange && (
+                            <p className="text-xs text-yellow-500 font-bold mt-1">يتطلب تغيير كلمة السر</p>
+                        )}
                     </div>
                 </div>
                  <div className="mt-4 pt-4 border-t">
@@ -343,6 +347,31 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
             setIsSaving(false);
         }
     };
+    
+    const handleForcePasswordChange = async () => {
+        setIsSaving(true);
+        try {
+            if (!firestore) throw new Error("Firestore not available");
+            const customerDocRef = doc(firestore, "customers", customer.id);
+            await updateDoc(customerDocRef, { requiresPasswordChange: true });
+            toast({
+                title: "تم بنجاح",
+                description: `تم وضع علامة على حساب ${customer.name} لفرض تغيير كلمة المرور عند تسجيل الدخول التالي.`,
+            });
+            setIsOpen(false);
+        } catch (error) {
+            console.error("Error forcing password change:", error);
+             const contextualError = new FirestorePermissionError({
+                operation: 'update',
+                path: `customers/${customer.id}`,
+                requestResourceData: { requiresPasswordChange: true }
+            });
+            errorEmitter.emit('permission-error', contextualError);
+            toast({ variant: "destructive", title: "فشل الإجراء", description: "حدث خطأ أثناء محاولة فرض تغيير كلمة المرور." });
+        } finally {
+            setIsSaving(false);
+        }
+    }
 
 
     return (
@@ -357,7 +386,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
                 <DialogHeader>
                     <DialogTitle>تعديل حساب: {customer.name}</DialogTitle>
                     <DialogDescription>
-                        يمكنك تعديل بيانات العميل. لإعادة تعيين كلمة المرور، يرجى توجيه العميل إلى صفحة "نسيت كلمة المرور".
+                        يمكنك تعديل بيانات العميل أو فرض تغيير كلمة المرور عند تسجيل الدخول التالي.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -370,13 +399,33 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
                         <Input id="phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="col-span-3" dir="ltr" />
                     </div>
                 </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="secondary">إلغاء</Button>
-                    </DialogClose>
-                    <Button type="button" onClick={handleSaveChanges} disabled={isSaving}>
+                <DialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-2">
+                     <Button type="button" onClick={handleSaveChanges} disabled={isSaving}>
                         {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
                     </Button>
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button type="button" variant="destructive" disabled={isSaving}>
+                                <KeyRound className="h-4 w-4 ml-2"/>
+                                إعادة تعيين كلمة المرور
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>تأكيد إعادة التعيين</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    سيؤدي هذا إلى مطالبة المستخدم بتغيير كلمة المرور الخاصة به عند تسجيل الدخول التالي. يجب عليك إعادة تعيين كلمة المرور يدويًا من لوحة تحكم Firebase أولاً. هل أنت متأكد؟
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleForcePasswordChange}>نعم، قم بالفرض</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary" className="mt-2 sm:mt-0">إلغاء</Button>
+                    </DialogClose>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
