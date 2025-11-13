@@ -92,9 +92,8 @@ service cloud.firestore {
     }
 
     match /settings/navigation/items/{itemId} {
-        // Any signed-in user can read the navigation items.
-        allow get, list: if isSignedIn();
-        // Only admin can create, update, or delete navigation items.
+        allow list: if isSignedIn();
+        allow get: if isSignedIn();
         allow write: if isAdmin();
     }
     
