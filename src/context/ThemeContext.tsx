@@ -21,14 +21,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkMode] = useState(false);
   const firestore = useFirestore();
   const { isAdmin } = useAdmin();
-  const { user, isUserLoading } = useUser(); // Get user auth state
 
   // Firestore reference to the global theme document
   const themeDocRef = useMemoFirebase(() => {
-    // Only create the reference if firestore is available and the user is logged in
-    if (!firestore || !user) return null;
+    // We create the reference regardless of auth state now
+    if (!firestore) return null;
     return doc(firestore, "settings", "theme");
-  }, [firestore, user]);
+  }, [firestore]);
 
   // Use useDoc to listen for real-time theme changes
   const { data: themeData } = useDoc(themeDocRef);
@@ -38,7 +37,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Apply the primary color to the document root whenever it changes
   useEffect(() => {
-    document.documentElement.style.setProperty('--primary', primaryColor);
+    if (primaryColor) {
+      document.documentElement.style.setProperty('--primary', primaryColor);
+    }
   }, [primaryColor]);
 
 

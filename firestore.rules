@@ -84,8 +84,8 @@ service cloud.firestore {
     }
 
     match /settings/theme {
-        // Any signed-in user can read the theme.
-        allow get: if isSignedIn();
+        // Allow anyone (including signed-out users) to read the theme.
+        allow get: if true;
         // Only the admin can change the theme.
         allow write: if isAdmin();
     }
