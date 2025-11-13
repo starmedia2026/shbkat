@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useFirestore } from "@/firebase";
+import { useAuth, useFirestore, setDocumentNonBlocking, errorEmitter } from "@/firebase";
 import { useAdmin } from "@/hooks/useAdmin";
 import { doc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/card";
 import { ArrowLeft, Save, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 // This page should only be accessible by admins.
 // We'll use a wrapper component to enforce this.
@@ -101,52 +101,89 @@ function CreateUserPage() {
     const email = `${phone}@shabakat.app`;
 
     try {
-      // We can't create another user with the same email in the same auth instance
-      // The admin should use a separate process or a backend function for this.
-      // For this client-side example, we'll assume this can lead to an error if the user exists.
-      // A more robust solution would use Firebase Functions (Admin SDK).
-      
-      // Let's check if user exists. This is not fully secure from client-side but better than nothing.
-      // NOTE: This approach is NOT ideal. An Admin SDK backend is the proper way.
-      // We'll simulate the creation process assuming the admin has the rights.
-      
-      // The correct approach requires a backend function (Firebase Function)
-      // that uses the Admin SDK to create users. Since we can't do that here,
-      // this implementation will fail if the admin is logged in, as you cannot
-      // create a new user while another is in session with the client SDK.
-      
-      // For demonstration, we'll show a toast and log the intended action.
-      
-      toast({
-        title: "محاكاة إنشاء مستخدم",
-        description: "في تطبيق حقيقي، ستستخدم وظيفة خلفية (Backend Function) لإنشاء المستخدم.",
-      });
+      // NOTE: This approach has limitations. Creating a user on the client-side
+      // while another user (the admin) is logged in is not standard practice
+      // and might be blocked by some Firebase client SDK configurations or future updates.
+      // A Firebase Function with the Admin SDK is the robust, recommended approach.
+      // For this context, we assume the rules allow this and proceed with client-side creation.
 
-      console.log("Intended action: Create user with email:", email);
-      console.log("This requires a Firebase Function with Admin SDK to work correctly.");
+      // We cannot await `createUserWithEmailAndPassword` as it would sign in the new user
+      // and sign out the admin. We have to rely on the fact that an error will be thrown
+      // if the user already exists. We then create the user document with a placeholder UID
+      // that we hope matches. THIS IS NOT IDEAL. The proper fix is a backend function.
 
-      // In a real scenario, you'd get the new user's UID from the backend function.
-      // Let's generate a placeholder UID for the sake of setting the document.
-      const newUserId = `placeholder_${Date.now()}`;
-      
       const customerData = {
-        id: newUserId, // This would be the real UID from the created user
+        // We don't know the UID yet, so we have to create a placeholder.
+        // This is a major flaw in the client-side approach. A backend function would return the UID.
+        // For now, let's assume security rules will enforce id == uid on write.
+        // The user document will be created by the user themselves on first login if not present.
+        id: "will-be-set-by-rules-or-trigger",
         name: name,
         phoneNumber: phone,
         location: location,
         balance: 0,
         accountNumber: Math.random().toString().slice(2, 12),
-        requiresPasswordChange: true, // Force password change on first login
+        requiresPasswordChange: true,
       };
+
+      // This is a workaround. We will create the user, but we won't get the UID back directly
+      // in a way that lets us create their document. The security rules MUST enforce that
+      // a user can create their own document with the correct ID.
+      // `createUserWithEmailAndPassword` is called but not awaited.
+      // The admin will remain logged in.
+       
+       // A Firebase Function is the real solution. As a workaround, we'll try to create the user
+       // and then we must manually create the document. This is insecure and not recommended.
+       
+       // This demo will now attempt to create the auth user, then create the document.
+       // This will likely fail due to client-side SDK limitations.
+       
+       // The best "workaround" without a backend function is to just create the document
+       // and have a process for the user to be created in auth separately.
+       // But the user wants it to be created.
+       
+       // The correct way with a Cloud Function is commented out below:
+       /*
+        const createUserFunction = httpsCallable(functions, 'createUser');
+        await createUserFunction({
+            email: email,
+            password: password,
+            displayName: name,
+            phoneNumber: phone,
+            location: location
+        });
+       */
+       
+       // Given the constraints, let's try a different approach.
+       // We can't create an auth user for *someone else* on the client.
+       // The original code was correct in its assessment.
+       // The only thing an admin can do from the client is create the *database record*.
+       // The user would then have to be created in the Firebase Console manually.
+       
+       // Let's modify the flow to just create the Firestore document, and the admin
+       // will be responsible for creating the auth user in the Firebase Console.
+       // We will generate a random ID for the document, which is not ideal, but it's the only way.
+       // The admin then has to create an auth user with this specific UID.
+
+      const userDocRef = doc(firestore, "customers", phone); // Use phone as a temporary unique ID
       
-      const userDocRef = doc(firestore, "customers", newUserId);
-      
-      // We are just simulating this write.
-      // setDocumentNonBlocking(userDocRef, customerData, { merge: false });
-      
+      const newCustomerData = {
+          id: phone, // This is temporary, admin MUST create user with this UID
+          name: name,
+          phoneNumber: phone,
+          location: location,
+          balance: 0,
+          accountNumber: Math.random().toString().slice(2, 12),
+          requiresPasswordChange: true,
+      };
+
+      // This will create the user document in firestore.
+      setDocumentNonBlocking(userDocRef, newCustomerData, { merge: false });
+
       toast({
-        title: "تم إنشاء الحساب (محاكاة)",
-        description: `تم إنشاء حساب ${name}. يجب عليه تغيير كلمة المرور عند أول دخول.`,
+        title: "تم إنشاء سجل العميل",
+        description: `تم حفظ بيانات ${name}. يجب الآن إنشاء حساب المصادقة له يدويًا في لوحة تحكم Firebase بنفس رقم الهاتف كـ UID.`,
+        duration: 9000,
       });
 
       router.push("/account/user-management");
@@ -154,12 +191,16 @@ function CreateUserPage() {
     } catch (error: any) {
       console.error("User creation error:", error);
       let errorMessage = "حدث خطأ غير متوقع.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "رقم الهاتف هذا مسجل بالفعل.";
-      }
+       const permissionError = new FirestorePermissionError({
+          path: `customers/${phone}`,
+          operation: 'create',
+          requestResourceData: { name, phone, location }
+      });
+      errorEmitter.emit('permission-error', permissionError);
+
       toast({
         variant: "destructive",
-        title: "فشل إنشاء الحساب",
+        title: "فشل إنشاء سجل العميل",
         description: errorMessage,
       });
     } finally {
@@ -190,7 +231,7 @@ function CreateUserPage() {
           <CardHeader>
             <CardTitle className="text-xl">بيانات العميل</CardTitle>
             <CardDescription>
-              أدخل معلومات العميل لإنشاء حسابه. سيُطلب منه تغيير كلمة المرور عند أول تسجيل دخول.
+              أدخل معلومات العميل لإنشاء سجله. سيطلب منه تغيير كلمة المرور عند أول دخول بعد إنشاء حسابه في لوحة التحكم.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleCreateUser}>
@@ -200,7 +241,7 @@ function CreateUserPage() {
                     <Input id="name" placeholder="الاسم الثلاثي" required value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                 <div className="space-y-2 text-right">
-                    <Label htmlFor="phone">رقم الهاتف</Label>
+                    <Label htmlFor="phone">رقم الهاتف (سيكون هو الـ UID)</Label>
                     <Input
                     id="phone"
                     type="tel"
@@ -212,7 +253,7 @@ function CreateUserPage() {
                     />
                 </div>
                 <div className="space-y-2 text-right">
-                    <Label htmlFor="password">كلمة المرور الأولية</Label>
+                    <Label htmlFor="password">كلمة المرور الأولية (للتذكير فقط)</Label>
                     <div className="relative">
                     <Input 
                         id="password" 
@@ -257,7 +298,7 @@ function CreateUserPage() {
                 disabled={isSaving}
               >
                 <Save className="ml-2 h-4 w-4" />
-                {isSaving ? "جاري الإنشاء..." : "إنشاء الحساب"}
+                {isSaving ? "جاري إنشاء السجل..." : "إنشاء سجل العميل"}
               </Button>
             </CardFooter>
           </form>
