@@ -53,12 +53,12 @@ export default function NetworkManagementPage() {
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
   useEffect(() => {
-    if (!isAdminLoading && !isAdmin) {
+    if (!isAdminLoading && isAdmin === false) {
       router.replace("/account");
     }
   }, [isAdmin, isAdminLoading, router]);
 
-  if (isAdminLoading || !isAdmin) {
+  if (isAdminLoading || isAdmin === null) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="p-4 flex items-center justify-between relative">
@@ -328,5 +328,3 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
-
-    
