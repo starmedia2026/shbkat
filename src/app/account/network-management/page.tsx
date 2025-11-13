@@ -42,7 +42,6 @@ import {
 import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
 import { useNetworkOwner } from "@/hooks/useNetworkOwner";
-import { Skeleton } from "@/components/ui/skeleton";
 
 
 interface Category {
@@ -98,7 +97,7 @@ export default function NetworkManagementPage() {
 
   useEffect(() => {
     if (isAuthorizing) {
-      setIsAuthorized(null); // Still checking
+      setIsAuthorized(null);
       return;
     }
     
@@ -136,7 +135,6 @@ function NetworkManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | nul
       return networks;
     }
     if (isOwner && ownedNetwork) {
-      // An owner can see their own network.
       return networks.filter(n => n.id === ownedNetwork.id);
     }
     return [];
@@ -184,7 +182,7 @@ function NetworkManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | nul
     const newId = `new-network-${Date.now()}`;
     const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: "", categories: [] };
     const newNetworks = [...networks, newNetwork];
-    setNetworks(newNetworks); // Update state locally first
+    setNetworks(newNetworks);
     setEditingNetworkId(newId);
     setEditingNetworkData({name: "", logo: "", address: "", ownerPhone: ""});
   };
@@ -208,7 +206,6 @@ function NetworkManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | nul
     setEditingCategoryId(newId);
     setEditingCategory(newCategory);
 
-    // Add placeholder to the list to show the form
     const newNetworks = networks.map(n => n.id === networkId ? { ...n, categories: [...n.categories, newCategory] } : n)
     setNetworks(newNetworks);
   };
@@ -260,7 +257,7 @@ function NetworkManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | nul
         title: "تمت الإضافة والحفظ",
         description: `تمت إضافة فئة "${globalCategory.name}" لجميع الشبكات.`,
     });
-    setGlobalCategory(initialGlobalCategoryState); // Reset form
+    setGlobalCategory(initialGlobalCategoryState);
   };
 
 
@@ -322,7 +319,6 @@ function NetworkManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | nul
                             <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(network.id)}><Save className="h-4 w-4"/></Button>
                             <Button size="icon" variant="ghost" onClick={() => {
                                 setEditingNetworkId(null);
-                                // If the name is empty, it means it was a new network that was cancelled, so remove it.
                                 if (network.name === "") {
                                     setNetworks(networks.filter(n => n.id !== network.id));
                                 }
@@ -386,7 +382,6 @@ function NetworkManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | nul
                                 setCategory={setEditingCategory}
                                 onSave={() => handleUpdateCategory(network.id)}
                                 onCancel={() => {
-                                    // If it was a new category, remove the placeholder
                                     if (category.name === "") setNetworks(networks.map(n => n.id === network.id ? { ...n, categories: n.categories.filter(c => c.id !== category.id)} : n))
                                     setEditingCategoryId(null);
                                     setEditingCategory(null);
