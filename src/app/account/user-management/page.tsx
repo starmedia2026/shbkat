@@ -9,7 +9,8 @@ import {
   Edit,
   RefreshCw,
   Copy,
-  KeyRound
+  KeyRound,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -298,7 +299,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
                             </AlertDialogContent>
                         </AlertDialog>
                         <EditCustomerDialog customer={customer} />
-                         <PasswordResetDialog customer={customer} />
+                         <PasswordResetInfoDialog />
                     </div>
                 </div>
             </CardContent>
@@ -397,93 +398,55 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     );
 }
 
-
-function PasswordResetDialog({ customer }: { customer: Customer }) {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-    const [isSaving, setIsSaving] = useState(false);
-    const [newTempPassword, setNewTempPassword] = useState('');
-
-    const generateRandomPassword = () => {
-        const password = Math.random().toString(36).slice(-8);
-        setNewTempPassword(password);
-    };
-
-    const copyToClipboard = () => {
-        if (!newTempPassword) return;
-        navigator.clipboard.writeText(newTempPassword);
-        toast({ title: "تم النسخ", description: "تم نسخ كلمة المرور المؤقتة." });
-    };
-
-    const handleForcePasswordChange = async () => {
-        setIsSaving(true);
-        try {
-            if (!firestore) throw new Error("Firestore not available");
-            const customerDocRef = doc(firestore, "customers", customer.id);
-            await updateDoc(customerDocRef, { requiresPasswordChange: true });
-            toast({
-                title: "تم بنجاح",
-                description: `تم وضع علامة على حساب ${customer.name} لفرض تغيير كلمة المرور.`,
-            });
-        } catch (error) {
-            console.error("Error forcing password change:", error);
-            const contextualError = new FirestorePermissionError({
-                operation: 'update',
-                path: `customers/${customer.id}`,
-                requestResourceData: { requiresPasswordChange: true }
-            });
-            errorEmitter.emit('permission-error', contextualError);
-            toast({ variant: "destructive", title: "فشل الإجراء", description: "حدث خطأ أثناء محاولة فرض تغيير كلمة المرور." });
-        } finally {
-            setIsSaving(false);
-        }
-    }
-
+function PasswordResetInfoDialog() {
     return (
-        <AlertDialog onOpenChange={(open) => open && generateRandomPassword()}>
-            <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="flex-grow">
-                    <KeyRound className="h-4 w-4 ml-2"/>
-                    إعادة تعيين
-                </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>إعادة تعيين كلمة المرور لـ {customer.name}</AlertDialogTitle>
-                    <AlertDialogDescription asChild>
-                        <div>
-                            <p>سيؤدي هذا الإجراء إلى وضع علامة على حساب المستخدم لفرض تغيير كلمة المرور عند تسجيل الدخول التالي.</p>
-                            <div className="my-4 space-y-2">
-                                <Label>كلمة المرور المؤقتة الجديدة:</Label>
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        readOnly
-                                        value={newTempPassword}
-                                        className="font-mono tracking-widest"
-                                        dir="ltr"
-                                    />
-                                    <Button variant="outline" size="icon" onClick={copyToClipboard} disabled={!newTempPassword}>
-                                        <Copy className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <p className="font-bold mt-2">الخطوات التالية المطلوبة منك:</p>
-                            <ol className="list-decimal list-inside mt-1 text-sm text-muted-foreground">
-                                <li>**انسخ** كلمة المرور المؤقتة أعلاه.</li>
-                                <li>اذهب إلى **لوحة تحكم Firebase** وأعد تعيين كلمة المرور للمستخدم يدويًا باستخدام الكلمة المنسوخة.</li>
-                                <li>أرسل كلمة المرور المؤقتة الجديدة للمستخدم.</li>
-                                <li>اضغط على "تأكيد وبدء العملية" أدناه.</li>
-                            </ol>
-                        </div>
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleForcePasswordChange} disabled={isSaving}>
-                        {isSaving ? "جاري التأكيد..." : "تأكيد وبدء العملية"}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" className="flex-grow">
+            <KeyRound className="h-4 w-4 ml-2" />
+            إعادة تعيين
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5" />
+              تعليمات إعادة تعيين كلمة المرور
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 pt-2 text-right">
+                <p>
+                  بسبب قيود الأمان، لا يمكن إعادة تعيين كلمة المرور مباشرة من
+                  هنا. يرجى اتباع الخطوات التالية يدويًا:
+                </p>
+                <ol className="list-decimal list-inside space-y-2 text-sm bg-muted p-3 rounded-md">
+                  <li>
+                    اذهب إلى لوحة تحكم Firebase قسم{" "}
+                    <strong>Authentication</strong>.
+                  </li>
+                  <li>
+                    <strong>احذف</strong> حساب المستخدم المطلوب.
+                  </li>
+                  <li>اطلب من المستخدم <strong>التسجيل مرة أخرى</strong> بنفس رقم هاتفه.</li>
+                  <li>
+                    بعد تسجيله، اذهب إلى قسم <strong>Firestore Database</strong>،
+                    وابحث عن سجله القديم وانسخ بياناته (مثل الرصيد).
+                  </li>
+                  <li>
+                    ابحث عن سجله الجديد و<strong>ألصق البيانات</strong> التي نسختها.
+                  </li>
+                </ol>
+                <p className="text-xs text-muted-foreground pt-2">
+                  نعتذر عن هذه العملية اليدوية، لكنها ضرورية لضمان أمان
+                  الحسابات.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>فهمت</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     );
-}
+  }
