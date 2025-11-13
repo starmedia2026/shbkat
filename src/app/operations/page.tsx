@@ -107,8 +107,8 @@ function OperationCard({ operation }: { operation: Operation }) {
               </div>
             </div>
             <div className="text-left flex-shrink-0">
-              <p className={`font-bold text-sm ${isIncome ? 'text-green-500' : 'text-red-500'}`} dir="ltr">
-                {isIncome ? '+' : ''}{operation.amount.toLocaleString('en-US')} ريال
+              <p className={`font-bold text-sm ${isIncome ? 'text-green-500' : 'text-red-500'}`} dir="rtl">
+                ريال {isIncome ? '+' : ''}{operation.amount.toLocaleString('en-US')}
               </p>
               <p className="text-xs text-muted-foreground">
                 {format(new Date(operation.date), "d MMM yyyy, h:mm a", { locale: ar })}

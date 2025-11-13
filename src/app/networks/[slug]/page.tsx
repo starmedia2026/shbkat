@@ -259,8 +259,8 @@ function PackageCard({ category, networkId, networkName, isClient }: { category:
                     <div className="flex justify-between items-start">
                         <div>
                             <p className="font-semibold text-base">{category.name}</p>
-                            <p className="text-sm font-bold text-primary mt-1" dir="ltr">
-                                {isClient ? category.price.toLocaleString('en-US') : category.price} ريال يمني
+                            <p className="text-sm font-bold text-primary mt-1" dir="rtl">
+                                ريال يمني {isClient ? category.price.toLocaleString('en-US') : category.price}
                             </p>
                         </div>
                         <AlertDialog>
@@ -276,7 +276,7 @@ function PackageCard({ category, networkId, networkName, isClient }: { category:
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>تأكيد عملية الشراء</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        هل أنت متأكد من رغبتك في شراء "{category.name}" بمبلغ <span className="font-bold text-primary" dir="ltr">{isClient ? category.price.toLocaleString('en-US') : category.price}</span> ريال؟
+                                        هل أنت متأكد من رغبتك في شراء "{category.name}" بمبلغ <span className="font-bold text-primary" dir="ltr">{category.price.toLocaleString('en-US')} ريال</span>؟
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>

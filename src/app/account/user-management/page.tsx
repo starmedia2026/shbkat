@@ -267,9 +267,9 @@ function CustomerCard({ customer }: { customer: Customer }) {
                         </div>
                     </div>
                     <div className="text-left">
-                        <p className="font-bold text-sm text-green-500 flex items-center justify-end gap-1" dir="ltr">
-                            {customer.balance.toLocaleString('en-US')}
+                        <p className="font-bold text-sm text-green-500 flex items-center justify-end gap-1" dir="rtl">
                              <span className="text-xs">ريال يمني</span>
+                            {customer.balance.toLocaleString('en-US')}
                         </p>
                          {customer.requiresPasswordChange && (
                             <p className="text-xs text-yellow-500 font-bold mt-1">يتطلب تغيير كلمة السر</p>
