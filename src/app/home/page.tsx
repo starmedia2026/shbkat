@@ -16,7 +16,8 @@ import {
   Coins,
   ChevronLeft,
   Briefcase,
-  BarChart3
+  BarChart3,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,7 +32,6 @@ import { ar } from "date-fns/locale";
 import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import * as LucideIcons from 'lucide-react';
 import { useNetworkOwner } from "@/hooks/useNetworkOwner";
 
 
@@ -382,17 +382,20 @@ export default function HomePage() {
   );
 }
 
-const DefaultIconMap: { [key: string]: React.ElementType } = {
-  networks: Wifi,
-  transfer: Send,
-  "top-up": Wallet,
-  operations: History,
-  favorites: Heart,
-  contact: Phone,
-};
+function ServiceIcon({ id, className }: { id: string; className?: string }) {
+  const commonProps = { className: cn("h-7 w-7 text-primary", className) };
+  switch (id) {
+    case "networks": return <Wifi {...commonProps} />;
+    case "transfer": return <Send {...commonProps} />;
+    case "top-up": return <Wallet {...commonProps} />;
+    case "operations": return <History {...commonProps} />;
+    case "favorites": return <Heart {...commonProps} />;
+    case "contact": return <Phone {...commonProps} />;
+    default: return <HelpCircle {...commonProps} />;
+  }
+}
 
-function ServiceGridItem({ href, iconUrl, label, id, icon }: HomeService & { icon?: React.ElementType }) {
-    const Icon = icon || DefaultIconMap[id] || LucideIcons.HelpCircle;
+function ServiceGridItem({ href, iconUrl, label, id, icon: IconProp }: HomeService & { icon?: React.ElementType }) {
     
     return (
         <Link href={href} className="block">
@@ -401,8 +404,10 @@ function ServiceGridItem({ href, iconUrl, label, id, icon }: HomeService & { ico
                     <div className="p-3 rounded-lg bg-muted flex items-center justify-center h-12 w-12">
                         {iconUrl ? (
                             <Image src={iconUrl} alt={label} width={28} height={28} className="object-contain"/>
+                        ) : IconProp ? (
+                            <IconProp className="h-7 w-7 text-primary" />
                         ) : (
-                            <Icon className="h-7 w-7 text-primary" />
+                            <ServiceIcon id={id} />
                         )}
                     </div>
                     <p className="text-xs font-semibold mt-1 text-center">{label}</p>
@@ -440,3 +445,5 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
+
+    
