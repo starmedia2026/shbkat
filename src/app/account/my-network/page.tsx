@@ -42,6 +42,8 @@ import {
 import { useNetworkOwner } from "@/hooks/useNetworkOwner";
 import Image from "next/image";
 import { useUser } from "@/firebase";
+import Link from 'next/link';
+
 
 interface Category {
   id: string;
@@ -299,7 +301,7 @@ function MyNetworkContent() {
                 </CardContent>
                 </Card>
             ) : (
-                 <Button variant="secondary" className="w-full" onClick={handleAddNetwork}>
+                <Button variant="secondary" className="w-full" onClick={handleAddNetwork}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     إضافة شبكتي
                 </Button>
