@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const auth = useAuth();
   const { toast } = useToast();
@@ -32,6 +33,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
     const email = `${phone}@shabakat.app`;
 
     try {
@@ -41,9 +43,9 @@ export default function LoginPage() {
         });
       router.push("/home");
     } catch (error: any) {
-      console.error("Login error:", error);
       let errorMessage = "فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.";
-      if (error.code === 'auth/invalid-credential') {
+      // This is the most common error, so we make the message specific.
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
         errorMessage = "رقم الهاتف أو كلمة المرور غير صحيحة.";
       }
        setError(errorMessage);
@@ -52,6 +54,8 @@ export default function LoginPage() {
         title: "خطأ في تسجيل الدخول",
         description: errorMessage,
       });
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -82,6 +86,7 @@ export default function LoginPage() {
                   className="text-right"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
               <div className="grid gap-2 text-right">
@@ -95,6 +100,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pr-10"
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
@@ -113,11 +119,11 @@ export default function LoginPage() {
                   نسيت كلمة المرور؟
                 </Link>
               </div>
-               {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+               {error && <p className="text-destructive text-sm mt-2">{error}</p>}
             </CardContent>
             <CardFooter className="flex flex-col gap-4 p-6 pt-0">
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base">
-                دخول
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base" disabled={isLoading}>
+                {isLoading ? "جاري الدخول..." : "دخول"}
               </Button>
               <div className="text-xs text-muted-foreground">
                 ليس لديك حساب؟{" "}
