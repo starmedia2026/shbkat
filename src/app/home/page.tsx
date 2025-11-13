@@ -60,9 +60,28 @@ const services = [
 
 export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [greeting, setGreeting] = useState("مساءك جميل");
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+
+  useEffect(() => {
+    const getGreeting = () => {
+      const today = new Date();
+      const currentHour = today.getHours();
+
+      if (today.getDay() === 5) { // 5 corresponds to Friday
+        return "جمعة مباركة";
+      }
+
+      if (currentHour >= 4 && currentHour < 12) {
+        return "صباحك جميل";
+      }
+      return "مساءك جميل";
+    };
+
+    setGreeting(getGreeting());
+  }, []);
 
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -106,6 +125,9 @@ export default function HomePage() {
   const formatDisplayName = (fullName?: string): string => {
     if (!fullName) return "مستخدم جديد";
     const nameParts = fullName.trim().split(" ");
+    if (nameParts.length > 1) {
+      return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
+    }
     return nameParts[0] || "مستخدم";
   };
   
@@ -158,7 +180,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="text-right">
-            <h2 className="text-sm text-muted-foreground">مساءك جميل</h2>
+            <h2 className="text-sm text-muted-foreground">{greeting}</h2>
             {isLoading ? (
               <Skeleton className="h-6 w-32 mt-1" />
             ) : (
@@ -292,3 +314,5 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
+
+    
