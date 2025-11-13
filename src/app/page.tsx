@@ -36,6 +36,10 @@ export default function LoginPage() {
     if (storedName) {
       setLastUserName(storedName);
     }
+    const storedPhone = localStorage.getItem('lastUserPhone');
+    if (storedPhone) {
+      setPhone(storedPhone);
+    }
   }, []);
 
 
