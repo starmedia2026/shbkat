@@ -239,28 +239,31 @@ function CustomerCard({ customer }: { customer: Customer }) {
         });
     };
 
-    const handleDeleteCustomer = async () => {
+    const handleDeleteCustomer = () => {
         if (!firestore) {
             toast({ variant: "destructive", title: "خطأ", description: "خدمة قاعدة البيانات غير متوفرة." });
             return;
         }
-
+    
         const customerDocRef = doc(firestore, "customers", customer.id);
-        try {
-            await deleteDoc(customerDocRef);
+        
+        deleteDoc(customerDocRef).then(() => {
             toast({
                 title: "تم الحذف بنجاح",
                 description: `تم حذف بيانات العميل ${customer.name} من قاعدة البيانات.`,
             });
-        } catch (error) {
-            console.error("Error deleting customer:", error);
-            const contextualError = new FirestorePermissionError({
+        }).catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: customerDocRef.path,
                 operation: 'delete',
-                path: `customers/${customer.id}`,
             });
-            errorEmitter.emit('permission-error', contextualError);
-            toast({ variant: "destructive", title: "فشل الحذف", description: "حدث خطأ أثناء حذف بيانات العميل." });
-        }
+            errorEmitter.emit('permission-error', permissionError);
+            toast({
+                variant: "destructive",
+                title: "فشل الحذف",
+                description: "حدث خطأ أثناء محاولة حذف بيانات العميل.",
+            });
+        });
     };
 
 
@@ -324,7 +327,8 @@ function CustomerCard({ customer }: { customer: Customer }) {
                             </AlertDialogContent>
                         </AlertDialog>
                         <EditCustomerDialog customer={customer} />
-                         <PasswordResetInfoDialog />
+                        <PasswordResetInfoDialog customer={customer} />
+
                          <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button variant="destructive" className="flex-grow">
@@ -445,13 +449,11 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     );
 }
 
-function PasswordResetInfoDialog() {
+function PasswordResetInfoDialog({ customer }: { customer: Customer }) {
   const [passwordResetInitiated, setPasswordResetInitiated] = useState(false);
   const [newTempPassword, setNewTempPassword] = useState('');
   const { toast } = useToast();
   const firestore = useFirestore();
-  // This is a placeholder for the customer prop which should be passed into this component
-  const customer: Customer | null = null; 
 
   const handleInitiatePasswordReset = async () => {
       if (!customer || !firestore) {
@@ -461,14 +463,13 @@ function PasswordResetInfoDialog() {
       
       const tempPassword = Math.random().toString(36).slice(-8);
       setNewTempPassword(tempPassword);
-      setPasswordResetInitiated(true);
       
       const customerDocRef = doc(firestore, "customers", customer.id);
       try {
           await updateDoc(customerDocRef, { requiresPasswordChange: true });
+          setPasswordResetInitiated(true);
           toast({ title: "تم بدء العملية", description: "تم وضع علامة على الحساب. يرجى إكمال الخطوات التالية." });
       } catch (error) {
-          console.error("Error setting password change flag:", error);
           const contextualError = new FirestorePermissionError({
               operation: 'update',
               path: `customers/${customer.id}`,
@@ -484,8 +485,13 @@ function PasswordResetInfoDialog() {
       toast({ title: "تم النسخ", description: "تم نسخ كلمة المرور المؤقتة." });
   };
 
+  const resetState = () => {
+    setPasswordResetInitiated(false);
+    setNewTempPassword('');
+  }
+
   return (
-    <AlertDialog>
+    <AlertDialog onOpenChange={(open) => !open && resetState()}>
       <AlertDialogTrigger asChild>
         <Button variant="outline" className="flex-grow">
           <KeyRound className="h-4 w-4 ml-2" />
@@ -502,12 +508,15 @@ function PasswordResetInfoDialog() {
             <div className="space-y-3 pt-2 text-right">
               {passwordResetInitiated ? (
                  <>
-                    <p>الخطوة 1: انسخ كلمة المرور المؤقتة الجديدة.</p>
+                    <p className="font-bold">الخطوة 1: انسخ كلمة المرور المؤقتة الجديدة.</p>
                     <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
                         <Input readOnly value={newTempPassword} className="font-mono" dir="ltr"/>
                         <Button variant="ghost" size="icon" onClick={copyToClipboard}><Copy className="h-4 w-4"/></Button>
                     </div>
-                     <p>الخطوة 2: اذهب إلى لوحة تحكم Firebase وأعد تعيين كلمة مرور العميل باستخدام هذه الكلمة.</p>
+                     <p className="font-bold">الخطوة 2: اذهب إلى لوحة تحكم Firebase.</p>
+                     <p className="text-sm">
+                        اذهب إلى قسم <code className="font-mono bg-muted p-1 rounded-sm">Authentication</code>، ابحث عن المستخدم، وأعد تعيين كلمة المرور الخاصة به باستخدام الكلمة التي نسختها.
+                     </p>
                       <p className="text-xs text-muted-foreground pt-2">
                         بعد ذلك، أرسل كلمة المرور هذه للعميل ليتمكن من تسجيل الدخول وتعيين كلمة مرور جديدة.
                      </p>
@@ -515,17 +524,16 @@ function PasswordResetInfoDialog() {
               ) : (
                 <>
                   <p>
-                    هذه العملية ستضع علامة على حساب المستخدم لإجباره على تغيير كلمة المرور عند تسجيل الدخول التالي.
+                    هذه العملية من خطوتين. أولاً، سنضع علامة على حساب المستخدم لإجباره على تغيير كلمة المرور عند تسجيل الدخول التالي.
                   </p>
                    <ol className="list-decimal list-inside space-y-2 text-sm bg-muted p-3 rounded-md">
-                      <li>اضغط على "تأكيد وبدء العملية" لإنشاء كلمة مرور مؤقتة.</li>
-                      <li><strong>انسخ</strong> كلمة المرور المؤقتة التي ستظهر.</li>
-                      <li>اذهب إلى لوحة تحكم Firebase قسم <strong>Authentication</strong>.</li>
-                      <li>ابحث عن المستخدم وأعد تعيين كلمة المرور الخاصة به باستخدام الكلمة التي نسختها.</li>
-                      <li>أرسل كلمة المرور المؤقتة للمستخدم.</li>
+                      <li>اضغط على "تأكيد وبدء العملية" لإنشاء كلمة مرور مؤقتة ووضع علامة على الحساب.</li>
+                      <li><strong>انسخ</strong> كلمة المرور المؤقتة التي ستظهر لك.</li>
+                      <li>اذهب إلى لوحة تحكم Firebase وأعد تعيين كلمة مرور العميل يدويًا.</li>
+                      <li>أرسل كلمة المرور المؤقتة للعميل.</li>
                    </ol>
                   <p className="text-xs text-muted-foreground pt-2">
-                    هل أنت متأكد أنك تريد بدء عملية إعادة تعيين كلمة المرور؟
+                    هل أنت متأكد أنك تريد بدء عملية إعادة تعيين كلمة المرور لحساب "{customer.name}"؟
                   </p>
                 </>
               )}
@@ -546,3 +554,5 @@ function PasswordResetInfoDialog() {
     </AlertDialog>
   );
 }
+
+    
