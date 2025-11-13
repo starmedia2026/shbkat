@@ -43,7 +43,7 @@ service cloud.firestore {
       allow get: if isOwner(customerId) || isAdmin();
       allow list: if isAdmin();
 
-      allow create: if isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId;
+      allow create: if (isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId) || isAdmin();
       allow update: if isOwner(customerId) || isAdmin();
       allow delete: if isExistingOwner(customerId) || isAdmin();
 
