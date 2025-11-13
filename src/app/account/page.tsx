@@ -169,24 +169,32 @@ export default function AccountPage() {
   };
   
   const handleShare = async () => {
-    const shareUrl = appSettings?.shareLink || window.location.origin;
-    const shareData = {
+    const shareUrl = appSettings?.shareLink;
+    const shareData: ShareData = {
       title: "تطبيق شبكات",
       text: "اكتشف تطبيق شبكات لخدمات الاتصالات!",
-      url: shareUrl,
     };
+
+    if (shareUrl) {
+      shareData.url = shareUrl;
+    }
+
     try {
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
         // Fallback for browsers that don't support the Web Share API
-        navigator.clipboard.writeText(shareUrl);
+        navigator.clipboard.writeText(shareUrl || window.location.origin);
         toast({
           title: "تم نسخ الرابط",
           description: "تم نسخ رابط التطبيق إلى الحافظة. يمكنك مشاركته الآن!",
         });
       }
     } catch (error) {
+      // Don't show an error toast if the user cancels the share sheet
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
       console.error("Error sharing:", error);
       toast({
         variant: "destructive",
@@ -418,5 +426,6 @@ function AccountItem({
 
   return <li>{content}</li>;
 }
+
 
     
