@@ -1,6 +1,6 @@
 
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Bell,
   Eye,
@@ -26,10 +26,19 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import Image from "next/image";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 interface Notification {
     id: string;
     read: boolean;
+}
+
+interface Advert {
+    id: string;
+    imageUrl: string;
+    linkUrl?: string;
 }
 
 interface Operation {
@@ -47,7 +56,6 @@ const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; 
   purchase: { icon: CreditCard, color: "text-blue-500" },
 };
 
-
 const services = [
     { href: "/networks", icon: Wifi, label: "الشبكات" },
     { href: "/transfer", icon: Send, label: "تحويل" },
@@ -64,6 +72,7 @@ export default function HomePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const autoplay = useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
 
   useEffect(() => {
     const getGreeting = () => {
@@ -106,7 +115,6 @@ export default function HomePage() {
 
   const { data: notifications, isLoading: areNotificationsLoading } = useCollection<Notification>(notificationsQuery);
   
-  // Query for the last 4 operations
   const lastOperationsQuery = useMemoFirebase(() => {
       if (!firestore || !user?.uid) return null;
       return query(
@@ -118,6 +126,12 @@ export default function HomePage() {
 
   const { data: lastOperations, isLoading: areLastOperationsLoading } = useCollection<Operation>(lastOperationsQuery);
 
+  const advertsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, "adverts"), orderBy("createdAt", "desc"));
+  }, [firestore]);
+
+  const { data: adverts, isLoading: areAdvertsLoading } = useCollection<Advert>(advertsQuery);
 
   const isLoading = isUserLoading || isCustomerLoading;
   const hasNotifications = !areNotificationsLoading && notifications && notifications.length > 0;
@@ -217,12 +231,12 @@ export default function HomePage() {
               ) : (
                 <div className="text-3xl font-bold tracking-wider mt-2 w-full" dir="rtl">
                   {balanceVisible ? (
-                    <div className="flex items-baseline gap-x-2 justify-start">
-                       <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US')}</span>
+                    <div className="flex items-baseline gap-x-2 justify-end">
+                       <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US', {useGrouping: true})}</span>
                        <span className="text-sm font-normal">ريال يمني</span>
                     </div>
                   ) : (
-                    <div className="text-left">******</div>
+                    <div className="text-right">******</div>
                   )}
                 </div>
               )}
@@ -236,6 +250,39 @@ export default function HomePage() {
             ))}
         </div>
         
+        {/* Adverts Carousel */}
+        {areAdvertsLoading ? (
+            <Skeleton className="h-32 w-full rounded-lg" />
+        ) : adverts && adverts.length > 0 ? (
+            <Carousel 
+                className="w-full"
+                plugins={[autoplay.current]}
+                onMouseEnter={autoplay.current.stop}
+                onMouseLeave={autoplay.current.reset}
+                opts={{ loop: true }}
+            >
+                <CarouselContent>
+                    {adverts.map((ad) => (
+                        <CarouselItem key={ad.id}>
+                            <Card className="rounded-xl overflow-hidden shadow-lg">
+                                <CardContent className="p-0 aspect-video relative">
+                                    <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" className={cn(!ad.linkUrl && "pointer-events-none")}>
+                                        <Image
+                                            src={ad.imageUrl}
+                                            alt="Advertisement"
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 100vw, 33vw"
+                                        />
+                                    </a>
+                                </CardContent>
+                            </Card>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+            </Carousel>
+        ) : null}
+
         {/* Last Operations */}
         <div className="space-y-3">
             <div className="flex justify-between items-center px-2">
@@ -322,5 +369,3 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
-
-    

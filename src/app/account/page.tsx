@@ -18,6 +18,7 @@ import {
   CreditCard,
   BarChart3,
   Palette,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -258,6 +259,11 @@ export default function AccountPage() {
                     label="تقرير مبيعات الكروت"
                     href="/account/card-sales"
                   />
+                  <AccountItem
+                    icon={ImageIcon}
+                    label="إدارة الإعلانات"
+                    href="/account/ad-management"
+                  />
                 </>
               )}
               <AccountItem
@@ -337,5 +343,3 @@ function AccountItem({
     </li>
   );
 }
-
-    

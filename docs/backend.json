@@ -1,6 +1,30 @@
 
 {
   "entities": {
+    "Advert": {
+      "title": "Advert",
+      "description": "Represents an advertisement image for the home page carousel.",
+      "type": "object",
+      "properties": {
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the advertisement image."
+        },
+        "linkUrl": {
+          "type": "string",
+          "description": "Optional URL to navigate to when the ad is clicked."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp of when the advert was added."
+        }
+      },
+      "required": [
+        "imageUrl",
+        "createdAt"
+      ]
+    },
     "Card": {
       "title": "Card",
       "description": "Represents a scratch card for top-up.",
@@ -23,9 +47,9 @@
           ]
         },
         "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "The timestamp of when the card was added."
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp of when the card was added."
         },
         "usedAt": {
           "type": "string",
@@ -212,6 +236,22 @@
   "firestore": {
     "structure": [
       {
+        "path": "/adverts/{advertId}",
+        "definition": {
+          "entityName": "Advert",
+          "schema": {
+            "$ref": "#/backend/entities/Advert"
+          },
+          "description": "Stores advertisement data for the home page carousel.",
+          "params": [
+            {
+              "name": "advertId",
+              "description": "The unique identifier for the advert."
+            }
+          ]
+        }
+      },
+      {
         "path": "/cards/{cardId}",
         "definition": {
           "entityName": "Card",
@@ -266,31 +306,31 @@
       {
         "path": "/customers/{customerId}/notifications/{notificationId}",
         "definition": {
-            "entityName": "Notification",
-            "schema": {
-                "$ref": "#/backend/entities/Notification"
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Stores notifications for a specific customer.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "The unique identifier for the customer."
             },
-            "description": "Stores notifications for a specific customer.",
-            "params": [
-                {
-                    "name": "customerId",
-                    "description": "The unique identifier for the customer."
-                },
-                {
-                    "name": "notificationId",
-                    "description": "The unique identifier for the notification."
-                }
-            ]
+            {
+              "name": "notificationId",
+              "description": "The unique identifier for the notification."
+            }
+          ]
         }
       },
       {
         "path": "/settings/theme",
         "definition": {
-            "entityName": "ThemeSettings",
-            "schema": {
-                "$ref": "#/backend/entities/ThemeSettings"
-            },
-            "description": "Stores the global theme settings for the application, like the primary color. There should only be one document in this collection named 'theme'."
+          "entityName": "ThemeSettings",
+          "schema": {
+            "$ref": "#/backend/entities/ThemeSettings"
+          },
+          "description": "Stores the global theme settings for the application, like the primary color. There should only be one document in this collection named 'theme'."
         }
       }
     ],
