@@ -47,22 +47,35 @@ export default function SignupPage() {
     e.preventDefault();
     setError("");
 
+    if (name.trim().split(/\s+/).length < 3) {
+      const nameError = "الرجاء إدخال اسمك الثلاثي على الأقل.";
+      setError(nameError);
+      toast({
+        variant: "destructive",
+        title: "خطأ في الإدخال",
+        description: nameError,
+      });
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setError("كلمتا المرور غير متطابقتين");
+      const passwordError = "كلمتا المرور غير متطابقتين";
+      setError(passwordError);
       toast({
         variant: "destructive",
         title: "خطأ",
-        description: "كلمتا المرور غير متطابقتين",
+        description: passwordError,
       });
       return;
     }
     
     if (!location) {
-      setError("الرجاء اختيار موقعك");
+      const locationError = "الرجاء اختيار موقعك";
+      setError(locationError);
       toast({
         variant: "destructive",
         title: "خطأ",
-        description: "الرجاء اختيار موقعك",
+        description: locationError,
       });
       return;
     }
@@ -133,7 +146,7 @@ export default function SignupPage() {
             <CardContent className="grid gap-4">
               <div className="grid gap-2 text-right">
                 <Label htmlFor="name">الاسم</Label>
-                <Input id="name" placeholder="الاسم الكامل" required value={name} onChange={(e) => setName(e.target.value)} />
+                <Input id="name" placeholder="الاسم الثلاثي الكامل" required value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="grid gap-2 text-right">
                 <Label htmlFor="phone">رقم الهاتف</Label>
