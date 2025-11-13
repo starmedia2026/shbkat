@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -34,7 +33,7 @@ export default function ForgotPasswordPage() {
         <Card className="w-full border-0 shadow-none bg-transparent">
           <CardHeader className="space-y-2 text-center">
             <CardTitle className="text-xl">نسيت كلمة المرور؟</CardTitle>
-            <CardDescription className="text-sm">
+            <CardDescription className="text-sm mb-4">
               لإعادة تعيين كلمة المرور، يرجى التواصل مع الدعم الفني عبر واتساب.
             </CardDescription>
           </CardHeader>
