@@ -53,6 +53,7 @@ interface Customer {
     name: string;
     phoneNumber: string;
     balance: number;
+    requiresPasswordChange?: boolean;
 }
 
 export default function UserManagementPage() {
@@ -330,17 +331,26 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
         try {
             if (!firestore) throw new Error("Firestore not available");
             const customerDocRef = doc(firestore, "customers", customer.id);
-            await updateDoc(customerDocRef, {
+            
+            const updateData: { name: string; phoneNumber: string; requiresPasswordChange?: boolean } = {
                 name: name,
-                phoneNumber: phoneNumber
-            });
+                phoneNumber: phoneNumber,
+            };
+
+            // If a new password was generated, set the flag to force change on next login
+            if (newPassword) {
+                updateData.requiresPasswordChange = true;
+            }
+
+            await updateDoc(customerDocRef, updateData);
 
             // Note: Password update is not actually performed on Firebase Auth
             // as it requires Admin SDK which is not available on the client-side.
-            // We only show it to the admin.
+            // We only show it to the admin and set a flag for the user to change it.
 
             toast({ title: "نجاح", description: "تم تحديث بيانات العميل بنجاح." });
             setIsOpen(false);
+            setNewPassword(""); // Clear the generated password after closing
         } catch (error) {
             console.error("Error updating customer:", error);
             const contextualError = new FirestorePermissionError({
@@ -357,7 +367,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
 
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(!open) setNewPassword("")}}>
             <DialogTrigger asChild>
                 <Button variant="secondary" className="flex-grow">
                     <Edit className="h-4 w-4 ml-2"/>
