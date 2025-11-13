@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -32,6 +33,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'smartgum.com.br',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'tse2.mm.bing.net',
         port: '',
         pathname: '/**',
       }
