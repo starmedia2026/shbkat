@@ -92,7 +92,7 @@ function NavManagementContent() {
     const navItemsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(
-            collection(firestore, "settings", "navigation", "items"),
+            collection(firestore, "nav_items"),
             orderBy("order", "asc")
         );
     }, [firestore]);
@@ -131,7 +131,7 @@ function NavManagementContent() {
         const batchData: Record<string, Partial<NavItem>> = {};
 
         allItems.forEach((item, index) => {
-            const docRef = doc(firestore, "settings", "navigation", "items", item.id);
+            const docRef = doc(firestore, "nav_items", item.id);
             const updateData = {
                 label: item.label,
                 href: item.href,
@@ -148,7 +148,7 @@ function NavManagementContent() {
             });
         }).catch((serverError) => {
             const permissionError = new FirestorePermissionError({
-                path: 'settings/navigation/items (batch write)',
+                path: 'nav_items (batch write)',
                 operation: 'write',
                 requestResourceData: batchData
             });

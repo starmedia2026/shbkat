@@ -117,7 +117,7 @@ export default function AccountPage() {
     if (!firestore) return null;
     const itemLocation = isAdmin ? 'admin_account' : 'account';
     return query(
-        collection(firestore, "settings", "navigation", "items"),
+        collection(firestore, "nav_items"),
         where("location", "==", itemLocation),
         orderBy("order", "asc")
     );

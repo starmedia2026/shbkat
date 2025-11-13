@@ -347,11 +347,11 @@
         }
       },
       {
-        "path": "/settings/navigation/items/{itemId}",
+        "path": "/nav_items/{itemId}",
         "definition": {
             "entityName": "NavItem",
             "schema": { "$ref": "#/backend/entities/NavItem" },
-            "description": "Stores individual navigation items for dynamic menus in the app. This is a subcollection under 'settings/navigation'."
+            "description": "Stores individual navigation items for dynamic menus in the app. This is a root-level collection for simpler security rules."
         }
       }
     ],

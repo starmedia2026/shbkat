@@ -11,7 +11,7 @@
  * - /customers/{customerId}/notifications/{notificationId}: Notifications for a customer.
  * - /cards/{cardId}: Stores scratch card information.
  * - /settings/theme: Stores global theme settings.
- * - /settings/navigation/items/{itemId}: Stores configurable navigation items.
+ * - /nav_items/{itemId}: Stores configurable navigation items.
  * - /adverts/{advertId}: Stores advertisement images for the home page carousel.
  */
 rules_version = '2';
@@ -91,14 +91,9 @@ service cloud.firestore {
         allow write: if isAdmin();
     }
 
-    // This rule allows listing the items in the navigation subcollection.
-    match /settings/navigation/items {
-      allow list: if isSignedIn();
-    }
-
-    // This rule governs access to individual navigation items.
-    match /settings/navigation/items/{itemId} {
-        allow get: if isSignedIn();
+    // This rule governs access to navigation items.
+    match /nav_items/{itemId} {
+        allow read, list: if isSignedIn();
         allow write: if isAdmin();
     }
     

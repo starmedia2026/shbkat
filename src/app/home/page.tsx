@@ -57,6 +57,7 @@ interface NavItem {
     href: string;
     icon: keyof typeof LucideIcons;
     location: 'home' | 'account';
+    order: number;
 }
 
 const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; color: string; } } = {
@@ -136,7 +137,7 @@ export default function HomePage() {
   const homeNavItemsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
-      collection(firestore, "settings", "navigation", "items"),
+      collection(firestore, "nav_items"),
       where("location", "==", "home"),
       orderBy("order", "asc")
     );
@@ -343,7 +344,7 @@ export default function HomePage() {
   );
 }
 
-function ServiceGridItem({ href, icon, label }: Omit<NavItem, 'id' | 'location'>) {
+function ServiceGridItem({ href, icon, label }: Omit<NavItem, 'id' | 'location' | 'order'>) {
     const Icon = LucideIcons[icon as keyof typeof LucideIcons] || LucideIcons.HelpCircle;
     return (
         <Link href={href} className="block">
