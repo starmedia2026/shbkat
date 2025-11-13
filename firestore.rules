@@ -35,14 +35,6 @@ service cloud.firestore {
        return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
     }
 
-    function isNetworkOwner(networkId) {
-      return isSignedIn() && get(/databases/$(database)/documents/networks/$(networkId)).data.ownerPhone == request.auth.token.phone_number;
-    }
-    
-    function isOwnerOfAnyNetwork() {
-      return isSignedIn() && exists(/databases/$(database)/documents/networks, {"ownerPhone": request.auth.token.phone_number});
-    }
-
     match /customers/{customerId} {
       allow get: if isOwner(customerId) || isAdmin();
       allow list: if isAdmin();
@@ -83,8 +75,8 @@ service cloud.firestore {
     }
 
     match /cards/{cardId} {
-        // Admin or a network owner can do anything with cards.
-        allow create, delete, list: if isAdmin() || isOwnerOfAnyNetwork();
+        // Admin can do anything with cards.
+        allow create, delete, list: if isAdmin();
         // Any signed-in user can read card data (needed to find an available card).
         allow read: if isSignedIn();
         // Allow updates only for the specific 'purchase' transaction.
@@ -94,7 +86,7 @@ service cloud.firestore {
         allow update: if (isSignedIn() && 
           request.resource.data.status == 'used' &&
           resource.data.status == 'available' &&
-          request.resource.data.usedBy == request.auth.uid) || isAdmin() || isOwnerOfAnyNetwork();
+          request.resource.data.usedBy == request.auth.uid) || isAdmin();
     }
 
     match /settings/{docId} {
