@@ -205,7 +205,8 @@ function MyNetworkContent() {
     updateAndSave(newNetworks);
   };
   
-  const networkToDisplay = ownerNetwork;
+  const networkToDisplay = ownerNetwork || networks.find(n => editingNetworkId && n.id === editingNetworkId);
+
 
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
@@ -376,5 +377,7 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
+
+    
 
     
