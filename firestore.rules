@@ -13,7 +13,7 @@
  * Key Security Decisions:
  * - Customers can only access their own data (documents and subcollections).
  * - Admin users can read any customer's data and list all customers.
- * - Admin users can update any customer's data.
+ * - Admin users can update any customer's data, and can also delete any customer's data.
  * - The `id` field within a customer document must match the `customerId` in the path to ensure data consistency.
  * - Users can create their own documents and subcollection documents.
  */
@@ -45,7 +45,7 @@ service cloud.firestore {
 
       allow create: if isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId;
       allow update: if isOwner(customerId) || isAdmin();
-      allow delete: if isExistingOwner(customerId);
+      allow delete: if isExistingOwner(customerId) || isAdmin();
 
       match /operations/{operationId} {
         allow read, list: if isOwner(customerId) || isAdmin();
