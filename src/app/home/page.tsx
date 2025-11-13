@@ -1,3 +1,4 @@
+
 "use client";
 import { useState, useEffect } from "react";
 import {
@@ -114,7 +115,7 @@ export default function HomePage() {
                 <div className="text-3xl font-bold tracking-wider mt-1">
                   {balanceVisible ? (
                     <span className="flex items-baseline gap-2">
-                       <span>{(customer?.balance || 0).toLocaleString()}</span>
+                       <span>{(customer?.balance || 0).toLocaleString('ar-EG')}</span>
                        <span className="text-sm font-normal">ريال يمني</span>
                     </span>
                   ) : (

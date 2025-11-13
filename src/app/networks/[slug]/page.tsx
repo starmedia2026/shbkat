@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -221,7 +222,7 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
                         <div>
                             <p className="font-semibold text-base">{category.name}</p>
                             <p className="text-sm font-bold text-primary mt-1">
-                                {category.price.toLocaleString()} ريال يمني
+                                {category.price.toLocaleString('ar-EG')} ريال يمني
                             </p>
                         </div>
                         <AlertDialog>
@@ -237,7 +238,7 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>تأكيد عملية الشراء</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        هل أنت متأكد من رغبتك في شراء "{category.name}" بمبلغ <span className="font-bold text-primary">{category.price.toLocaleString()}</span> ريال؟
+                                        هل أنت متأكد من رغبتك في شراء "{category.name}" بمبلغ <span className="font-bold text-primary">{category.price.toLocaleString('ar-EG')}</span> ريال؟
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -386,3 +387,4 @@ function BackButton() {
         </button>
     );
 }
+

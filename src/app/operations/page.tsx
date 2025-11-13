@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -90,7 +91,7 @@ function OperationCard({ operation }: { operation: Operation }) {
         </div>
         <div className="text-left">
           <p className={`font-bold text-sm ${isIncome ? 'text-green-500' : 'text-red-500'}`} dir="ltr">
-            {isIncome ? '+' : ''}{operation.amount.toLocaleString()} ريال
+            {isIncome ? '+' : ''}{operation.amount.toLocaleString('ar-EG')} ريال
           </p>
           <p className="text-xs text-muted-foreground">
             {format(new Date(operation.date), "d MMM yyyy, h:mm a", { locale: ar })}
