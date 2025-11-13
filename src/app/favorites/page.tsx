@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, ChevronLeft, Heart, Wifi } from "lucide-react";
+import { ArrowRight, ChevronLeft, Heart, Wifi, Phone, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
@@ -10,6 +10,7 @@ import { collection } from "firebase/firestore";
 import { networks as allNetworks } from "@/lib/networks";
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 interface Favorite {
     id: string; // The networkId is the document id
@@ -32,7 +33,8 @@ export default function FavoritesPage() {
 
   const favoriteNetworks = React.useMemo(() => {
     if (!favorites) return [];
-    return favorites.map(fav => networksMap.get(fav.id)).filter(Boolean);
+    // Filter the networks from allNetworks based on the favorite IDs
+    return allNetworks.filter(network => favorites.some(fav => fav.id === network.id));
   }, [favorites]);
 
   return (
@@ -50,30 +52,49 @@ export default function FavoritesPage() {
       <main className="p-4 space-y-4">
         {isLoading ? (
             [...Array(3)].map((_, i) => (
-                <Card key={i} className="w-full shadow-md rounded-2xl bg-card/50">
+                <Card key={i} className="w-full shadow-lg rounded-2xl bg-primary text-primary-foreground">
                     <CardContent className="p-4 flex items-center justify-between">
-                         <div className="flex items-center space-x-4 space-x-reverse">
-                            <Skeleton className="h-10 w-10 rounded-full" />
-                            <Skeleton className="h-4 w-24" />
+                         <div className="flex items-center gap-4">
+                            <Skeleton className="h-12 w-12 rounded-full bg-black/20" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-5 w-24 bg-white/30" />
+                                <Skeleton className="h-3 w-32 bg-white/30" />
+                            </div>
                          </div>
-                         <Skeleton className="h-6 w-12" />
+                         <Skeleton className="h-8 w-16 bg-white/30" />
                     </CardContent>
                 </Card>
             ))
         ) : favoriteNetworks.length > 0 ? (
           favoriteNetworks.map((network) => (
             <Link href={`/networks/${network.id}`} key={network.id} className="block">
-              <Card className="w-full shadow-md rounded-2xl hover:shadow-lg transition-shadow cursor-pointer bg-card/50 hover:bg-card">
+              <Card className="w-full shadow-lg rounded-2xl hover:shadow-xl transition-shadow cursor-pointer bg-primary text-primary-foreground overflow-hidden">
                 <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-4 space-x-reverse">
-                    <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                      <Wifi className="h-6 w-6 text-primary" />
-                    </div>
-                    <span className="font-semibold text-sm">{network.name}</span>
+                  <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-black/10 rounded-full flex items-center justify-center shrink-0">
+                          <Wifi className="h-7 w-7"/>
+                      </div>
+                      <div className="flex-grow text-right">
+                          <h2 className="font-bold text-lg">{network.name}</h2>
+                          <div className="flex flex-col items-start gap-1 text-xs text-primary-foreground/90 mt-1">
+                             {network.ownerPhone && (
+                              <a href={`tel:${network.ownerPhone}`} className="flex items-center gap-2">
+                                  <Phone className="h-3 w-3" />
+                                  <span dir="ltr">{network.ownerPhone}</span>
+                              </a>
+                             )}
+                             {network.address && (
+                             <div className="flex items-center gap-2">
+                              <MapPin className="h-3 w-3" />
+                              <span>{network.address}</span>
+                             </div>
+                             )}
+                          </div>
+                      </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                     <Heart className="text-red-500 fill-current" />
-                     <ChevronLeft />
+                  <div className="flex items-center gap-2">
+                      <Heart className="h-5 w-5 text-red-500 fill-current" />
+                      <ChevronLeft className="w-8 h-8 opacity-70" />
                   </div>
                 </CardContent>
               </Card>
@@ -89,12 +110,3 @@ export default function FavoritesPage() {
     </div>
   );
 }
-
-// Simple Button to avoid importing the whole button component just for a back button
-const Button = ({ onClick, children, ...props }: any) => (
-    <button onClick={onClick} {...props}>
-      {children}
-    </button>
-  );
-
-    
