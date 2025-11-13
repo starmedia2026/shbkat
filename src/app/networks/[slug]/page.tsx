@@ -125,49 +125,55 @@ function PackageCard({ category, networkName, isClient }: { category: Category, 
         setIsPurchasing(true);
 
         try {
+             // Step 1: Find an available card outside the transaction
+            const cardsRef = collection(firestore, "cards");
+            const q = query(
+                cardsRef,
+                where("categoryId", "==", category.id),
+                where("status", "==", "available"),
+                limit(1)
+            );
+
+            const availableCardsSnapshot = await getDocs(q);
+            if (availableCardsSnapshot.empty) {
+                throw new Error("لا توجد كروت متاحة من هذه الفئة حاليًا.");
+            }
+            const cardToPurchaseDoc = availableCardsSnapshot.docs[0];
+            const cardRef = cardToPurchaseDoc.ref;
+            
+            // Step 2: Run the transaction
             const purchasedCardNumber = await runTransaction(firestore, async (transaction) => {
-                // 1. Find an available card
-                const cardsRef = collection(firestore, "cards");
-                const q = query(
-                    cardsRef,
-                    where("categoryId", "==", category.id),
-                    where("status", "==", "available"),
-                    limit(1)
-                );
-                
-                const cardSnapshot = await getDocs(q);
-
-                if (cardSnapshot.empty) {
-                    throw new Error("لا توجد كروت متاحة من هذه الفئة حاليًا.");
-                }
-
-                const cardDoc = cardSnapshot.docs[0];
-                const cardRef = cardDoc.ref;
-                const cardData = cardDoc.data();
-
-                // 2. Fetch sender document
+                // Re-read the card and customer docs inside the transaction to ensure they haven't changed
                 const senderDoc = await transaction.get(customerDocRef);
+                const cardDoc = await transaction.get(cardRef);
+                
                 if (!senderDoc.exists()) {
                     throw new Error("لم يتم العثور على حساب العميل.");
                 }
+                if (!cardDoc.exists() || cardDoc.data().status !== 'available') {
+                    throw new Error("هذا الكرت لم يعد متاحًا. الرجاء المحاولة مرة أخرى.");
+                }
+
                 const senderBalance = senderDoc.data().balance;
                 if (senderBalance < category.price) {
                     throw new Error("رصيد غير كافٍ.");
                 }
 
-                // 3. Update card status
+                // All checks passed, proceed with writes
                 const now = new Date().toISOString();
+
+                // Update card status
                 transaction.update(cardRef, {
                     status: "used",
                     usedAt: now,
                     usedBy: user.uid,
                 });
 
-                // 4. Update customer balance
+                // Update customer balance
                 const newBalance = senderBalance - category.price;
                 transaction.update(customerDocRef, { balance: newBalance });
 
-                // 5. Create operation log
+                // Create operation log
                 const operationDocRef = doc(collection(firestore, `customers/${user.uid}/operations`));
                 const operationData = {
                     type: "purchase",
@@ -178,7 +184,7 @@ function PackageCard({ category, networkName, isClient }: { category: Category, 
                 };
                 transaction.set(operationDocRef, operationData);
 
-                // 6. Create notification
+                // Create notification
                 const notificationDocRef = doc(collection(firestore, `customers/${user.uid}/notifications`));
                 const notificationData = {
                     type: "purchase",
@@ -196,12 +202,9 @@ function PackageCard({ category, networkName, isClient }: { category: Category, 
             setPurchasedCard({ cardNumber: purchasedCardNumber });
 
         } catch (error: any) {
-            // If the error is a permission error from Firestore, it will be caught here.
-            // We create a detailed, contextual error object and emit it globally.
-            // This allows our central error listener to catch it and display it in the dev overlay.
              if (error.code && (error.code === 'permission-denied' || error.code === 'unauthenticated')) {
                 const permissionError = new FirestorePermissionError({
-                    path: 'Transaction for card purchase', // General path for a transaction
+                    path: 'Transaction for card purchase', 
                     operation: 'write',
                     requestResourceData: {
                         note: 'This was a transaction involving multiple steps (reading card, updating card, updating customer, creating operation). The exact failing step is not provided by the transaction error, but it was a permission issue.',
@@ -212,7 +215,6 @@ function PackageCard({ category, networkName, isClient }: { category: Category, 
                 });
                 errorEmitter.emit('permission-error', permissionError);
             } else {
-                // For other types of errors (e.g., card not available), show a toast.
                 console.error("Purchase failed: ", error);
                 toast({
                     variant: "destructive",
@@ -410,3 +412,4 @@ function BackButton() {
     );
 }
 
+    
