@@ -124,7 +124,7 @@ function OperationCard({ operation }: { operation: Operation }) {
                     <p className="text-sm font-semibold text-muted-foreground">
                         كرت الشبكة:
                     </p>
-                    <p className="text-sm text-muted-foreground font-mono" dir="ltr">
+                    <p className="text-sm text-muted-foreground" dir="ltr">
                         {operation.cardNumber}
                     </p>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(operation.cardNumber!, "رقم الكرت")}>
@@ -235,3 +235,4 @@ function BackButton() {
     </button>
   );
 }
+

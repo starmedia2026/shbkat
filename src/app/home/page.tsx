@@ -234,7 +234,7 @@ export default function HomePage() {
                   {balanceVisible ? (
                     <div className="flex items-baseline gap-x-2 justify-end">
                        <span className="text-sm font-normal">ريال يمني</span>
-                       <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US', {useGrouping: true})}</span>
+                       <span>{(customer?.balance ?? 0).toLocaleString('en-US', {useGrouping: true})}</span>
                     </div>
                   ) : (
                     <div className="text-right">******</div>
@@ -363,7 +363,7 @@ function LastOperationItem({ operation }: { operation: Operation }) {
                         </p>
                     </div>
                 </div>
-                 <p className={`text-sm font-bold font-mono ${isIncome ? 'text-green-500' : 'text-red-500'}`}>
+                 <p className={`text-sm font-bold ${isIncome ? 'text-green-500' : 'text-red-500'}`}>
                     {isIncome ? '+' : '-'}{Math.abs(operation.amount).toLocaleString('en-US')}
                  </p>
             </CardContent>

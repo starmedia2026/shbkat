@@ -375,7 +375,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
     return (
         <Card className="w-full shadow-md rounded-2xl bg-card/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                 <CardTitle className="text-base font-mono tracking-wider flex items-center gap-2">{card.id}
+                 <CardTitle className="text-base tracking-wider flex items-center gap-2">{card.id}
                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(card.id)}>
                         <Copy className="h-4 w-4 text-muted-foreground"/>
                     </Button>
@@ -393,7 +393,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                     </div>
                      <div className="text-left space-y-2">
                          <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{customer?.name || 'مستخدم غير معروف'}</span></p>
-                         <p className="flex items-center justify-end gap-2" dir="ltr"><span className="font-mono">{customer?.phoneNumber || 'لا يوجد رقم'}</span> <Phone className="h-4 w-4 text-primary"/> </p>
+                         <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer?.phoneNumber || 'لا يوجد رقم'}</span> <Phone className="h-4 w-4 text-primary"/> </p>
                     </div>
                 </div>
                 <div className="mt-4 pt-3 border-t flex gap-2">
@@ -439,7 +439,7 @@ function AvailableCardItem({ card }: { card: CardData }) {
     return (
          <Card className="w-full shadow-md rounded-2xl bg-card/50">
              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                 <CardTitle className="text-base font-mono tracking-wider flex items-center gap-2">{card.id}
+                 <CardTitle className="text-base tracking-wider flex items-center gap-2">{card.id}
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(card.id)}>
                         <Copy className="h-4 w-4 text-muted-foreground"/>
                     </Button>
