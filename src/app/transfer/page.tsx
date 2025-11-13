@@ -108,7 +108,7 @@ export default function TransferPage() {
   const handleTransfer = async () => {
     const transferAmount = Number(amount);
 
-    if (!recipient || !sender || !user) {
+    if (!recipient || !sender || !user || !firestore) {
         toast({ variant: "destructive", title: "خطأ", description: "المستلم أو المرسل غير معروف." });
         return;
     }
@@ -169,7 +169,6 @@ export default function TransferPage() {
         setRecipient(null);
 
     } catch (error) {
-        console.error("Transaction failed: ", error);
         const contextualError = new FirestorePermissionError({
             operation: 'write',
             path: `customers collection (sender: ${user.uid}, recipient: ${recipient.id})`,
@@ -295,3 +294,5 @@ export default function TransferPage() {
     </div>
   );
 }
+
+    
