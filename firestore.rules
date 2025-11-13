@@ -3,7 +3,7 @@
  * @fileoverview Firestore Security Rules for the Customer Management App.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for customer data, with an exception for specific admin users (identified by a list of phone numbers) who have full read and write access to all customer data for management purposes.
+ * This ruleset enforces a strict user-ownership model for customer data, with an exception for a specific admin user (identified by a phone number) who has full read and write access to all customer data for management purposes.
  *
  * Data Structure:
  * - /customers/{customerId}: Stores public and private data for each customer.
@@ -13,11 +13,11 @@
  *
  * Key Security Decisions:
  * - Customers can only access their own data (documents and subcollections).
- * - Admin users can read any customer's data and list all customers.
- * - Admin users can update any customer's data, and can also delete any customer's data.
+ * - The Admin user can read any customer's data and list all customers.
+ * - The Admin user can update any customer's data, and can also delete any customer's data.
  * - The `id` field within a customer document must match the `customerId` in the path to ensure data consistency.
  * - Users can create their own documents and subcollection documents.
- * - Admins have full read/write access to the cards collection.
+ * - The Admin has full read/write access to the cards collection.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -35,9 +35,9 @@ service cloud.firestore {
       return isOwner(customerId) && resource != null;
     }
 
-    // Admins are all signed-in users with a customer document.
+    // The admin is a specific user identified by their phone number.
     function isAdmin() {
-       return exists(/databases/$(database)/documents/customers/$(request.auth.uid));
+       return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
     }
 
     match /customers/{customerId} {
