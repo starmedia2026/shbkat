@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import { doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -136,14 +138,18 @@ export default function SignupPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
-        <div className="mb-8 flex items-center gap-3">
-          <h1 className="text-3xl font-bold tracking-tight text-primary">
-            شبكات
-          </h1>
+        <div className="mb-4 flex items-center gap-3">
+          <Image
+            src="https://i.postimg.cc/76FCwnKs/44.png"
+            alt="Shabakat Logo"
+            width={120}
+            height={60}
+            priority
+          />
         </div>
         <Card className="w-full shadow-2xl">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl">إنشاء حساب جديد</CardTitle>
+            <CardTitle className="text-xl">إنشاء حساب جديد</CardTitle>
             <CardDescription>
               أدخل معلوماتك لإنشاء حساب جديد
             </CardDescription>
