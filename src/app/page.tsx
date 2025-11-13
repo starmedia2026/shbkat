@@ -93,19 +93,20 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 relative">
       <div className="flex w-full max-w-md flex-col items-center text-center">
-        <div className="mb-6 flex flex-col items-center gap-2">
+        <div className="mb-4 flex flex-col items-center gap-2">
             <Image
                 src="https://i.postimg.cc/76FCwnKs/44.png"
                 alt="Shabakat Logo"
-                width={150}
-                height={75}
+                width={120}
+                height={60}
                 priority
             />
-          <p className="text-lg text-muted-foreground mt-2">مرحباً بك</p>
-          {displayName && <p className="text-xl text-muted-foreground font-semibold">{displayName}</p>}
+          <p className="text-xl text-muted-foreground font-semibold mt-2">
+            {displayName ? `أهلاً ${displayName}` : 'أهلاً بك'}
+          </p>
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
-          <CardHeader className="space-y-1 text-center">
+          <CardHeader className="space-y-1 text-center pt-2">
             <CardTitle className="text-xl">تسجيل الدخول</CardTitle>
           </CardHeader>
           <form onSubmit={handleLogin}>
