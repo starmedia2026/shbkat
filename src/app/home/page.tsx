@@ -1,6 +1,6 @@
 
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Bell,
   Eye,
@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { doc, collection, query, where, writeBatch } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
@@ -69,23 +69,36 @@ export default function HomePage() {
     return fullName;
   };
   
-  const handleNotificationsClick = async () => {
-    if (!firestore || !user?.uid || !notifications || notifications.length === 0) return;
+  const handleNotificationsClick = () => {
+    if (!firestore || !user?.uid || !notifications || notifications.length === 0) {
+        router.push("/notifications");
+        return;
+    }
     
-    // Mark all unread notifications as read
     const batch = writeBatch(firestore);
+    const updates: Record<string, { read: boolean }> = {};
     notifications.forEach(notification => {
         if (!notification.read) {
             const notifRef = doc(firestore, `customers/${user.uid}/notifications`, notification.id);
-            batch.update(notifRef, { read: true });
+            const updateData = { read: true };
+            batch.update(notifRef, updateData);
+            updates[notifRef.path] = updateData;
         }
     });
     
-    try {
-        await batch.commit();
-    } catch (error) {
-        console.error("Error marking notifications as read: ", error);
-    }
+    batch.commit().catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: `batch write to notifications for user ${user.uid}`,
+            operation: 'write',
+            requestResourceData: {
+                note: "Attempted to mark multiple notifications as read.",
+                updates: updates
+            }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
+
+    router.push("/notifications");
   };
 
   return (
