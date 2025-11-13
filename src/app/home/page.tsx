@@ -7,7 +7,7 @@ import {
   EyeOff,
   Heart,
   History,
-  MessageSquare,
+  Phone,
   Send,
   User,
   Wallet,
@@ -155,7 +155,7 @@ export default function HomePage() {
           <ServiceButton icon={Heart} label="المفضلة" href="/favorites" iconClassName="text-chart-3" />
           <ServiceButton icon={Wallet} label="غذي حسابك" href="/top-up" iconClassName="text-chart-4" />
           <ServiceButton icon={Send} label="تحويل رصيد" href="/transfer" iconClassName="text-chart-5" />
-          <ServiceButton icon={MessageSquare} label="تواصل معنا" href="/contact" iconClassName="text-chart-6" />
+          <ServiceButton icon={Phone} label="تواصل معنا" href="/contact" iconClassName="text-chart-6" />
         </div>
       </main>
     </div>
