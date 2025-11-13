@@ -12,7 +12,7 @@ import {
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { HandMetal } from "lucide-react";
+import { Lock } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-4 flex items-center gap-3">
-          <HandMetal className="h-10 w-10 text-primary" />
+          <Lock className="h-10 w-10 text-primary" />
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
           <CardHeader className="space-y-2 text-center">
