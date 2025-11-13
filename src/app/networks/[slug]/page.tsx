@@ -200,7 +200,7 @@ function PackageCard({ category, networkId, networkName }: { category: Category,
                 const notificationDocRef = doc(collection(firestore, `customers/${user.uid}/notifications`));
                 const notificationData = {
                     type: "purchase",
-                    title: "شراء باقة",
+                    title: "شراء كرت",
                     body: `تم شراء ${category.name} بنجاح. رقم الكرت: ${cardDoc.id}`,
                     amount: -category.price,
                     date: now,

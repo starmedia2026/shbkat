@@ -38,7 +38,7 @@ const operationConfig = {
   transfer_sent: { icon: ArrowUp, color: "text-red-500", label: "تحويل مرسل" },
   transfer_received: { icon: ArrowDown, color: "text-green-500", label: "تحويل مستلم" },
   topup_admin: { icon: Coins, color: "text-green-500", label: "تعبئة رصيد" },
-  purchase: { icon: CreditCard, color: "text-red-500", label: "شراء باقة" },
+  purchase: { icon: CreditCard, color: "text-red-500", label: "شراء كرت" },
 };
 
 export default function OperationsPage() {
