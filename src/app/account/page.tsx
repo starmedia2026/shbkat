@@ -192,8 +192,7 @@ export default function AccountPage() {
       }
     } catch (error) {
       // Don't show an error toast if the user cancels the share sheet
-      // or if permission is denied, as this is expected user behavior.
-      if (error instanceof Error && (error.name === 'AbortError' || error.name === 'PermissionDeniedError')) {
+      if (error instanceof Error && error.name === 'AbortError') {
         return;
       }
       console.error("Error sharing:", error);
