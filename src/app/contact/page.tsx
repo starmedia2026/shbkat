@@ -99,16 +99,6 @@ export default function ContactPage() {
             </Card>
         </div>
 
-        {isLoading ? (
-            <Skeleton className="h-8 w-40 mt-4" />
-        ) : (
-            <div className="text-center pt-4">
-                 <p className="text-sm text-muted-foreground">رقم التواصل الموحد</p>
-                 <p className="font-mono text-xl tracking-widest text-primary font-semibold mt-1">
-                    {phoneNumber}
-                </p>
-            </div>
-        )}
       </main>
     </div>
   );
