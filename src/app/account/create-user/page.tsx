@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useFirestore, setDocumentNonBlocking, useAdmin } from "@/firebase";
+import { useAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
+import { useAdmin } from "@/hooks/useAdmin";
 import { doc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { Button } from "@/components/ui/button";
