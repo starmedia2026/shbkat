@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -10,9 +11,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        cairo: ['Cairo', 'sans-serif'],
-        tajawal: ['Tajawal', 'sans-serif'],
-        almarai: ['Almarai', 'sans-serif'],
+        'ibm-plex-sans-arabic': ['"IBM Plex Sans Arabic"', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
