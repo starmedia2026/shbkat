@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Home, User, Users } from "lucide-react";
+import { Home, User, Users, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -58,6 +58,7 @@ export function BottomNav() {
     ];
     if (isAdmin) {
       items.push({ href: "/account/user-management", icon: Users, label: "المستخدمين" });
+      items.push({ href: "/account/create-user", icon: UserPlus, label: "إضافة" });
     }
     items.push({ href: "/account", icon: User, label: "حسابي" });
     return items;
@@ -69,9 +70,10 @@ export function BottomNav() {
       <div className="flex justify-around items-center h-full max-w-md mx-auto">
         {navItems.map((item) => {
           // Determine if the link is active
-          const isActive = (item.href === "/account" && pathname.startsWith("/account") && pathname !== '/account/user-management') ||
-                         (item.href === "/account/user-management" && pathname === "/account/user-management") ||
-                         (item.href !== "/account" && item.href !== "/account/user-management" && pathname === item.href);
+          const isActive = (pathname.startsWith(item.href) && item.href !== '/account') || 
+                           (pathname === item.href) ||
+                           (item.href === "/account" && pathname === "/account" && !pathname.includes('/user-management') && !pathname.includes('/create-user'));
+
 
           return (
             <Link href={item.href} key={item.href} className="flex-1">

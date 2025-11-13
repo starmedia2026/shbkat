@@ -14,6 +14,7 @@ import {
   MapPin,
   Users,
   Wifi,
+  UserPlus,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -183,6 +184,11 @@ export default function AccountPage() {
             <ul className="divide-y divide-border">
               {isAdmin && (
                 <>
+                  <AccountItem
+                    icon={UserPlus}
+                    label="إنشاء حساب عميل"
+                    href="/account/create-user"
+                  />
                   <AccountItem
                     icon={Users}
                     label="إدارة المستخدمين"
