@@ -95,7 +95,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-bold tracking-tight text-primary">
             شبكات
           </h1>
-          <p className="text-lg text-muted-foreground">مرحباً بك</p>
+          <p className="text-lg text-muted-foreground mt-4">مرحباً بك</p>
           {displayName && <p className="text-xl text-muted-foreground font-semibold">{displayName}</p>}
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
