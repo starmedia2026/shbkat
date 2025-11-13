@@ -1,4 +1,5 @@
-import data from './networks.json';
+import fs from 'fs';
+import path from 'path';
 
 // In a real app, you'd fetch this from a server or have an API endpoint to update it.
 // For now, we'll read from the JSON file and provide a mock save function.
@@ -18,7 +19,21 @@ interface Network {
   categories: Category[];
 }
 
-export const networks: Network[] = data.networks;
+const getNetworks = (): Network[] => {
+    const filePath = path.join(process.cwd(), 'src', 'lib', 'networks.json');
+    try {
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
+        const data = JSON.parse(fileContent);
+        return data.networks;
+    } catch (error) {
+        console.error("Error reading networks.json:", error);
+        return [];
+    }
+};
+
+
+export const networks: Network[] = getNetworks();
+
 
 // Mock function to simulate saving data to the server.
 // In a real implementation, this would make a POST/PUT request to your backend.
