@@ -294,5 +294,4 @@ function CardManagementContent() {
     </div>
   );
 }
-
     

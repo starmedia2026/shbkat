@@ -53,13 +53,11 @@ export default function NetworkManagementPage() {
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
   useEffect(() => {
-    // Only redirect when loading is finished and the user is explicitly not an admin.
     if (!isAdminLoading && !isAdmin) {
       router.replace("/account");
     }
   }, [isAdmin, isAdminLoading, router]);
 
-  // Render a stable loading state until admin status is confirmed.
   if (isAdminLoading || !isAdmin) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -83,7 +81,6 @@ export default function NetworkManagementPage() {
     );
   }
 
-  // Render the content only if the user is an admin.
   return <NetworkManagementContent />;
 }
 
