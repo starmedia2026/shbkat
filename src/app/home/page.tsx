@@ -215,9 +215,9 @@ export default function HomePage() {
              {isLoading ? (
                  <Skeleton className="h-10 w-48 mt-2 bg-white/30" />
               ) : (
-                <div className="text-3xl font-bold tracking-wider mt-2 w-full" dir="ltr">
+                <div className="text-3xl font-bold tracking-wider mt-2 w-full" dir="rtl">
                   {balanceVisible ? (
-                    <div className="flex items-baseline gap-2 justify-start">
+                    <div className="flex items-baseline gap-x-2 justify-start">
                        <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US')}</span>
                        <span className="text-sm font-normal">ريال يمني</span>
                     </div>
