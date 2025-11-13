@@ -69,8 +69,8 @@ service cloud.firestore {
       match /notifications/{notificationId} {
         allow read, list: if isOwner(customerId) || isAdmin();
         allow create: if isSignedIn();
-        // Allow user/admin to mark notifications as read, including batch updates.
-        allow write: if (isOwner(customerId) || isAdmin()) && request.resource.data.keys().hasOnly(['read']);
+        // Allow user/admin to mark notifications as read.
+        allow update: if (isOwner(customerId) || isAdmin()) && request.resource.data.keys().hasOnly(['read']);
       }
     }
 
