@@ -168,38 +168,35 @@ export default function AccountPage() {
     return locationMap[locationKey] || locationKey;
   };
   
-  const handleShare = async () => {
+  const handleShare = () => {
     const shareUrl = appSettings?.shareLink;
     const shareData: ShareData = {
       title: "تطبيق شبكات",
       text: "اكتشف تطبيق شبكات لخدمات الاتصالات!",
     };
-
+    
     if (shareUrl) {
       shareData.url = shareUrl;
     }
 
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback for browsers that don't support the Web Share API
-        navigator.clipboard.writeText(shareUrl || window.location.origin);
-        toast({
-          title: "تم نسخ الرابط",
-          description: "تم نسخ رابط التطبيق إلى الحافظة. يمكنك مشاركته الآن!",
-        });
-      }
-    } catch (error) {
-      // Don't show an error toast if the user cancels the share sheet
-      if (error instanceof Error && error.name === 'AbortError') {
-        return;
-      }
-      console.error("Error sharing:", error);
+    if (navigator.share) {
+      navigator.share(shareData).catch((error) => {
+        // We only log an error if it's not an AbortError (user cancellation).
+        if (error.name !== 'AbortError') {
+          console.error("Error sharing:", error);
+           toast({
+            variant: "destructive",
+            title: "فشلت المشاركة",
+            description: "حدث خطأ غير متوقع أثناء محاولة مشاركة التطبيق.",
+          });
+        }
+      });
+    } else {
+      // Fallback for browsers that don't support the Web Share API
+      navigator.clipboard.writeText(shareUrl || window.location.origin);
       toast({
-        variant: "destructive",
-        title: "فشلت المشاركة",
-        description: "حدث خطأ غير متوقع أثناء محاولة مشاركة التطبيق.",
+        title: "تم نسخ الرابط",
+        description: "تم نسخ رابط التطبيق إلى الحافظة. يمكنك مشاركته الآن!",
       });
     }
   };
@@ -427,3 +424,4 @@ function AccountItem({
   return <li>{content}</li>;
 }
 
+    
