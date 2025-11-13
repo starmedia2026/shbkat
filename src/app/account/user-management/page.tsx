@@ -315,6 +315,17 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     const [isSaving, setIsSaving] = useState(false);
     const [newTempPassword, setNewTempPassword] = useState('');
 
+    useEffect(() => {
+        // Reset state when dialog opens
+        if (isOpen) {
+            setName(customer.name);
+            setPhoneNumber(customer.phoneNumber);
+            setNewTempPassword('');
+            setIsSaving(false);
+        }
+    }, [isOpen, customer]);
+    
+
     const generateRandomPassword = () => {
         const password = Math.random().toString(36).slice(-8);
         setNewTempPassword(password);
@@ -370,7 +381,6 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
                 title: "تم بنجاح",
                 description: `تم وضع علامة على حساب ${customer.name} لفرض تغيير كلمة المرور.`,
             });
-            // We don't close the main dialog here, so the admin can still copy the password
         } catch (error) {
             console.error("Error forcing password change:", error);
              const contextualError = new FirestorePermissionError({
