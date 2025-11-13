@@ -96,7 +96,7 @@ export default function LoginPage() {
             شبكات
           </h1>
           <p className="text-lg text-muted-foreground">مرحباً بك</p>
-          {displayName && <p className="text-lg text-muted-foreground font-semibold">{displayName}</p>}
+          {displayName && <p className="text-xl text-muted-foreground font-semibold">{displayName}</p>}
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
           <CardHeader className="space-y-1 text-center">
@@ -141,7 +141,7 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-              <div className="text-left text-xs">
+              <div className="text-left text-sm">
                 <Link
                   href="/forgot-password"
                   className="font-medium text-primary hover:underline"
@@ -155,7 +155,7 @@ export default function LoginPage() {
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base" disabled={isLoading}>
                 {isLoading ? "جاري الدخول..." : "دخول"}
               </Button>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-base text-muted-foreground">
                 ليس لديك حساب؟{" "}
                 <Link
                   href="/signup"
