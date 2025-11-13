@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
+import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useAdmin } from "@/hooks/useAdmin";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const DEFAULT_PRIMARY_COLOR = "210 100% 56%"; // Default blue
-const DEFAULT_FONT = "font-cairo";
+const DEFAULT_FONT = "font-readex-pro";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkMode] = useState(false);
@@ -35,7 +35,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { data: themeData, isLoading: isThemeLoading } = useDoc(themeDocRef);
   
   const primaryColor = themeData?.primaryColor || DEFAULT_PRIMARY_COLOR;
-  const font = DEFAULT_FONT; // Always use Cairo
   
   useEffect(() => {
     setIsMounted(true);
@@ -44,7 +43,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isMounted) {
       document.documentElement.style.setProperty('--primary', primaryColor);
-      // Font is now applied directly on the body in layout.tsx
+      document.body.classList.add(DEFAULT_FONT);
     }
   }, [primaryColor, isMounted]);
 
@@ -83,7 +82,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [isAdmin, themeDocRef, primaryColor]);
 
 
-  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor, font, isMounted };
+  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor, font: DEFAULT_FONT, isMounted };
 
   return (
     <ThemeContext.Provider value={contextValue}>
