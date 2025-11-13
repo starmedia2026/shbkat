@@ -160,7 +160,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             const cardToPurchaseDoc = availableCardsSnapshot.docs[0];
             const cardRef = cardToPurchaseDoc.ref;
 
-            // Find the network owner and admin outside the transaction
+            // Find the network owner outside the transaction
             let ownerRef: any = null;
             if (network.ownerPhone) {
                 const ownerQuery = query(customersRef, where("phoneNumber", "==", network.ownerPhone), limit(1));
@@ -170,17 +170,11 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 }
             }
             
-            const adminQuery = query(customersRef, where("phoneNumber", "==", ADMIN_PHONE_NUMBER), limit(1));
-            const adminSnapshot = await getDocs(adminQuery);
-            const adminRef = adminSnapshot.empty ? null : adminSnapshot.docs[0].ref;
-
-            
             // Run the transaction
             const purchasedCardNumber = await runTransaction(firestore, async (transaction) => {
                 const senderDoc = await transaction.get(customerDocRef);
                 const cardDoc = await transaction.get(cardRef);
                 const ownerDoc = ownerRef ? await transaction.get(ownerRef) : null;
-                const adminDoc = adminRef ? await transaction.get(adminRef) : null;
 
                 if (!senderDoc.exists()) throw new Error("لم يتم العثور على حساب العميل.");
                 if (!cardDoc.exists() || cardDoc.data().status !== 'available') throw new Error("هذا الكرت لم يعد متاحًا. الرجاء المحاولة مرة أخرى.");
@@ -204,13 +198,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                     const newOwnerBalance = ownerDoc.data().balance + ownerAmount;
                     transaction.update(ownerRef, { balance: newOwnerBalance });
                 }
-
-                // 4. Update admin balance
-                if (adminDoc && adminDoc.exists()) {
-                    const newAdminBalance = adminDoc.data().balance + commission;
-                    transaction.update(adminRef, { balance: newAdminBalance });
-                }
-
+                
                 // --- Create Logs and Notifications ---
                 const baseOpData = { amount: -category.price, date: now, status: 'completed', cardNumber: cardDoc.id };
                 // Customer's operation & notification
@@ -222,13 +210,6 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                     const ownerId = ownerDoc.id;
                     transaction.set(doc(collection(firestore, `customers/${ownerId}/operations`)), { type: 'transfer_received', amount: ownerAmount, date: now, description: `إيداع أرباح بيع كرت ${category.name}`, status: 'completed' });
                     transaction.set(doc(collection(firestore, `customers/${ownerId}/notifications`)), { type: 'transfer_received', title: 'إيداع أرباح', body: `تم إيداع ${ownerAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: ownerAmount, date: now, read: false });
-                }
-
-                 // Admin's operation & notification
-                if (adminDoc && adminDoc.exists()) {
-                    const adminId = adminDoc.id;
-                    transaction.set(doc(collection(firestore, `customers/${adminId}/operations`)), { type: 'transfer_received', amount: commission, date: now, description: `عمولة بيع كرت ${category.name}`, status: 'completed' });
-                    transaction.set(doc(collection(firestore, `customers/${adminId}/notifications`)), { type: 'transfer_received', title: 'تحصيل عمولة', body: `تم تحصيل عمولة ${commission.toLocaleString('en-US')} ريال.`, amount: commission, date: now, read: false });
                 }
 
                 return cardDoc.id; // Return the card number
