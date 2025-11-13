@@ -5,10 +5,6 @@
       "description": "Represents a scratch card for top-up.",
       "type": "object",
       "properties": {
-        "pin": {
-          "type": "string",
-          "description": "The PIN of the card."
-        },
         "networkId": {
           "type": "string",
           "description": "The ID of the network this card belongs to."
@@ -41,7 +37,6 @@
         }
       },
       "required": [
-        "pin",
         "networkId",
         "categoryId",
         "status",

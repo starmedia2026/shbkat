@@ -40,7 +40,6 @@ interface Category {
 
 interface CardInput {
   cardNumber: string;
-  pin: string;
 }
 
 export default function CardManagementPage() {
@@ -110,21 +109,18 @@ function CardManagementContent() {
     }
 
     const lines = cardsInput.trim().split("\n");
-    const cardsToSave: CardInput[] = [];
+    const cardsToSave: CardInput[] = lines
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => ({ cardNumber: line }));
 
-    for (const line of lines) {
-      const parts = line.trim().split(/\s+/); // Split by space or tab
-      if (parts.length === 2 && parts[0] && parts[1]) {
-        cardsToSave.push({ cardNumber: parts[0], pin: parts[1] });
-      }
-    }
 
     if (cardsToSave.length === 0) {
       toast({
         variant: "destructive",
         title: "تنسيق غير صحيح",
         description:
-          "لم يتم العثور على كروت صالحة. تأكد من أن كل سطر يحتوي على رقم الكرت ثم الرقم السري.",
+          "لم يتم العثور على كروت صالحة. تأكد من أن كل سطر يحتوي على رقم كرت واحد.",
       });
       return;
     }
@@ -139,7 +135,6 @@ function CardManagementContent() {
       cardsToSave.forEach((card) => {
         const cardRef = doc(cardsCollection, card.cardNumber);
         batch.set(cardRef, {
-          pin: card.pin,
           networkId: selectedNetworkId,
           categoryId: selectedCategoryId,
           status: "available",
@@ -198,7 +193,7 @@ function CardManagementContent() {
           <CardHeader>
             <CardTitle>إضافة كروت شحن جديدة</CardTitle>
             <CardDescription>
-              أدخل أرقام الكروت وأرقامها السرية، كل كرت في سطر.
+              أدخل أرقام الكروت، كل كرت في سطر منفصل.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -246,11 +241,11 @@ function CardManagementContent() {
 
             <div className="space-y-2">
               <Label htmlFor="cards-input">
-                أرقام الكروت (رقم الكرت ثم مسافة ثم الرقم السري)
+                أرقام الكروت (كل رقم في سطر)
               </Label>
               <Textarea
                 id="cards-input"
-                placeholder="1234567890123 1234\n5678901234567 5678\n..."
+                placeholder="1234567890123\n5678901234567\n..."
                 className="min-h-[200px] text-left"
                 dir="ltr"
                 value={cardsInput}
