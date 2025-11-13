@@ -38,14 +38,14 @@ export default function NetworksPage() {
                         <h2 className="font-bold text-lg">{network.name}</h2>
                         {network.ownerPhone && (
                            <div className="flex items-center justify-end gap-2 text-xs text-primary-foreground/90">
-                            <span dir="ltr">{network.ownerPhone}</span>
                             <Phone className="h-3 w-3" />
+                            <span dir="ltr">{network.ownerPhone}</span>
                            </div>
                         )}
                         {network.address && (
                            <div className="flex items-center justify-end gap-2 text-xs text-primary-foreground/90">
-                            <span>{network.address}</span>
                              <MapPin className="h-3 w-3" />
+                            <span>{network.address}</span>
                            </div>
                         )}
                     </div>
@@ -66,4 +66,5 @@ const Button = ({ onClick, children, className, ...props }: any) => (
     {children}
   </button>
 );
+
 
