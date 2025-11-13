@@ -30,10 +30,10 @@ export function useNetworkOwner() {
   }, [customer, isLoading]);
 
   const ownedNetwork = useMemo(() => {
-    if (!isOwner || !user) return null;
+    if (!isOwner || !customer?.phoneNumber) return null;
     // Find the network where the ownerPhone matches the current user's phone number
-    return networks.find(n => n.ownerPhone === user.phoneNumber) || null;
-  }, [isOwner, user]);
+    return networks.find(n => n.ownerPhone === customer.phoneNumber) || null;
+  }, [isOwner, customer]);
 
   return {
     isOwner: isOwner,

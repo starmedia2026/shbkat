@@ -15,6 +15,8 @@ import {
   CreditCard,
   Coins,
   ChevronLeft,
+  Briefcase,
+  BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +32,7 @@ import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import * as LucideIcons from 'lucide-react';
+import { useNetworkOwner } from "@/hooks/useNetworkOwner";
 
 
 interface Notification {
@@ -86,6 +89,7 @@ export default function HomePage() {
   const firestore = useFirestore();
   const router = useRouter();
   const autoplay = useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
+  const { isOwner: isNetworkOwner, isLoading: isOwnerLoading } = useNetworkOwner();
 
 
   useEffect(() => {
@@ -152,7 +156,7 @@ export default function HomePage() {
 
   const { data: adverts, isLoading: areAdvertsLoading } = useCollection<Advert>(advertsQuery);
 
-  const isLoading = isUserLoading || isCustomerLoading || isHomeLoading;
+  const isLoading = isUserLoading || isCustomerLoading || isHomeLoading || isOwnerLoading;
   const hasNotifications = !areNotificationsLoading && notifications && notifications.length > 0;
   
   const services = useMemo(() => {
@@ -270,6 +274,20 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
+        {/* Network Owner Controls */}
+        {!isLoading && isNetworkOwner && (
+            <div className="space-y-3">
+                <div className="flex justify-between items-center px-2">
+                    <h3 className="text-base font-bold">لوحة تحكم مالك الشبكة</h3>
+                </div>
+                 <div className="grid grid-cols-3 gap-3 text-center">
+                    <ServiceGridItem href="/account/my-network" label="إدارة شبكتي" id="my-network" icon={Briefcase} />
+                    <ServiceGridItem href="/account/card-management" label="إدارة الكروت" id="card-management" icon={CreditCard} />
+                    <ServiceGridItem href="/account/card-sales" label="تقرير المبيعات" id="card-sales" icon={BarChart3} />
+                </div>
+            </div>
+        )}
+
         {/* Services Grid */}
         <div className="grid grid-cols-3 gap-3 text-center">
           {isLoading ? (
@@ -373,8 +391,8 @@ const DefaultIconMap: { [key: string]: React.ElementType } = {
   contact: Phone,
 };
 
-function ServiceGridItem({ href, iconUrl, label, id }: HomeService) {
-    const Icon = DefaultIconMap[id] || LucideIcons.HelpCircle;
+function ServiceGridItem({ href, iconUrl, label, id, icon }: HomeService & { icon?: React.ElementType }) {
+    const Icon = icon || DefaultIconMap[id] || LucideIcons.HelpCircle;
     
     return (
         <Link href={href} className="block">

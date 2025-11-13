@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Home, User, Users, Briefcase } from "lucide-react";
+import { Home, User, Users, Briefcase, BarChart3, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -33,9 +33,8 @@ export function BottomNav() {
     ];
     if (isAdmin) {
       items.push({ href: "/account/user-management", icon: Users, label: "المستخدمين" });
-    }
-     if (isOwner) {
-      items.push({ href: "/account/my-network", icon: Briefcase, label: "إدارة" });
+      items.push({ href: "/account/card-sales", icon: BarChart3, label: "التقارير" });
+
     }
     items.push({ href: "/account", icon: User, label: "حسابي" });
     return items;
