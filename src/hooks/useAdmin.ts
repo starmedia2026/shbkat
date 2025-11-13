@@ -1,16 +1,15 @@
-
 "use client";
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useMemo } from "react";
 
-const ADMIN_PHONE_NUMBERS = ["770326828"];
+const ADMIN_PHONE_NUMBER = "770326828";
 
 /**
  * Custom hook to determine if the current user is an admin.
  * @returns An object containing:
- * - `isAdmin`: `true` if the user is an admin, `false` if not, `null` while loading or if there's no user.
+ * - `isAdmin`: `true` if the user is an admin, `false` if not, `null` while loading.
  * - `isLoading`: `true` if authentication or Firestore data is loading.
  */
 export function useAdmin() {
@@ -24,30 +23,34 @@ export function useAdmin() {
 
   const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
   
-  const isLoading = isUserLoading || isCustomerLoading;
+  const baseIsLoading = isUserLoading || isCustomerLoading;
 
   const isAdmin = useMemo(() => {
-    // If the user's phone number is the main admin number, bypass DB check.
-    if (customer?.phoneNumber === "770326828") {
-      return true;
-    }
-    
-    if (isLoading) {
-      return null; // Return null while loading to indicate an indeterminate state
+    if (baseIsLoading) {
+      return null; // Explicitly return null when loading
     }
     
     if (!customer?.phoneNumber) {
       return false; // Not an admin if there's no customer data or phone number
     }
-    // Check if the user's phone number is in the list of admin numbers
-    return ADMIN_PHONE_NUMBERS.includes(customer.phoneNumber);
-  }, [customer, isLoading]);
+    
+    // Check if the user's phone number is the main admin number
+    return customer.phoneNumber === ADMIN_PHONE_NUMBER;
+  }, [customer, baseIsLoading]);
 
-  // If the main admin is logged in, we can immediately say loading is false.
-  const finalIsLoading = customer?.phoneNumber === "770326828" ? false : isLoading;
+
+  const finalIsLoading = useMemo(() => {
+    // If we already have the customer data and it's the admin, we are not loading.
+    if (customer?.phoneNumber === ADMIN_PHONE_NUMBER) {
+        return false;
+    }
+    // Otherwise, respect the base loading state.
+    return baseIsLoading;
+  }, [customer, baseIsLoading]);
+
 
   return {
-    isAdmin,
+    isAdmin: isAdmin,
     isLoading: finalIsLoading,
   };
 }

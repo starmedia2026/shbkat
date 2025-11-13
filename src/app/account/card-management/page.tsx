@@ -44,10 +44,6 @@ interface CardInput {
 }
 
 export default function CardManagementPage() {
-  return <AdminProtectedContent />;
-}
-
-function AdminProtectedContent() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
@@ -79,7 +75,7 @@ function AdminProtectedContent() {
       </div>
     );
   }
-
+  
   return <CardManagementContent />;
 }
 

@@ -67,7 +67,7 @@ export default function UserManagementPage() {
   }, [isAdmin, isAdminLoading, router]);
 
   // Render a stable loading state until admin status is confirmed.
-  if (isAdminLoading || isAdmin === null) {
+  if (isAdminLoading || !isAdmin) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="p-4 flex items-center justify-between relative">
@@ -91,12 +91,7 @@ export default function UserManagementPage() {
   }
 
   // Render the content only if the user is an admin.
-  if (isAdmin) {
-    return <UserManagementContent />;
-  }
-
-  // Fallback, though the useEffect should have redirected.
-  return null;
+  return <UserManagementContent />;
 }
 
 function UserManagementContent() {
@@ -434,6 +429,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     );
 }
     
+
 
 
 
