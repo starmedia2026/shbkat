@@ -122,7 +122,7 @@ function OperationCard({ operation }: { operation: Operation }) {
             <div className="mt-3 pt-3 border-t flex justify-between items-center">
                  <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-muted-foreground">
-                        كرت الشحن:
+                        كرت الشبكة:
                     </p>
                     <p className="text-sm text-muted-foreground font-mono" dir="ltr">
                         {operation.cardNumber}

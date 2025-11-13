@@ -119,7 +119,7 @@ function NotificationCard({ notification }: { notification: Notification }) {
                 {notification.cardNumber && (
                     <div className="mt-3 pt-3 border-t flex justify-end items-center gap-2">
                         <p className="text-sm font-semibold text-muted-foreground">
-                            كرت الشحن:
+                            كرت الشبكة:
                         </p>
                          <p className="text-sm text-muted-foreground font-mono" dir="ltr">
                             {notification.cardNumber}
