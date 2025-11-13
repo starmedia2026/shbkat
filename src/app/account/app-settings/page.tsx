@@ -83,7 +83,7 @@ const initialServices: Service[] = [
 
 // Get all icon names from lucide-react, excluding specific ones
 const lucideIconNames = Object.keys(LucideIcons).filter(
-    (name) => name !== 'createLucideIcon' && name !== 'icons' && name.match(/^[A-Z]/)
+  (name) => typeof (LucideIcons as any)[name] === 'object' && (LucideIcons as any)[name].displayName
 ) as (keyof typeof LucideIcons)[];
 
 
@@ -421,6 +421,3 @@ function EditServiceDialog({ service, isOpen, onClose, onSave }: { service: Serv
         </Dialog>
     );
 }
-
-
-    
