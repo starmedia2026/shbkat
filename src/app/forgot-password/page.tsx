@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-8 flex items-center gap-3">
-          <Network className="h-12 w-12 text-primary" />
+          
           <h1 className="text-5xl font-bold tracking-tight text-primary">
             شبكات
           </h1>
