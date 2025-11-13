@@ -120,12 +120,12 @@ export default function LoginPage() {
                     className="object-contain"
                 />
             )}
-          <p className="text-xl text-muted-foreground font-semibold mt-2">
+          <p className="text-xl text-muted-foreground font-semibold">
             {displayName ? `أهلاً ${displayName}` : 'أهلاً بك'}
           </p>
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
-          <CardHeader className="space-y-1 text-center pt-2">
+          <CardHeader className="space-y-1 text-center pt-0">
             <CardTitle className="text-xl">تسجيل الدخول</CardTitle>
           </CardHeader>
           <form onSubmit={handleLogin}>
@@ -154,7 +154,7 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pr-10 placeholder:text-right"
+                    className="pr-4 pl-10 text-right"
                     dir="ltr"
                     disabled={isLoading}
                   />
