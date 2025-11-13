@@ -36,10 +36,12 @@ import { Label } from "@/components/ui/label";
 import Image from "next/image";
 
 
+const ADMIN_PHONE_NUMBER = "770326828";
+
 const networkData = networks.reduce((acc, network) => {
     acc[network.id] = network;
     return acc;
-  }, {} as { [key: string]: { name: string; categories: any[] } });
+  }, {} as { [key: string]: typeof networks[0] });
   
 
 interface Customer {
@@ -100,14 +102,14 @@ export default function NetworkDetailPage() {
       </header>
       <main className="p-4 space-y-4">
         {network.categories.map((category) => (
-          <PackageCard key={category.id} category={category} networkId={slug} networkName={network.name} />
+          <PackageCard key={category.id} category={category} network={network} />
         ))}
       </main>
     </div>
   );
 }
 
-function PackageCard({ category, networkId, networkName }: { category: Category, networkId: string, networkName: string }) {
+function PackageCard({ category, network }: { category: Category, network: typeof networks[0] }) {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -135,18 +137,18 @@ function PackageCard({ category, networkId, networkName }: { category: Category,
         setIsPurchasing(true);
 
         try {
-             // Step 1: Find an available card outside the transaction
+            const customersRef = collection(firestore, "customers");
+            // Find an available card outside the transaction
             const cardsRef = collection(firestore, "cards");
             const q = query(
                 cardsRef,
-                where("networkId", "==", networkId),
+                where("networkId", "==", network.id),
                 where("categoryId", "==", category.id),
                 where("status", "==", "available"),
                 limit(1)
             );
-
             const availableCardsSnapshot = await getDocs(q);
-            if (availableCardsSnapshot.empty) {
+             if (availableCardsSnapshot.empty) {
                 toast({
                     variant: "destructive",
                     title: "نفدت الكروت",
@@ -157,63 +159,77 @@ function PackageCard({ category, networkId, networkName }: { category: Category,
             }
             const cardToPurchaseDoc = availableCardsSnapshot.docs[0];
             const cardRef = cardToPurchaseDoc.ref;
+
+            // Find the network owner and admin outside the transaction
+            let ownerRef: any = null;
+            if (network.ownerPhone) {
+                const ownerQuery = query(customersRef, where("phoneNumber", "==", network.ownerPhone), limit(1));
+                const ownerSnapshot = await getDocs(ownerQuery);
+                if (!ownerSnapshot.empty) {
+                    ownerRef = ownerSnapshot.docs[0].ref;
+                }
+            }
             
-            // Step 2: Run the transaction
+            const adminQuery = query(customersRef, where("phoneNumber", "==", ADMIN_PHONE_NUMBER), limit(1));
+            const adminSnapshot = await getDocs(adminQuery);
+            const adminRef = adminSnapshot.empty ? null : adminSnapshot.docs[0].ref;
+
+            
+            // Run the transaction
             const purchasedCardNumber = await runTransaction(firestore, async (transaction) => {
-                // Re-read the card and customer docs inside the transaction to ensure they haven't changed
                 const senderDoc = await transaction.get(customerDocRef);
                 const cardDoc = await transaction.get(cardRef);
+                const ownerDoc = ownerRef ? await transaction.get(ownerRef) : null;
+                const adminDoc = adminRef ? await transaction.get(adminRef) : null;
+
+                if (!senderDoc.exists()) throw new Error("لم يتم العثور على حساب العميل.");
+                if (!cardDoc.exists() || cardDoc.data().status !== 'available') throw new Error("هذا الكرت لم يعد متاحًا. الرجاء المحاولة مرة أخرى.");
                 
-                if (!senderDoc.exists()) {
-                    throw new Error("لم يتم العثور على حساب العميل.");
-                }
-                if (!cardDoc.exists() || cardDoc.data().status !== 'available') {
-                    throw new Error("هذا الكرت لم يعد متاحًا. الرجاء المحاولة مرة أخرى.");
-                }
-
                 const senderBalance = senderDoc.data().balance;
-                if (senderBalance < category.price) {
-                    throw new Error("رصيد غير كافٍ.");
+                if (senderBalance < category.price) throw new Error("رصيد غير كافٍ.");
+
+                const now = new Date().toISOString();
+                const commission = category.price * 0.10;
+                const ownerAmount = category.price - commission;
+
+                // 1. Update card status
+                transaction.update(cardRef, { status: "used", usedAt: now, usedBy: user.uid });
+
+                // 2. Update customer balance
+                const newSenderBalance = senderBalance - category.price;
+                transaction.update(customerDocRef, { balance: newSenderBalance });
+
+                // 3. Update network owner balance
+                if (ownerDoc && ownerDoc.exists()) {
+                    const newOwnerBalance = ownerDoc.data().balance + ownerAmount;
+                    transaction.update(ownerRef, { balance: newOwnerBalance });
                 }
 
-                // All checks passed, proceed with writes
-                const now = new Date().toISOString();
+                // 4. Update admin balance
+                if (adminDoc && adminDoc.exists()) {
+                    const newAdminBalance = adminDoc.data().balance + commission;
+                    transaction.update(adminRef, { balance: newAdminBalance });
+                }
 
-                // Update card status
-                transaction.update(cardRef, {
-                    status: "used",
-                    usedAt: now,
-                    usedBy: user.uid,
-                });
+                // --- Create Logs and Notifications ---
+                const baseOpData = { amount: -category.price, date: now, status: 'completed', cardNumber: cardDoc.id };
+                // Customer's operation & notification
+                transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name} - ${network.name}` });
+                transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseOpData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح. رقم الكرت: ${cardDoc.id}`, read: false });
 
-                // Update customer balance
-                const newBalance = senderBalance - category.price;
-                transaction.update(customerDocRef, { balance: newBalance });
+                // Network owner's operation & notification
+                if (ownerDoc && ownerDoc.exists()) {
+                    const ownerId = ownerDoc.id;
+                    transaction.set(doc(collection(firestore, `customers/${ownerId}/operations`)), { type: 'transfer_received', amount: ownerAmount, date: now, description: `إيداع أرباح بيع كرت ${category.name}`, status: 'completed' });
+                    transaction.set(doc(collection(firestore, `customers/${ownerId}/notifications`)), { type: 'transfer_received', title: 'إيداع أرباح', body: `تم إيداع ${ownerAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: ownerAmount, date: now, read: false });
+                }
 
-                // Create operation log
-                const operationDocRef = doc(collection(firestore, `customers/${user.uid}/operations`));
-                const operationData = {
-                    type: "purchase",
-                    amount: -category.price,
-                    date: now,
-                    description: `شراء كرت: ${category.name} - ${networkName}`,
-                    status: "completed",
-                    cardNumber: cardDoc.id, // Store the card number
-                };
-                transaction.set(operationDocRef, operationData);
-
-                // Create notification
-                const notificationDocRef = doc(collection(firestore, `customers/${user.uid}/notifications`));
-                const notificationData = {
-                    type: "purchase",
-                    title: "شراء كرت",
-                    body: `تم شراء ${category.name} بنجاح. رقم الكرت: ${cardDoc.id}`,
-                    amount: -category.price,
-                    date: now,
-                    read: false,
-                    cardNumber: cardDoc.id,
-                };
-                transaction.set(notificationDocRef, notificationData);
+                 // Admin's operation & notification
+                if (adminDoc && adminDoc.exists()) {
+                    const adminId = adminDoc.id;
+                    transaction.set(doc(collection(firestore, `customers/${adminId}/operations`)), { type: 'transfer_received', amount: commission, date: now, description: `عمولة بيع كرت ${category.name}`, status: 'completed' });
+                    transaction.set(doc(collection(firestore, `customers/${adminId}/notifications`)), { type: 'transfer_received', title: 'تحصيل عمولة', body: `تم تحصيل عمولة ${commission.toLocaleString('en-US')} ريال.`, amount: commission, date: now, read: false });
+                }
 
                 return cardDoc.id; // Return the card number
             });
@@ -221,7 +237,7 @@ function PackageCard({ category, networkId, networkName }: { category: Category,
             setPurchasedCard({ 
                 cardNumber: purchasedCardNumber,
                 categoryName: category.name,
-                networkName: networkName
+                networkName: network.name
             });
 
         } catch (serverError: any) {
@@ -432,5 +448,3 @@ function BackButton() {
         </button>
     );
 }
-
-    
