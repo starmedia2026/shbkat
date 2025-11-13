@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
+import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +22,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -33,6 +34,7 @@ export default function EditProfilePage() {
 
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
+  const [password, setPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const customerDocRef = useMemoFirebase(() => {
@@ -50,33 +52,56 @@ export default function EditProfilePage() {
   }, [customer]);
 
   const handleSaveChanges = async () => {
-    if (!customerDocRef) {
+    if (!customerDocRef || !user || !user.email) {
       toast({
         variant: "destructive",
         title: "خطأ",
-        description: "لم يتم العثور على المستخدم.",
+        description: "لا يمكن العثور على بيانات المستخدم للتحقق.",
       });
       return;
+    }
+    if (!password) {
+        toast({
+          variant: "destructive",
+          title: "كلمة المرور مطلوبة",
+          description: "الرجاء إدخال كلمة المرور الحالية لتأكيد التغييرات.",
+        });
+        return;
     }
 
     setIsSaving(true);
     try {
-      await updateDoc(customerDocRef, {
-        name,
-        location,
-      });
-      toast({
-        title: "نجاح",
-        description: "تم تحديث ملفك الشخصي بنجاح.",
-      });
-      router.back();
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast({
-        variant: "destructive",
-        title: "فشل التحديث",
-        description: "حدث خطأ أثناء تحديث ملفك الشخصي.",
-      });
+        // Re-authenticate user first
+        const credential = EmailAuthProvider.credential(user.email, password);
+        await reauthenticateWithCredential(user, credential);
+
+        // If re-authentication is successful, update the document
+        await updateDoc(customerDocRef, {
+            name,
+            location,
+        });
+
+        toast({
+            title: "نجاح",
+            description: "تم تحديث ملفك الشخصي بنجاح.",
+        });
+        router.back();
+
+    } catch (error: any) {
+        console.error("Error updating profile:", error);
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            toast({
+              variant: "destructive",
+              title: "فشل التحقق",
+              description: "كلمة المرور التي أدخلتها غير صحيحة.",
+            });
+        } else {
+            toast({
+                variant: "destructive",
+                title: "فشل التحديث",
+                description: "حدث خطأ أثناء تحديث ملفك الشخصي.",
+            });
+        }
     } finally {
       setIsSaving(false);
     }
@@ -117,6 +142,10 @@ export default function EditProfilePage() {
                     <Skeleton className="h-4 w-1/4" />
                     <Skeleton className="h-10 w-full" />
                 </div>
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
               </div>
             ) : (
               <>
@@ -145,6 +174,22 @@ export default function EditProfilePage() {
                       <SelectItem value="alaqad">العقاد</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2 text-right pt-4 border-t">
+                    <Label htmlFor="password">
+                        <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4"/>
+                            <span>تأكيد كلمة المرور الحالية</span>
+                        </div>
+                    </Label>
+                    <Input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="أدخل كلمة المرور لتأكيد التغييرات"
+                        required
+                    />
                 </div>
               </>
             )}
