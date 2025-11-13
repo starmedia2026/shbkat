@@ -41,6 +41,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [location, setLocation] = useState("");
+  const [accountType, setAccountType] = useState("user");
   const [error, setError] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
@@ -94,6 +95,17 @@ export default function SignupPage() {
       });
       return;
     }
+    
+    if (!accountType) {
+      const accountTypeError = "الرجاء اختيار نوع الحساب";
+      setError(accountTypeError);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: accountTypeError,
+      });
+      return;
+    }
 
     const email = `${phone}@shabakat.app`;
 
@@ -109,6 +121,7 @@ export default function SignupPage() {
           location: location,
           balance: 0,
           accountNumber: Math.random().toString().slice(2, 12), // Generate a random account number
+          accountType: accountType,
         };
         
         const userDocRef = doc(firestore, "customers", user.uid);
@@ -230,22 +243,36 @@ export default function SignupPage() {
                   </button>
                 </div>
               </div>
-              <div className="grid gap-2 text-right">
-                <Label htmlFor="location">الموقع</Label>
-                <Select dir="rtl" onValueChange={setLocation} value={location} required>
-                  <SelectTrigger id="location">
-                    <SelectValue placeholder="اختر موقعك" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="shibam">شبام</SelectItem>
-                    <SelectItem value="sayun">سيئون</SelectItem>
-                    <SelectItem value="alqatn">القطن</SelectItem>
-                    <SelectItem value="alhawta">الحوطة</SelectItem>
-                    <SelectItem value="tarim">تريم</SelectItem>
-                    <SelectItem value="alghurfa">الغرفة</SelectItem>
-                    <SelectItem value="alaqad">العقاد</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2 text-right">
+                  <Label htmlFor="location">الموقع</Label>
+                  <Select dir="rtl" onValueChange={setLocation} value={location} required>
+                    <SelectTrigger id="location">
+                      <SelectValue placeholder="اختر موقعك" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="shibam">شبام</SelectItem>
+                      <SelectItem value="sayun">سيئون</SelectItem>
+                      <SelectItem value="alqatn">القطن</SelectItem>
+                      <SelectItem value="alhawta">الحوطة</SelectItem>
+                      <SelectItem value="tarim">تريم</SelectItem>
+                      <SelectItem value="alghurfa">الغرفة</SelectItem>
+                      <SelectItem value="alaqad">العقاد</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                 <div className="grid gap-2 text-right">
+                  <Label htmlFor="accountType">نوع الحساب</Label>
+                  <Select dir="rtl" onValueChange={setAccountType} value={accountType} required>
+                    <SelectTrigger id="accountType">
+                      <SelectValue placeholder="اختر نوع الحساب" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">مستخدم</SelectItem>
+                      <SelectItem value="network-owner">مالك شبكة</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
                {error && <p className="text-red-500 text-sm">{error}</p>}
             </CardContent>

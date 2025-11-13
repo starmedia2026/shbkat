@@ -34,6 +34,10 @@ service cloud.firestore {
     function isAdmin() {
        return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
     }
+    
+    function isNetworkOwner() {
+        return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.accountType == "network-owner";
+    }
 
     match /customers/{customerId} {
       allow get: if isOwner(customerId) || isAdmin();
@@ -76,7 +80,7 @@ service cloud.firestore {
 
     match /cards/{cardId} {
         // Admin can do anything with cards.
-        allow create, delete, list: if isAdmin();
+        allow create, delete, list: if isAdmin() || isNetworkOwner();
         // Any signed-in user can read card data (needed to find an available card).
         allow read: if isSignedIn();
         // Allow updates only for the specific 'purchase' transaction.
@@ -86,7 +90,7 @@ service cloud.firestore {
         allow update: if (isSignedIn() && 
           request.resource.data.status == 'used' &&
           resource.data.status == 'available' &&
-          request.resource.data.usedBy == request.auth.uid) || isAdmin();
+          request.resource.data.usedBy == request.auth.uid) || isAdmin() || isNetworkOwner();
     }
 
     match /settings/{docId} {
