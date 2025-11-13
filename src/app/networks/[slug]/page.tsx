@@ -57,6 +57,8 @@ interface Category {
 
 interface PurchasedCardInfo {
     cardNumber: string;
+    categoryName: string;
+    networkName: string;
 }
 
 export default function NetworkDetailPage() {
@@ -90,14 +92,14 @@ export default function NetworkDetailPage() {
       </header>
       <main className="p-4 space-y-4">
         {network.categories.map((category) => (
-          <PackageCard key={category.id} category={category} networkName={network.name} isClient={isClient} />
+          <PackageCard key={category.id} category={category} networkId={slug} networkName={network.name} isClient={isClient} />
         ))}
       </main>
     </div>
   );
 }
 
-function PackageCard({ category, networkName, isClient }: { category: Category, networkName: string, isClient: boolean }) {
+function PackageCard({ category, networkId, networkName, isClient }: { category: Category, networkId: string, networkName: string, isClient: boolean }) {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -129,6 +131,7 @@ function PackageCard({ category, networkName, isClient }: { category: Category, 
             const cardsRef = collection(firestore, "cards");
             const q = query(
                 cardsRef,
+                where("networkId", "==", networkId),
                 where("categoryId", "==", category.id),
                 where("status", "==", "available"),
                 limit(1)
@@ -206,7 +209,11 @@ function PackageCard({ category, networkName, isClient }: { category: Category, 
                 return cardDoc.id; // Return the card number
             });
 
-            setPurchasedCard({ cardNumber: purchasedCardNumber });
+            setPurchasedCard({ 
+                cardNumber: purchasedCardNumber,
+                categoryName: category.name,
+                networkName: networkName
+            });
 
         } catch (error: any) {
              // This allows our central error listener to catch it and display it in the dev overlay.
@@ -309,7 +316,6 @@ function PackageCard({ category, networkName, isClient }: { category: Category, 
 
 function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInfo, isOpen: boolean, onClose: () => void }) {
     const { toast } = useToast();
-    const [showSmsDialog, setShowSmsDialog] = useState(false);
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(card.cardNumber);
@@ -319,88 +325,40 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
         });
     };
 
-    return (
-        <>
-            <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>تم الشراء بنجاح!</DialogTitle>
-                        <DialogDescription>
-                            اضغط على رقم الكرت لنسخه.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="card-number">رقم الكرت</Label>
-                        <div className="mt-2">
-                            <Input
-                                id="card-number"
-                                value={card.cardNumber}
-                                readOnly
-                                className="text-lg font-mono tracking-wider text-center cursor-pointer"
-                                dir="ltr"
-                                onClick={copyToClipboard}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter className="flex-col sm:flex-row gap-2">
-                        <Button type="button" variant="secondary" onClick={() => { onClose(); setShowSmsDialog(true); }}>
-                           <Send className="ml-2 h-4 w-4"/>
-                           ارسال الى SMS
-                        </Button>
-                        <Button type="button" onClick={onClose}>إغلاق</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* This has to be a separate dialog so they don't overlap */}
-             <SendSmsDialog 
-                card={card}
-                isOpen={showSmsDialog}
-                onClose={() => setShowSmsDialog(false)}
-            />
-        </>
-    );
-}
-
-export function SendSmsDialog({ card, isOpen, onClose }: { card: PurchasedCardInfo, isOpen: boolean, onClose: () => void }) {
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const { toast } = useToast();
-
     const handleSendSms = () => {
-        // In a real app, you would integrate with an SMS gateway here.
-        console.log(`Simulating sending SMS for card ${card.cardNumber} to ${phoneNumber}`);
-        toast({
-            title: "جاري إرسال الرسالة",
-            description: `سيتم إرسال تفاصيل الكرت إلى الرقم ${phoneNumber}.`
-        });
+        const messageBody = encodeURIComponent(`تم شراء ${card.categoryName} من ${card.networkName}.\nرقم الكرت: ${card.cardNumber}`);
+        window.location.href = `sms:?body=${messageBody}`;
         onClose();
     };
-    
+
     return (
-         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>ارسال معلومات الكرت</DialogTitle>
+                    <DialogTitle>تم الشراء بنجاح!</DialogTitle>
                     <DialogDescription>
-                        يمكنك ارسال معلومات الكرت برسالة نصية SMS الى اي رقم. يرجى إدخال رقم الجوال الذي تريد إرسال الكرت اليه.
+                        اضغط على رقم الكرت لنسخه، أو أرسله عبر رسالة نصية.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
-                    <Label htmlFor="sms-phone-number">رقم الجوال</Label>
-                    <Input
-                        id="sms-phone-number"
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="77xxxxxxxx"
-                        dir="ltr"
-                    />
+                    <Label htmlFor="card-number">رقم الكرت</Label>
+                    <div className="mt-2">
+                        <Input
+                            id="card-number"
+                            value={card.cardNumber}
+                            readOnly
+                            className="text-lg font-mono tracking-wider text-center cursor-pointer"
+                            dir="ltr"
+                            onClick={copyToClipboard}
+                        />
+                    </div>
                 </div>
-                <DialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-2">
-                    <Button type="button" onClick={handleSendSms} disabled={phoneNumber.length < 9}>تأكيد</Button>
-                    <DialogClose asChild>
-                         <Button type="button" variant="secondary">إلغاء</Button>
-                    </DialogClose>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                    <Button type="button" variant="secondary" onClick={handleSendSms}>
+                       <Send className="ml-2 h-4 w-4"/>
+                       ارسال الى SMS
+                    </Button>
+                    <Button type="button" onClick={onClose}>إغلاق</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -419,9 +377,3 @@ function BackButton() {
         </button>
     );
 }
-
-    
-
-    
-
-    
