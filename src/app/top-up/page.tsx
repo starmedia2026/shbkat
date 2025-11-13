@@ -77,10 +77,9 @@ export default function TopUpPage() {
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <header className="p-4 flex items-center justify-between relative">
+      <header className="p-4 flex items-center justify-end relative">
+        <h1 className="text-lg font-semibold text-right flex-grow mr-4">غذي حسابك</h1>
         <BackButton />
-        <h1 className="text-lg font-bold text-center flex-grow">غذي حسابك</h1>
-        <div className="w-10"></div>
       </header>
       <main className="p-4 space-y-6">
         <h2 className="text-right font-bold text-lg px-2">طريقة الدفع</h2>
@@ -174,7 +173,7 @@ function BackButton() {
   return (
     <button
       onClick={() => router.back()}
-      className="absolute left-4 top-1/2 -translate-y-1/2 p-2"
+      className="absolute right-4 top-1/2 -translate-y-1/2 p-2"
     >
       <ArrowLeft className="h-6 w-6" />
     </button>

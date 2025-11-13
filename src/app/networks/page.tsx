@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,16 +27,16 @@ export default function NetworksPage() {
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <header className="p-4 flex items-center justify-between relative">
+      <header className="p-4 flex items-center justify-end relative">
+        <h1 className="text-lg font-semibold text-right flex-grow mr-4">الشبكات</h1>
         <Button
           variant="ghost"
           size="icon"
-          className="absolute left-4"
+          className="absolute right-0"
           onClick={() => router.back()}
         >
           <ArrowLeft className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-bold text-center flex-grow">الشبكات</h1>
       </header>
       <main className="p-4 space-y-4">
         {allNetworks.map((network) => (
