@@ -68,7 +68,7 @@ service cloud.firestore {
 
     match /cards/{cardId} {
         // Admin can do anything.
-        allow create, delete: if isAdmin();
+        allow create, delete, list: if isAdmin();
         // Any signed-in user can read card data (needed to find an available card).
         allow read: if isSignedIn();
         // Allow updates only for the specific 'purchase' transaction.
