@@ -93,14 +93,14 @@ export default function NetworkDetailPage() {
       </header>
       <main className="p-4 space-y-4">
         {network.categories.map((category) => (
-          <PackageCard key={category.id} category={category} networkId={slug} networkName={network.name} isClient={isClient} />
+          <PackageCard key={category.id} category={category} networkId={slug} networkName={network.name} />
         ))}
       </main>
     </div>
   );
 }
 
-function PackageCard({ category, networkId, networkName, isClient }: { category: Category, networkId: string, networkName: string, isClient: boolean }) {
+function PackageCard({ category, networkId, networkName }: { category: Category, networkId: string, networkName: string }) {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -259,8 +259,8 @@ function PackageCard({ category, networkId, networkName, isClient }: { category:
                     <div className="flex justify-between items-start">
                         <div>
                             <p className="font-semibold text-base">{category.name}</p>
-                            <p className="text-sm font-bold text-primary mt-1" dir="rtl">
-                                ريال يمني {isClient ? category.price.toLocaleString('en-US') : category.price}
+                            <p className="text-sm font-bold text-primary mt-1">
+                                {category.price.toLocaleString('en-US')} ريال يمني
                             </p>
                         </div>
                         <AlertDialog>
@@ -276,7 +276,7 @@ function PackageCard({ category, networkId, networkName, isClient }: { category:
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>تأكيد عملية الشراء</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        هل أنت متأكد من رغبتك في شراء "{category.name}" بمبلغ <span className="font-bold text-primary" dir="ltr">{category.price.toLocaleString('en-US')} ريال</span>؟
+                                        هل أنت متأكد من رغبتك في شراء "{category.name}" بمبلغ <span className="font-bold text-primary">{category.price.toLocaleString('en-US')} ريال يمني</span>؟
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>

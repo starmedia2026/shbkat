@@ -210,9 +210,9 @@ export default function TransferPage() {
               {isLoading ? (
                 <Skeleton className="h-7 w-28 mt-1" />
               ) : (
-                <p className="text-xl font-bold text-primary flex items-baseline gap-2" dir="rtl">
-                  <span className="text-sm font-normal">ريال يمني</span>
+                <p className="text-xl font-bold text-primary flex items-baseline gap-2">
                   <span>{(sender?.balance || 0).toLocaleString('en-US')}</span>
+                  <span className="text-sm font-normal">ريال يمني</span>
                 </p>
               )}
             </div>
@@ -282,7 +282,7 @@ export default function TransferPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>تأكيد عملية التحويل</AlertDialogTitle>
               <AlertDialogDescription>
-                هل أنت متأكد من رغبتك في تحويل مبلغ <span className="font-bold text-primary" dir="ltr">{Number(amount).toLocaleString('en-US')} ريال يمني</span> إلى <span className="font-bold text-primary">{recipient?.name}</span>؟
+                هل أنت متأكد من رغبتك في تحويل مبلغ <span className="font-bold text-primary">{Number(amount).toLocaleString('en-US')} ريال يمني</span> إلى <span className="font-bold text-primary">{recipient?.name}</span>؟
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
