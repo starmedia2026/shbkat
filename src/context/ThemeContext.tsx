@@ -2,9 +2,10 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { useFirestore, useDoc, useMemoFirebase, errorEmitter } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useAdmin } from "@/hooks/useAdmin";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -37,12 +38,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     setIsMounted(true);
+    // Set font on mount, primary color is handled by server component + script
+    document.body.classList.add(DEFAULT_FONT);
   }, []);
 
+  // Update CSS variable for primary color on the client side when it changes
   useEffect(() => {
     if (isMounted) {
       document.documentElement.style.setProperty('--primary', primaryColor);
-      document.body.classList.add(DEFAULT_FONT);
+      document.documentElement.style.setProperty('--ring', primaryColor);
     }
   }, [primaryColor, isMounted]);
 
@@ -73,9 +77,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setPrimaryColor = useCallback((hslColor: string) => {
     if (isAdmin && themeDocRef) {
       document.documentElement.style.setProperty('--primary', hslColor); 
-      setDoc(themeDocRef, { primaryColor: hslColor }, { merge: true }).catch(error => {
-          console.error("Failed to save theme color:", error);
-          document.documentElement.style.setProperty('--primary', primaryColor);
+      document.documentElement.style.setProperty('--ring', hslColor);
+      setDoc(themeDocRef, { primaryColor: hslColor }, { merge: true })
+      .catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: themeDocRef.path,
+                operation: 'write',
+                requestResourceData: { primaryColor: hslColor }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            // Revert if save fails
+            document.documentElement.style.setProperty('--primary', primaryColor);
+            document.documentElement.style.setProperty('--ring', primaryColor);
       });
     }
   }, [isAdmin, themeDocRef, primaryColor]);
