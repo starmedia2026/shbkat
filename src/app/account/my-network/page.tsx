@@ -86,7 +86,7 @@ function LoadingScreen() {
 
 export default function MyNetworkPage() {
   const router = useRouter();
-  const { isOwner, isLoading } = useNetworkOwner();
+  const { isOwner, ownedNetwork, isLoading } = useNetworkOwner();
 
   useEffect(() => {
     if (!isLoading && isOwner === false) {
@@ -98,13 +98,13 @@ export default function MyNetworkPage() {
     return <LoadingScreen />;
   }
 
-  return <MyNetworkContent />;
+  return <MyNetworkContent initialNetwork={ownedNetwork} />;
 }
 
-function MyNetworkContent() {
+function MyNetworkContent({ initialNetwork }: { initialNetwork: Network | null }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [networks, setNetworks] = useState<Network[]>(initialNetworks);
+  const [network, setNetwork] = useState<Network | null>(initialNetwork);
   const [isSaving, setIsSaving] = useState(false);
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
   const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string}>({name: "", logo: "", address: ""});
@@ -112,10 +112,6 @@ function MyNetworkContent() {
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   const { user } = useUser();
   
-  const ownerNetwork = useMemo(() => {
-    if (!user?.phoneNumber) return null;
-    return initialNetworks.find(n => n.ownerPhone === user.phoneNumber);
-  }, [user?.phoneNumber]);
 
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
     setIsSaving(true);
@@ -132,7 +128,10 @@ function MyNetworkContent() {
         throw new Error('فشل في حفظ البيانات على الخادم');
       }
       
-      setNetworks(updatedNetworks);
+      const updatedNetwork = updatedNetworks.find(n => n.ownerPhone === user?.phoneNumber);
+      if(updatedNetwork) {
+        setNetwork(updatedNetwork);
+      }
 
       toast({
         title: "تم الحفظ",
@@ -148,68 +147,68 @@ function MyNetworkContent() {
     } finally {
       setIsSaving(false);
     }
-  }, [toast]);
+  }, [toast, user?.phoneNumber]);
   
-  const updateAndSave = (newNetworks: Network[]) => {
-    handleSave(newNetworks);
+  const updateAndSave = (updatedNetwork: Network) => {
+    const allNetworks = initialNetworks.map(n => n.id === updatedNetwork.id ? updatedNetwork : n);
+    handleSave(allNetworks);
   };
   
   const handleAddNetwork = () => {
-    if (ownerNetwork) {
+    if (network) {
         toast({ variant: "destructive", title: "لا يمكن الإضافة", description: "يمكنك إدارة شبكة واحدة فقط." });
         return;
     }
     const newId = `new-network-${Date.now()}`;
     const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: user?.phoneNumber || "", categories: [] };
-    const newNetworks = [...networks, newNetwork];
-    setNetworks(newNetworks);
+    setNetwork(newNetwork);
     setEditingNetworkId(newId);
     setEditingNetworkData({name: "", logo: "", address: ""});
   };
 
-  const handleUpdateNetwork = (networkId: string) => {
-    const newNetworks = networks.map(n => n.id === networkId ? { ...n, ...editingNetworkData, ownerPhone: n.ownerPhone || user?.phoneNumber } : n);
-    updateAndSave(newNetworks);
+  const handleUpdateNetwork = () => {
+    if(!network) return;
+    const updatedNetwork = { ...network, ...editingNetworkData, ownerPhone: network.ownerPhone || user?.phoneNumber };
+    
+    // Check if it's a new network or an existing one
+    const isNew = !initialNetworks.some(n => n.id === updatedNetwork.id);
+    const allNetworks = isNew ? [...initialNetworks, updatedNetwork] : initialNetworks.map(n => n.id === updatedNetwork.id ? updatedNetwork : n);
+
+    handleSave(allNetworks);
     setEditingNetworkId(null);
     setEditingNetworkData({name: "", logo: "", address: ""});
   };
   
-  const handleAddCategory = (networkId: string) => {
+  const handleAddCategory = () => {
+    if(!network) return;
     const newId = `new-cat-${Date.now()}`;
     const newCategory: Category = { id: newId, name: "", price: 0, validity: "", capacity: "" };
     setEditingCategoryId(newId);
     setEditingCategory(newCategory);
 
-    const newNetworks = networks.map(n => n.id === networkId ? { ...n, categories: [...n.categories, newCategory] } : n)
-    setNetworks(newNetworks);
+    const updatedNetwork = { ...network, categories: [...network.categories, newCategory] };
+    setNetwork(updatedNetwork);
   };
 
-  const handleUpdateCategory = (networkId: string) => {
-    if (!editingCategory || !editingCategoryId) return;
+  const handleUpdateCategory = () => {
+    if (!editingCategory || !editingCategoryId || !network) return;
 
-    const newNetworks = networks.map(n => 
-      n.id === networkId 
-        ? { ...n, categories: n.categories.map(c => c.id === editingCategoryId ? editingCategory as Category : c) } 
-        : n
-    );
-    updateAndSave(newNetworks);
+    const isNewCategory = !network.categories.some(c => c.id === editingCategoryId && c.name !== "");
+
+    const updatedNetwork = { ...network, categories: network.categories.map(c => c.id === editingCategoryId ? editingCategory as Category : c) };
+    
+    updateAndSave(updatedNetwork);
 
     setEditingCategoryId(null);
     setEditingCategory(null);
   };
   
-  const handleDeleteCategory = (networkId: string, categoryId: string) => {
-     const newNetworks = networks.map(n => 
-        n.id === networkId 
-        ? { ...n, categories: n.categories.filter(c => c.id !== categoryId) } 
-        : n
-    );
-    updateAndSave(newNetworks);
+  const handleDeleteCategory = (categoryId: string) => {
+     if(!network) return;
+     const updatedNetwork = { ...network, categories: network.categories.filter(c => c.id !== categoryId) };
+     updateAndSave(updatedNetwork);
   };
   
-  const networkToDisplay = ownerNetwork || networks.find(n => editingNetworkId && n.id === editingNetworkId);
-
-
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
       <header className="p-4 flex items-center justify-between relative border-b sticky top-0 bg-background z-10">
@@ -232,57 +231,60 @@ function MyNetworkContent() {
       </header>
       <main className="p-4">
         <div className="space-y-6">
-            {networkToDisplay ? (
-                <Card key={networkToDisplay.id} className="w-full shadow-md rounded-2xl bg-card/50">
+            {network ? (
+                <Card key={network.id} className="w-full shadow-md rounded-2xl bg-card/50">
                 <CardHeader className="flex-row items-center justify-between">
-                    {editingNetworkId === networkToDisplay.id ? (
+                    {editingNetworkId === network.id ? (
                     <div className="flex flex-col gap-2 flex-grow">
                         <Input placeholder="اسم الشبكة" value={editingNetworkData.name} onChange={e => setEditingNetworkData(prev => ({...prev, name: e.target.value}))}/>
                         <Input placeholder="رابط الشعار" value={editingNetworkData.logo} onChange={e => setEditingNetworkData(prev => ({...prev, logo: e.target.value}))}/>
                         <Input placeholder="عنوان الشبكة" value={editingNetworkData.address} onChange={e => setEditingNetworkData(prev => ({...prev, address: e.target.value}))}/>
                         <div className="flex justify-end gap-2 mt-2">
-                            <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(networkToDisplay.id)}><Save className="h-4 w-4"/></Button>
+                            <Button size="icon" variant="ghost" onClick={handleUpdateNetwork}><Save className="h-4 w-4"/></Button>
                             <Button size="icon" variant="ghost" onClick={() => {
                                 setEditingNetworkId(null);
-                                if (!initialNetworks.find(n => n.id === networkToDisplay.id)) {
-                                    setNetworks(networks.filter(n => n.id !== networkToDisplay.id));
+                                if (!initialNetworks.find(n => n.id === network.id)) {
+                                    setNetwork(null);
                                 }
                             }}><X className="h-4 w-4"/></Button>
                         </div>
                     </div>
                     ) : (
                         <div className="flex items-center gap-3">
-                            {networkToDisplay.logo && <Image src={networkToDisplay.logo} alt={networkToDisplay.name} width={40} height={40} className="rounded-full"/>}
-                            {!networkToDisplay.logo && <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center"><ImageIcon className="h-5 w-5 text-muted-foreground"/></div>}
+                            {network.logo && <Image src={network.logo} alt={network.name} width={40} height={40} className="rounded-full"/>}
+                            {!network.logo && <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center"><ImageIcon className="h-5 w-5 text-muted-foreground"/></div>}
                             <div className="flex-grow">
-                            <CardTitle className="text-lg">{networkToDisplay.name || "شبكة بدون اسم"}</CardTitle>
-                            {networkToDisplay.address && (
+                            <CardTitle className="text-lg">{network.name || "شبكة بدون اسم"}</CardTitle>
+                            {network.address && (
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                                         <MapPin className="h-3 w-3"/>
-                                        <span>{networkToDisplay.address}</span>
+                                        <span>{network.address}</span>
                                     </div>
                                 )}
                             </div>
                         </div>
                     )}
-                    {editingNetworkId !== networkToDisplay.id && (
+                    {editingNetworkId !== network.id && (
                         <div className="flex items-center gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(networkToDisplay.id); setEditingNetworkData({name: networkToDisplay.name, logo: networkToDisplay.logo || "", address: networkToDisplay.address || ""}); }}>
+                            <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(network.id); setEditingNetworkData({name: network.name, logo: network.logo || "", address: network.address || ""}); }}>
                                 <Edit className="h-4 w-4" />
                             </Button>
                         </div>
                     )}
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {networkToDisplay.categories.map((category) => 
+                    {network.categories.map((category) => 
                         editingCategoryId === category.id ? (
                             <CategoryEditForm 
                                 key={category.id}
                                 category={editingCategory}
                                 setCategory={setEditingCategory}
-                                onSave={() => handleUpdateCategory(networkToDisplay.id)}
+                                onSave={() => handleUpdateCategory()}
                                 onCancel={() => {
-                                    if (category.name === "") setNetworks(networks.map(n => n.id === networkToDisplay.id ? { ...n, categories: n.categories.filter(c => c.id !== category.id)} : n))
+                                    // if it was a new category being added and cancelled, remove it from the state
+                                    if (category.name === "") {
+                                        setNetwork(prev => prev ? {...prev, categories: prev.categories.filter(c => c.id !== category.id) } : null);
+                                    }
                                     setEditingCategoryId(null);
                                     setEditingCategory(null);
                                 }}
@@ -291,13 +293,13 @@ function MyNetworkContent() {
                             <CategoryCard 
                                 key={category.id} 
                                 category={category} 
-                                networkId={networkToDisplay.id}
+                                networkId={network.id}
                                 onEdit={() => { setEditingCategoryId(category.id); setEditingCategory(category); }}
-                                onDelete={() => handleDeleteCategory(networkToDisplay.id, category.id)}
+                                onDelete={() => handleDeleteCategory(category.id)}
                             />
                         )
                     )}
-                    <Button variant="outline" className="w-full" onClick={() => handleAddCategory(networkToDisplay.id)}>
+                    <Button variant="outline" className="w-full" onClick={handleAddCategory}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     إضافة باقة جديدة
                     </Button>
@@ -496,3 +498,5 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
+
+    
