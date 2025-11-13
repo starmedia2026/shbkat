@@ -24,9 +24,9 @@ export const paymentMethods: PaymentMethod[] = [
     "accountNumber": "1055518",
     "logoUrl": "",
     "theme": {
-      "iconBg": "bg-purple-100 dark:bg-purple-900/50",
-      "iconColor": "text-purple-600 dark:text-purple-400",
-      "borderColor": "border-purple-500"
+      "iconBg": "bg-primary/10",
+      "iconColor": "text-primary",
+      "borderColor": "border-primary"
     }
   },
   {
@@ -37,9 +37,9 @@ export const paymentMethods: PaymentMethod[] = [
     "accountNumber": "2345678",
     "logoUrl": "",
     "theme": {
-      "iconBg": "bg-green-100 dark:bg-green-900/50",
-      "iconColor": "text-green-600 dark:text-green-400",
-      "borderColor": "border-green-500"
+      "iconBg": "bg-primary/10",
+      "iconColor": "text-primary",
+      "borderColor": "border-primary"
     }
   },
   {
@@ -50,9 +50,9 @@ export const paymentMethods: PaymentMethod[] = [
     "accountNumber": "3456789",
     "logoUrl": "",
     "theme": {
-      "iconBg": "bg-blue-100 dark:bg-blue-900/50",
-      "iconColor": "text-blue-600 dark:text-blue-400",
-      "borderColor": "border-blue-500"
+      "iconBg": "bg-primary/10",
+      "iconColor": "text-primary",
+      "borderColor": "border-primary"
     }
   }
 ];
