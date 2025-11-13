@@ -46,6 +46,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useAdmin } from "@/hooks/useAdmin";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 
 // WhatsApp icon component
@@ -177,17 +179,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
     const { toast } = useToast();
     const [amount, setAmount] = useState("");
 
-    const handleTopUp = () => {
-        if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-            toast({
-                variant: "destructive",
-                title: "مبلغ غير صالح",
-                description: "الرجاء إدخال مبلغ صحيح لتغذية الرصيد.",
-            });
-            return;
-        }
-
-        const topUpAmount = Number(amount);
+    const performTopUp = (topUpAmount: number, andThen?: (newBalance: number) => void) => {
         if (!firestore) return;
         const customerDocRef = doc(firestore, "customers", customer.id);
         const operationDocRef = doc(collection(firestore, `customers/${customer.id}/operations`));
@@ -219,9 +211,10 @@ function CustomerCard({ customer }: { customer: Customer }) {
         batch.commit().then(() => {
             toast({
                 title: "نجاح",
-                description: `تم تغذية حساب ${customer.name} بمبلغ ${amount} ريال. الرصيد الجديد: ${newBalance.toLocaleString('en-US')}`,
+                description: `تم تغذية حساب ${customer.name} بمبلغ ${topUpAmount.toLocaleString('en-US')} ريال. الرصيد الجديد: ${newBalance.toLocaleString('en-US')}`,
             });
             setAmount(""); // Clear input
+            andThen?.(newBalance);
         }).catch((serverError) => {
             const contextualError = new FirestorePermissionError({
                 operation: 'write',
@@ -233,6 +226,44 @@ function CustomerCard({ customer }: { customer: Customer }) {
                 }
             });
             errorEmitter.emit('permission-error', contextualError);
+        });
+    };
+    
+    const handleTopUp = () => {
+        const topUpAmount = Number(amount);
+        if (isNaN(topUpAmount) || topUpAmount <= 0) {
+            toast({
+                variant: "destructive",
+                title: "مبلغ غير صالح",
+                description: "الرجاء إدخال مبلغ صحيح لتغذية الرصيد.",
+            });
+            return;
+        }
+        performTopUp(topUpAmount);
+    };
+
+    const handleWhatsAppTopUp = () => {
+        const topUpAmount = Number(amount);
+        if (isNaN(topUpAmount) || topUpAmount <= 0) {
+            toast({
+                variant: "destructive",
+                title: "مبلغ غير صالح",
+                description: "الرجاء إدخال مبلغ صحيح لتغذية الرصيد.",
+            });
+            return;
+        }
+
+        performTopUp(topUpAmount, (newBalance) => {
+            const date = format(new Date(), "yyyy-MM-dd", { locale: ar });
+            const message = `📩 *عملية إيداع من تطبيق شبكات*
+تم بنجاح إيداع مبلغ ${topUpAmount.toLocaleString('en-US')} ريال يمني في حسابك (${customer.phoneNumber}) بتاريخ ${date}.
+يُرجى التحقق من الرصيد عبر تطبيق شبكات للتأكد من تفاصيل العملية
+🔒 هذه الرسالة صادرة تلقائيًا من تطبيق شبكات — دقة. أمان. ثقة
+
+*رصيدك: ${newBalance.toLocaleString('en-US')}*`;
+
+            const whatsappUrl = `https://wa.me/967${customer.phoneNumber}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, "_blank");
         });
     };
 
@@ -298,7 +329,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
                             <AlertDialogTrigger asChild>
                                  <Button variant="outline" className="flex-grow">
                                     <Coins className="h-4 w-4 ml-2"/>
-                                    تغذية الرصيد
+                                    تغذية
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="rounded-2xl">
@@ -325,13 +356,44 @@ function CustomerCard({ customer }: { customer: Customer }) {
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                 <Button variant="outline" className="flex-grow bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
+                                    <WhatsAppIcon className="h-5 w-5 ml-2"/>
+                                    إيداع وإبلاغ
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="rounded-2xl">
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>إيداع وإبلاغ عبر واتساب</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    أدخل مبلغ الإيداع. سيتم إضافة المبلغ لرصيد العميل وإعداد رسالة واتساب لإبلاغه.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="space-y-2 text-right">
+                                    <Label htmlFor="whatsapp-amount" className="text-right">المبلغ</Label>
+                                    <Input
+                                        id="whatsapp-amount"
+                                        type="number"
+                                        placeholder="أدخل المبلغ"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        dir="ltr"
+                                    />
+                                </div>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleWhatsAppTopUp}>تأكيد ومتابعة</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+
                         <EditCustomerDialog customer={customer} />
                         
                          <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="destructive" className="flex-grow">
-                                    <Trash2 className="h-4 w-4 ml-2" />
-                                    حذف
+                                <Button variant="destructive" size="icon">
+                                    <Trash2 className="h-4 w-4" />
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -411,9 +473,8 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="secondary" className="flex-grow">
-                    <Edit className="h-4 w-4 ml-2"/>
-                    تعديل
+                <Button variant="secondary" size="icon">
+                    <Edit className="h-4 w-4"/>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
