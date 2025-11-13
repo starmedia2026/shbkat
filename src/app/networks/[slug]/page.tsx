@@ -136,7 +136,13 @@ function PackageCard({ category, networkName, isClient }: { category: Category, 
 
             const availableCardsSnapshot = await getDocs(q);
             if (availableCardsSnapshot.empty) {
-                throw new Error("لا توجد كروت متاحة من هذه الفئة حاليًا.");
+                toast({
+                    variant: "destructive",
+                    title: "نفدت الكروت",
+                    description: "عذراً، لا توجد كروت متاحة من هذه الفئة حالياً. يرجى المحاولة لاحقاً.",
+                });
+                setIsPurchasing(false);
+                return;
             }
             const cardToPurchaseDoc = availableCardsSnapshot.docs[0];
             const cardRef = cardToPurchaseDoc.ref;
@@ -203,9 +209,10 @@ function PackageCard({ category, networkName, isClient }: { category: Category, 
             setPurchasedCard({ cardNumber: purchasedCardNumber });
 
         } catch (error: any) {
+             // This allows our central error listener to catch it and display it in the dev overlay.
              if (error.code && (error.code === 'permission-denied' || error.code === 'unauthenticated')) {
                 const permissionError = new FirestorePermissionError({
-                    path: 'Transaction for card purchase', 
+                    path: 'Transaction for card purchase', // General path for a transaction
                     operation: 'write',
                     requestResourceData: {
                         note: 'This was a transaction involving multiple steps (reading card, updating card, updating customer, creating operation). The exact failing step is not provided by the transaction error, but it was a permission issue.',
@@ -412,6 +419,8 @@ function BackButton() {
         </button>
     );
 }
+
+    
 
     
 
