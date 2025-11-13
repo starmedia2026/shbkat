@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -380,8 +381,9 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
             </Dialog>
 
             <Dialog open={smsDialogOpen} onOpenChange={setSmsDialogOpen}>
-                <DialogContent className="sm:max-w-[425px] bg-white">
+                <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
+                         <DialogTitle>ارسال معلومات الكرت</DialogTitle>
                          <DialogDescription className="text-center text-muted-foreground p-4">
                             يمكنك ارسال معلومات الكرت برسالة نصية SMS الى اي رقم. يرجى إدخال رقم الجوال الذي تريد إرسال الكرت اليه.
                         </DialogDescription>
