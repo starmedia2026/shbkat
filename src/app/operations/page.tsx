@@ -11,6 +11,19 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+
 
 interface Operation {
   id: string;
@@ -72,52 +85,109 @@ function OperationCard({ operation }: { operation: Operation }) {
   const config = operationConfig[operation.type];
   const Icon = config.icon;
   const isIncome = operation.amount > 0;
+  const [smsDialogOpen, setSmsDialogOpen] = useState(false);
   
-  const handleSendSms = () => {
-    if (!operation.cardNumber) return;
-    const [purchaseType, networkName] = operation.description.replace('شراء: ', '').split(' - ');
-    const messageBody = encodeURIComponent(`تم شراء ${purchaseType} من ${networkName}.\nرقم الكرت: ${operation.cardNumber}`);
-    window.location.href = `sms:?body=${messageBody}`;
-  };
-
   return (
-    <Card className="w-full shadow-md rounded-2xl bg-card/50">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-3 space-x-reverse">
-            <div className={`p-2 rounded-full bg-muted ${isIncome ? 'text-green-500' : 'text-red-500'}`}>
-              <Icon className="h-5 w-5" />
+    <>
+      <Card className="w-full shadow-md rounded-2xl bg-card/50">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3 space-x-reverse">
+              <div className={`p-2 rounded-full bg-muted ${isIncome ? 'text-green-500' : 'text-red-500'}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">{config.label}</p>
+                <p className="text-xs text-muted-foreground">{operation.description}</p>
+                {operation.cardNumber && (
+                   <p className="text-xs text-muted-foreground mt-1 font-mono" dir="ltr">
+                    {operation.cardNumber}
+                  </p>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-sm">{config.label}</p>
-              <p className="text-xs text-muted-foreground">{operation.description}</p>
-              {operation.cardNumber && (
-                 <p className="text-xs text-muted-foreground mt-1 font-mono" dir="ltr">
-                  {operation.cardNumber}
-                </p>
-              )}
+            <div className="text-left flex-shrink-0">
+              <p className={`font-bold text-sm ${isIncome ? 'text-green-500' : 'text-red-500'}`} dir="ltr">
+                {isIncome ? '+' : ''}{operation.amount.toLocaleString('ar-EG')} ريال
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {format(new Date(operation.date), "d MMM yyyy, h:mm a", { locale: ar })}
+              </p>
             </div>
           </div>
-          <div className="text-left flex-shrink-0">
-            <p className={`font-bold text-sm ${isIncome ? 'text-green-500' : 'text-red-500'}`} dir="ltr">
-              {isIncome ? '+' : ''}{operation.amount.toLocaleString('ar-EG')} ريال
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {format(new Date(operation.date), "d MMM yyyy, h:mm a", { locale: ar })}
-            </p>
-          </div>
-        </div>
-        {operation.type === 'purchase' && operation.cardNumber && (
-          <div className="mt-3 pt-3 border-t flex justify-end">
-              <Button variant="secondary" size="sm" onClick={handleSendSms}>
-                  <Send className="ml-2 h-4 w-4"/>
-                  ارسال SMS
-              </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          {operation.type === 'purchase' && operation.cardNumber && (
+            <div className="mt-3 pt-3 border-t flex justify-end">
+                <Button variant="secondary" size="sm" onClick={() => setSmsDialogOpen(true)}>
+                    <Send className="ml-2 h-4 w-4"/>
+                    ارسال SMS
+                </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      {operation.cardNumber && (
+        <SendSmsDialog
+          isOpen={smsDialogOpen}
+          onClose={() => setSmsDialogOpen(false)}
+          operation={operation}
+        />
+      )}
+    </>
   );
+}
+
+function SendSmsDialog({ isOpen, onClose, operation }: { isOpen: boolean, onClose: () => void, operation: Operation }) {
+    const { toast } = useToast();
+    const [smsRecipient, setSmsRecipient] = useState("");
+
+    const handleSendSms = () => {
+        if (!smsRecipient.trim()) {
+            toast({
+                variant: "destructive",
+                title: "رقم الجوال مطلوب",
+                description: "الرجاء إدخال رقم جوال صحيح.",
+            });
+            return;
+        }
+        if (!operation.cardNumber) return;
+
+        const [purchaseType, networkName] = operation.description.replace('شراء: ', '').split(' - ');
+        const messageBody = encodeURIComponent(`تم شراء ${purchaseType} من ${networkName}.\nرقم الكرت: ${operation.cardNumber}`);
+        
+        window.location.href = `sms:${smsRecipient}?body=${messageBody}`;
+        onClose();
+        setSmsRecipient(""); // Reset for next time
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="sm:max-w-[425px] rounded-2xl">
+                <DialogHeader>
+                     <DialogTitle className="text-center">ارسال معلومات الكرت</DialogTitle>
+                     <DialogDescription className="text-center text-muted-foreground p-4">
+                        يمكنك ارسال معلومات الكرت برسالة نصية SMS الى اي رقم. يرجى إدخال رقم الجوال الذي تريد إرسال الكرت اليه.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="px-4 pb-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="sms-recipient" className="text-right">رقم الجوال</Label>
+                        <Input
+                            id="sms-recipient"
+                            type="tel"
+                            placeholder="77xxxxxxxx"
+                            value={smsRecipient}
+                            onChange={(e) => setSmsRecipient(e.target.value)}
+                            dir="ltr"
+                        />
+                    </div>
+                </div>
+                <DialogFooter className="grid grid-cols-2 gap-2 p-4 pt-0">
+                    <Button onClick={handleSendSms} >تأكيد</Button>
+                    <Button variant="outline" onClick={onClose}>إلغاء</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
 }
 
 function OperationSkeleton() {
