@@ -44,7 +44,7 @@ export const paymentMethods: PaymentMethod[] = [
   },
   {
     "id": "busairi",
-    "name": "بي كاش - بنك الكريمي",
+    "name": "بي كاش - بنك البسيري",
     "description": "تحويل عبر بي كاش",
     "accountName": "تطبيق كرتي",
     "accountNumber": "3456789",
@@ -56,4 +56,3 @@ export const paymentMethods: PaymentMethod[] = [
     }
   }
 ];
-

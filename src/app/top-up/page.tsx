@@ -8,11 +8,11 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { paymentMethods as initialPaymentMethods, PaymentMethod } from "@/lib/payment-methods";
+import { paymentMethods, type PaymentMethod } from "@/lib/payment-methods";
 import Image from "next/image";
 
 export default function TopUpPage() {
-  const [selectedPayment, setSelectedPayment] = useState(initialPaymentMethods[0]?.id || "");
+  const [selectedPayment, setSelectedPayment] = useState(paymentMethods[0]?.id || "");
 
   const handleWhatsAppRedirect = () => {
     const phoneNumber = "770326828";
@@ -30,7 +30,7 @@ export default function TopUpPage() {
         <h2 className="text-right font-bold text-lg px-2">طريقة الدفع</h2>
         
         <div className="grid gap-4">
-            {initialPaymentMethods.map((method) => (
+            {paymentMethods.map((method) => (
                 <PaymentOption 
                     key={method.id}
                     method={method}
