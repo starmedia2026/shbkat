@@ -50,10 +50,11 @@ service cloud.firestore {
       
       // An owner can update their own document, or an admin can.
       // A signed-in user can also update another user's document as part of a transfer.
-      // This is safe because it's only allowing the balance to change, and the transaction logic
-      // in the code ensures the sender's balance is debited correctly.
+      // This is safe because the transaction logic in the code ensures balances are handled correctly.
       allow update: if isAdmin() || isOwner(customerId) || (
           isSignedIn() && request.resource.data.keys().hasOnly(['balance'])
+      ) || (
+          isAdmin() && request.resource.data.keys().hasAll(['name', 'phoneNumber'])
       );
 
       // An owner can delete their own document, or an admin can.
@@ -62,32 +63,31 @@ service cloud.firestore {
       match /operations/{operationId} {
         allow read, list: if isOwner(customerId) || isAdmin();
         // Allow creating an operation for self or for another user (as part of a transfer)
-        allow create: if isSignedIn() || isAdmin();
+        allow create: if isSignedIn();
       }
       
       match /notifications/{notificationId} {
         allow read, list: if isOwner(customerId) || isAdmin();
         // Allow creating a notification for self or for another user (as part of a transfer)
-        allow create: if isSignedIn() || isAdmin();
-        allow update: if isOwner(customerId) || isAdmin(); // Allow user/admin to mark notifications as read
+        allow create: if isSignedIn();
+        // Allow user/admin to mark notifications as read
+        allow update: if isOwner(customerId) || isAdmin();
       }
     }
 
     match /cards/{cardId} {
         // Admin can do anything.
-        allow create, delete, list: if isAdmin();
+        allow create, delete, list, update: if isAdmin();
         // Any signed-in user can read card data (needed to find an available card).
         allow read: if isSignedIn();
         // Allow updates only for the specific 'purchase' transaction.
         // User must be signed in.
         // Card must be transitioning from 'available' to 'used'.
         // The 'usedBy' field must be the user's own UID.
-        allow update: if isAdmin() || (
-          isSignedIn() && 
+        allow update: if isSignedIn() && 
           request.resource.data.status == 'used' &&
           resource.data.status == 'available' &&
-          request.resource.data.usedBy == request.auth.uid
-        );
+          request.resource.data.usedBy == request.auth.uid;
     }
   }
 }
