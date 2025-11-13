@@ -61,12 +61,14 @@ service cloud.firestore {
 
       match /operations/{operationId} {
         allow read, list: if isOwner(customerId) || isAdmin();
-        allow create: if isOwner(customerId) || isAdmin();
+        // Allow creating an operation for self or for another user (as part of a transfer)
+        allow create: if isSignedIn() || isAdmin();
       }
       
       match /notifications/{notificationId} {
         allow read, list: if isOwner(customerId) || isAdmin();
-        allow create: if isOwner(customerId) || isAdmin();
+        // Allow creating a notification for self or for another user (as part of a transfer)
+        allow create: if isSignedIn() || isAdmin();
         allow update: if isOwner(customerId) || isAdmin(); // Allow user/admin to mark notifications as read
       }
     }
