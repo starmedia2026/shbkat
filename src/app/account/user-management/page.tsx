@@ -356,7 +356,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
             await updateDoc(customerDocRef, { requiresPasswordChange: true });
             toast({
                 title: "تم بنجاح",
-                description: `تم وضع علامة على حساب ${customer.name} لفرض تغيير كلمة المرور عند تسجيل الدخول التالي.`,
+                description: `تم وضع علامة على حساب ${customer.name} لفرض تغيير كلمة المرور.`,
             });
             setIsOpen(false);
         } catch (error) {
@@ -386,7 +386,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
                 <DialogHeader>
                     <DialogTitle>تعديل حساب: {customer.name}</DialogTitle>
                     <DialogDescription>
-                        يمكنك تعديل بيانات العميل أو فرض تغيير كلمة المرور عند تسجيل الدخول التالي.
+                        يمكنك تعديل بيانات العميل أو بدء عملية إعادة تعيين كلمة المرور.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -412,14 +412,20 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>تأكيد إعادة التعيين</AlertDialogTitle>
+                                <AlertDialogTitle>بدء عملية إعادة تعيين كلمة المرور</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    سيؤدي هذا إلى مطالبة المستخدم بتغيير كلمة المرور الخاصة به عند تسجيل الدخول التالي. يجب عليك إعادة تعيين كلمة المرور يدويًا من لوحة تحكم Firebase أولاً. هل أنت متأكد؟
+                                    <p>سيؤدي هذا الإجراء إلى وضع علامة على حساب المستخدم لفرض تغيير كلمة المرور عند تسجيل الدخول التالي.</p>
+                                    <p className="font-bold mt-2">الخطوات التالية المطلوبة منك:</p>
+                                    <ol className="list-decimal list-inside mt-1 text-sm text-muted-foreground">
+                                        <li>اذهب إلى لوحة تحكم Firebase.</li>
+                                        <li>في قسم Authentication، أعد تعيين كلمة المرور للمستخدم يدويًا.</li>
+                                        <li>أرسل كلمة المرور المؤقتة الجديدة للمستخدم.</li>
+                                    </ol>
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleForcePasswordChange}>نعم، قم بالفرض</AlertDialogAction>
+                                <AlertDialogAction onClick={handleForcePasswordChange}>نعم، ابدأ العملية</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
