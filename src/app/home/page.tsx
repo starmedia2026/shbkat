@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import {
@@ -223,4 +222,3 @@ function ServiceGridItem({ href, icon: Icon, label, color, bgColor }: { href: st
         </Link>
     );
 }
-
