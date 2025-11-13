@@ -129,7 +129,7 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
                 title: "نجاح",
                 description: `تم شراء ${category.name} بنجاح.`,
             });
-        }).catch((error) => {
+        }).catch(async (serverError) => {
             const contextualError = new FirestorePermissionError({
                 operation: 'write',
                 path: 'batch-write', // Generic path for batch
@@ -140,11 +140,6 @@ function PackageCard({ category, networkName }: { category: Category, networkNam
                 }
             });
             errorEmitter.emit('permission-error', contextualError);
-            toast({
-                variant: "destructive",
-                title: "فشل الشراء",
-                description: "حدث خطأ أثناء محاولة إتمام عملية الشراء.",
-            });
         });
     };
     

@@ -7,10 +7,6 @@ import {
   Phone,
   Coins,
   Edit,
-  RefreshCw,
-  Copy,
-  KeyRound,
-  Info,
   Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -220,7 +216,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
                 description: `تم تغذية حساب ${customer.name} بمبلغ ${amount} ريال. الرصيد الجديد: ${newBalance.toLocaleString()}`,
             });
             setAmount(""); // Clear input
-        }).catch((error) => {
+        }).catch(async (serverError) => {
             const contextualError = new FirestorePermissionError({
                 operation: 'write',
                 path: 'batch-write', // Generic path for batch
@@ -231,11 +227,6 @@ function CustomerCard({ customer }: { customer: Customer }) {
                 }
             });
             errorEmitter.emit('permission-error', contextualError);
-            toast({
-                variant: "destructive",
-                title: "فشل تحديث الرصيد",
-                description: "حدث خطأ أثناء محاولة تحديث رصيد العميل.",
-            });
         });
     };
 
@@ -259,11 +250,6 @@ function CustomerCard({ customer }: { customer: Customer }) {
                 operation: 'delete',
             });
             errorEmitter.emit('permission-error', permissionError);
-            toast({
-                variant: "destructive",
-                title: "فشل الحذف",
-                description: "حدث خطأ أثناء محاولة حذف بيانات العميل.",
-            });
         }
     };
 
@@ -397,14 +383,13 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
         updateDoc(customerDocRef, updateData).then(() => {
             toast({ title: "نجاح", description: "تم تحديث بيانات العميل بنجاح." });
             setIsOpen(false);
-        }).catch((error) => {
+        }).catch(async (serverError) => {
             const contextualError = new FirestorePermissionError({
                 operation: 'update',
                 path: customerDocRef.path,
                 requestResourceData: updateData
             });
             errorEmitter.emit('permission-error', contextualError);
-            toast({ variant: "destructive", title: "فشل التحديث", description: "حدث خطأ أثناء تحديث بيانات العميل." });
         }).finally(() => {
             setIsSaving(false);
         });
@@ -449,5 +434,6 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     );
 }
     
+
 
 

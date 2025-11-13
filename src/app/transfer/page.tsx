@@ -193,7 +193,7 @@ read: false,
         setRecipientPhone("");
         setAmount("");
         setRecipient(null);
-    }).catch((error: any) => {
+    }).catch(async (error: any) => {
         const contextualError = new FirestorePermissionError({
             operation: 'write',
             path: 'customers/(sender and recipient)',
@@ -203,12 +203,6 @@ read: false,
             }
         });
         errorEmitter.emit('permission-error', contextualError);
-
-        toast({
-            variant: "destructive",
-            title: "فشل التحويل",
-            description: "حدث خطأ أثناء محاولة إتمام عملية التحويل. قد تكون المشكلة في الأذونات.",
-        });
     });
   };
   
