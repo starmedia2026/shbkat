@@ -376,38 +376,38 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     }, [isOpen, customer]);
     
 
-    const handleSaveChanges = async () => {
+    const handleSaveChanges = () => {
         if (!name.trim() || !phoneNumber.trim()) {
             toast({ variant: "destructive", title: "حقول فارغة", description: "الاسم ورقم الهاتف مطلوبان." });
             return;
         }
 
+        if (!firestore) {
+            toast({ variant: "destructive", title: "خطأ", description: "خدمة قاعدة البيانات غير متوفرة." });
+            return;
+        }
+
         setIsSaving(true);
-        try {
-            if (!firestore) throw new Error("Firestore not available");
-            const customerDocRef = doc(firestore, "customers", customer.id);
-            
-            const updateData: { name: string; phoneNumber: string; } = {
-                name: name,
-                phoneNumber: phoneNumber,
-            };
+        const customerDocRef = doc(firestore, "customers", customer.id);
+        const updateData = {
+            name: name,
+            phoneNumber: phoneNumber,
+        };
 
-            await updateDoc(customerDocRef, updateData);
-
+        updateDoc(customerDocRef, updateData).then(() => {
             toast({ title: "نجاح", description: "تم تحديث بيانات العميل بنجاح." });
             setIsOpen(false);
-        } catch (error) {
-            console.error("Error updating customer:", error);
+        }).catch((error) => {
             const contextualError = new FirestorePermissionError({
                 operation: 'update',
-                path: `customers/${customer.id}`,
-                requestResourceData: { name, phoneNumber }
+                path: customerDocRef.path,
+                requestResourceData: updateData
             });
             errorEmitter.emit('permission-error', contextualError);
             toast({ variant: "destructive", title: "فشل التحديث", description: "حدث خطأ أثناء تحديث بيانات العميل." });
-        } finally {
+        }).finally(() => {
             setIsSaving(false);
-        }
+        });
     };
 
 
@@ -449,4 +449,5 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     );
 }
     
+
 
