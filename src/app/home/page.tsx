@@ -12,20 +12,32 @@ import {
   User,
   Wallet,
   Wifi,
+  ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { doc, collection, query, where, writeBatch } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 
 interface Notification {
     id: string;
     read: boolean;
 }
+
+const services = [
+    { href: "/networks", icon: Wifi, label: "الشبكات", color: "text-blue-500", bgColor: "bg-blue-100" },
+    { href: "/operations", icon: History, label: "العمليات", color: "text-orange-500", bgColor: "bg-orange-100" },
+    { href: "/favorites", icon: Heart, label: "المفضلة", color: "text-red-500", bgColor: "bg-red-100" },
+    { href: "/top-up", icon: Wallet, label: "غذي حسابك", color: "text-green-500", bgColor: "bg-green-100" },
+    { href: "/transfer", icon: Send, label: "تحويل لمشترك", color: "text-purple-500", bgColor: "bg-purple-100" },
+    { href: "/contact", icon: Phone, label: "تواصل معنا", color: "text-indigo-500", bgColor: "bg-indigo-100" },
+];
+
 
 export default function HomePage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
@@ -89,8 +101,8 @@ export default function HomePage() {
     batch.commit().catch((serverError) => {
         const permissionError = new FirestorePermissionError({
             path: `batch write to notifications for user ${user.uid}`,
-            operation: 'write',
-            requestResourceData: {
+            operation: 'update',
+            requestResourceData: { 
                 note: "Attempted to mark multiple notifications as read.",
                 updates: updates
             }
@@ -103,18 +115,17 @@ export default function HomePage() {
 
   return (
     <div className="bg-background text-foreground min-h-screen pb-24">
-      <header className="p-6 flex justify-between items-center">
+       <header className="p-4 pt-6 flex justify-between items-center">
         <div className="text-right">
           <h2 className="text-base text-muted-foreground">مرحباً بك</h2>
           {isLoading ? (
             <Skeleton className="h-7 w-40 mt-1" />
           ) : (
-            <h1 className="text-lg font-bold">{customer?.name ? formatDisplayName(customer.name) : '...'}</h1>
+            <h1 className="text-2xl font-bold">{customer?.name ? formatDisplayName(customer.name) : '...'}</h1>
           )}
         </div>
         <div className="relative">
-          <Link href="/notifications" onClick={handleNotificationsClick}>
-            <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="rounded-full bg-card" onClick={handleNotificationsClick}>
               <Bell className="h-6 w-6 text-primary" />
               {hasNotifications && (
                 <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
@@ -123,23 +134,22 @@ export default function HomePage() {
                 </span>
               )}
             </Button>
-          </Link>
         </div>
       </header>
 
       <main className="p-4 space-y-6">
-        <Card className="w-full shadow-lg rounded-2xl bg-primary text-primary-foreground">
-          <CardContent className="p-8 flex justify-between items-center">
-            <div>
+        <Card className="w-full shadow-lg rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden">
+          <CardContent className="p-6 flex justify-between items-center relative">
+            <div className="z-10">
               <p className="text-sm text-primary-foreground/80">الرصيد الحالي</p>
               {isLoading ? (
-                 <Skeleton className="h-9 w-36 mt-2 bg-white/30" />
+                 <Skeleton className="h-10 w-40 mt-2 bg-white/30" />
               ) : (
-                <div className="text-3xl font-bold tracking-wider mt-1">
+                <div className="text-3xl font-bold tracking-wider mt-1" dir="ltr">
                   {balanceVisible ? (
                     <span className="flex items-baseline gap-2">
-                       <span>{(customer?.balance ?? 0).toLocaleString('en-US')}</span>
-                       <span className="text-sm font-normal">ريال يمني</span>
+                       <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US')}</span>
+                       <span className="text-sm font-normal">YER</span>
                     </span>
                   ) : (
                     "********"
@@ -151,7 +161,7 @@ export default function HomePage() {
               variant="ghost"
               size="icon"
               onClick={() => setBalanceVisible(!balanceVisible)}
-              className="text-primary-foreground hover:bg-white/20 hover:text-primary-foreground self-start"
+              className="text-primary-foreground hover:bg-white/20 hover:text-primary-foreground self-start z-10"
             >
               {balanceVisible ? (
                 <Eye className="h-6 w-6" />
@@ -159,31 +169,58 @@ export default function HomePage() {
                 <EyeOff className="h-6 w-6" />
               )}
             </Button>
+             <div className="absolute -right-10 -bottom-8 w-32 h-32 bg-white/20 rounded-full opacity-50"></div>
+             <div className="absolute -left-4 -top-4 w-16 h-16 bg-white/20 rounded-full opacity-50"></div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <ServiceButton icon={Wifi} label="الشبكات" href="/networks" iconClassName="text-chart-1"/>
-          <ServiceButton icon={History} label="العمليات" href="/operations" iconClassName="text-chart-2" />
-          <ServiceButton icon={Heart} label="المفضلة" href="/favorites" iconClassName="text-chart-3" />
-          <ServiceButton icon={Wallet} label="غذي حسابك" href="/top-up" iconClassName="text-chart-4" />
-          <ServiceButton icon={Send} label="تحويل لمشترك" href="/transfer" iconClassName="text-chart-5" />
-          <ServiceButton icon={Phone} label="تواصل معنا" href="/contact" iconClassName="text-chart-6" />
+        <div className="space-y-3">
+            {services.slice(0, 3).map((service, index) => (
+                <ServiceListItem key={index} {...service} />
+            ))}
+        </div>
+        
+        <div className="grid grid-cols-3 gap-3 text-center">
+            {services.slice(3).map((service, index) => (
+                 <ServiceGridItem key={index} {...service} />
+            ))}
         </div>
       </main>
     </div>
   );
 }
 
-function ServiceButton({ icon: Icon, label, href, iconClassName }: { icon: React.ElementType, label: string, href: string, iconClassName?: string }) {
-  return (
-    <Link href={href} className="block">
-      <Card className="shadow-md rounded-2xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card/50 hover:bg-card">
-        <CardContent className="p-4 flex flex-col items-center justify-center space-y-3 h-36">
-          <Icon className={`h-10 w-10 ${iconClassName}`} />
-          <p className="text-base font-semibold">{label}</p>
-        </CardContent>
-      </Card>
-    </Link>
-  );
+
+function ServiceListItem({ href, icon: Icon, label, color, bgColor }: { href: string; icon: React.ElementType, label: string, color: string, bgColor: string }) {
+    return (
+        <Link href={href} className="block">
+            <Card className="shadow-md rounded-xl hover:shadow-lg transition-shadow cursor-pointer bg-card/50 hover:bg-card">
+                <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className={cn("p-3 rounded-lg dark:bg-opacity-20", bgColor)}>
+                            <Icon className={cn("h-6 w-6", color)} />
+                        </div>
+                        <p className="text-base font-semibold">{label}</p>
+                    </div>
+                    <ChevronLeft className="h-6 w-6 text-muted-foreground" />
+                </CardContent>
+            </Card>
+        </Link>
+    );
 }
+
+function ServiceGridItem({ href, icon: Icon, label, color, bgColor }: { href: string; icon: React.ElementType, label: string, color: string, bgColor: string }) {
+    return (
+        <Link href={href} className="block">
+            <Card className="shadow-md rounded-xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card/50 hover:bg-card">
+                <CardContent className="p-4 flex flex-col items-center justify-center gap-2 aspect-square">
+                    <div className={cn("p-3 rounded-full dark:bg-opacity-20", bgColor)}>
+                        <Icon className={cn("h-6 w-6", color)} />
+                    </div>
+                    <p className="text-sm font-semibold mt-1">{label}</p>
+                </CardContent>
+            </Card>
+        </Link>
+    );
+}
+
