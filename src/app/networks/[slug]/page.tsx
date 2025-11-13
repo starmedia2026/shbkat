@@ -201,7 +201,7 @@ function PackageCard({ category, networkId, networkName }: { category: Category,
                 const notificationData = {
                     type: "purchase",
                     title: "شراء باقة",
-                    body: `تم شراء ${category.name} من ${networkName} بنجاح.`,
+                    body: `تم شراء ${category.name} بنجاح. رقم الكرت: ${cardDoc.id}`,
                     amount: -category.price,
                     date: now,
                     read: false,
@@ -347,11 +347,11 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
         <>
             <Dialog open={isOpen && !smsDialogOpen} onOpenChange={(open) => !open && onClose()}>
                 <DialogContent className="sm:max-w-[425px] rounded-2xl">
-                    <DialogHeader>
+                    <DialogHeader className="pt-4">
                         {/* Title is visually present but also accessible */}
                         <DialogTitle className="text-center text-lg font-bold">تم الشراء بنجاح!</DialogTitle>
                     </DialogHeader>
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center pb-4 -mt-4">
                         <Image src="https://smartgum.com.br/wp-content/uploads/2020/03/ok.png" alt="Success" width={120} height={120} />
                         <div className="w-full space-y-4 mt-4">
                             <div className="w-full space-y-2">
@@ -426,3 +426,6 @@ function BackButton() {
         </button>
     );
 }
+
+
+    

@@ -23,7 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -120,7 +120,7 @@ function CardSalesContent() {
   // Fetch all cards
   const cardsCollectionRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, "cards");
+    return query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
   }, [firestore]);
   const { data: cards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
 
@@ -139,14 +139,7 @@ function CardSalesContent() {
 
   const { soldCards, availableCards } = useMemo(() => {
     if (!cards) return { soldCards: [], availableCards: [] };
-    const sold = cards
-      .filter(card => card.status === 'used')
-      .sort((a, b) => {
-        if (a.usedAt && b.usedAt) {
-          return new Date(b.usedAt).getTime() - new Date(a.usedAt).getTime();
-        }
-        return 0;
-      });
+    const sold = cards.filter(card => card.status === 'used');
     const available = cards.filter(card => card.status === 'available');
     return { soldCards: sold, availableCards: available };
   }, [cards]);
@@ -220,12 +213,14 @@ function SoldCardItem({ card, customer }: { card: CardData; customer?: Customer 
     };
 
     const handleWhatsAppRedirect = () => {
-        if (!customer) {
-            toast({ variant: "destructive", title: "خطأ", description: "معلومات العميل غير متوفرة." });
+        if (!customer || !card.usedAt) {
+            toast({ variant: "destructive", title: "خطأ", description: "معلومات العميل أو تاريخ الشراء غير متوفرة." });
             return;
         }
 
         const firstName = customer.name.split(' ')[0];
+        const formattedDate = format(new Date(card.usedAt), "d/M/yyyy, h:mm a", { locale: ar });
+
         const message = `السلام عليكم ورحمة الله وبركاته،
 يا أهلاً وسهلاً فيك يا ${firstName} 🌹
 
@@ -234,6 +229,7 @@ function SoldCardItem({ card, customer }: { card: CardData; customer?: Customer 
 📃 *معلومات الكرت*
 📡 الفئة: ${networkName} (${categoryPrice} ريال)
 🔢 رقم الكرت: ${card.id}
+🗓️ تاريخ الشراء: ${formattedDate}
 
 💳 *رصيدك المتبقي في التطبيق :*
 ${customer.balance.toLocaleString('en-US')} ريال
@@ -333,10 +329,5 @@ function CardSkeleton() {
         </Card>
     );
 }
-
-
-    
-
-    
 
     
