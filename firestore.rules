@@ -74,7 +74,7 @@ service cloud.firestore {
     }
 
     match /cards/{cardId} {
-        // Admin can do anything with cards.
+        // Admin or Network owner can create, delete, and list cards.
         allow create, delete, list: if isAdmin() || isNetworkOwner();
         // Any signed-in user can read card data (needed to find an available card).
         allow read: if isSignedIn();
@@ -82,6 +82,7 @@ service cloud.firestore {
         // User must be signed in.
         // Card must be transitioning from 'available' to 'used'.
         // The 'usedBy' field must be the user's own UID.
+        // Also allow admin or network owner to update cards.
         allow update: if (isSignedIn() && 
           request.resource.data.status == 'used' &&
           resource.data.status == 'available' &&
