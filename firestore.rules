@@ -51,8 +51,6 @@ service cloud.firestore {
       // This is safe because the transaction logic in the code ensures balances are handled correctly.
       allow update: if isAdmin() || isOwner(customerId) || (
           isSignedIn() && request.resource.data.keys().hasOnly(['balance'])
-      ) || (
-          isAdmin() && request.resource.data.keys().hasAll(['name', 'phoneNumber'])
       );
 
       // An owner can delete their own document, or an admin can.

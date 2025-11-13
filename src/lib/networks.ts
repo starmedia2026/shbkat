@@ -71,6 +71,13 @@ export const networks: Network[] = [
         "price": 100,
         "validity": "يوم واحد",
         "capacity": "0.5"
+      },
+      {
+        "id": "new-cat-1763070687524",
+        "name": "8 قيقا",
+        "price": 1000,
+        "validity": "شهر",
+        "capacity": "8"
       }
     ]
   }
