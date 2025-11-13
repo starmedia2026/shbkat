@@ -85,18 +85,19 @@ service cloud.firestore {
     }
 
     match /settings/{docId} {
-        // Allow anyone (including signed-out users) to read settings like theme and navigation.
+        // Allow anyone (including signed-out users) to read settings like theme.
         allow get: if true;
         // Only the admin can change the settings.
         allow write: if isAdmin();
-
-        match /navigation/items/{itemId} {
-             // Any signed-in user can read the navigation items.
-            allow get, list: if true;
-            // Only admin can create, update, or delete navigation items.
-            allow write: if isAdmin();
-        }
     }
+
+    match /settings/navigation/items/{itemId} {
+        // Any signed-in user can read the navigation items.
+        allow get, list: if isSignedIn();
+        // Only admin can create, update, or delete navigation items.
+        allow write: if isAdmin();
+    }
+    
 
     match /adverts/{advertId} {
         // Allow anyone to see the adverts.
