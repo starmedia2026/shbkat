@@ -40,7 +40,8 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogClose
+    DialogClose,
+    DialogTrigger
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -448,5 +449,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
 
     
 
+
+    
 
     
