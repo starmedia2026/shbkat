@@ -106,17 +106,17 @@ export default function HomePage() {
 
   const { data: notifications, isLoading: areNotificationsLoading } = useCollection<Notification>(notificationsQuery);
   
-  // Query for the last operation
-  const lastOperationQuery = useMemoFirebase(() => {
+  // Query for the last 4 operations
+  const lastOperationsQuery = useMemoFirebase(() => {
       if (!firestore || !user?.uid) return null;
       return query(
           collection(firestore, `customers/${user.uid}/operations`),
           orderBy("date", "desc"),
-          limit(1)
+          limit(4)
       );
   }, [firestore, user?.uid]);
 
-  const { data: lastOperation, isLoading: isLastOperationLoading } = useCollection<Operation>(lastOperationQuery);
+  const { data: lastOperations, isLoading: areLastOperationsLoading } = useCollection<Operation>(lastOperationsQuery);
 
 
   const isLoading = isUserLoading || isCustomerLoading;
@@ -168,7 +168,7 @@ export default function HomePage() {
       {/* Header Section */}
       <header className="bg-background p-4 pb-20 rounded-b-[3rem]">
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
+          <div className="flex-1">
              <Button variant="ghost" size="icon" className="rounded-full bg-card relative" onClick={handleNotificationsClick}>
               <Bell className="h-5 w-5 text-primary" />
               {hasNotifications && (
@@ -179,19 +179,21 @@ export default function HomePage() {
               )}
             </Button>
           </div>
-          <div className="text-right">
+          <div className="flex-1 text-center">
             <h2 className="text-sm text-muted-foreground">{greeting}</h2>
             {isLoading ? (
-              <Skeleton className="h-6 w-32 mt-1" />
+              <Skeleton className="h-6 w-32 mt-1 mx-auto" />
             ) : (
               <h1 className="text-lg font-bold">{customer?.name ? formatDisplayName(customer.name) : '...'}</h1>
             )}
           </div>
-          <Link href="/account">
-            <div className="w-11 h-11 bg-card rounded-full flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-          </Link>
+          <div className="flex-1 flex justify-end">
+            <Link href="/account">
+                <div className="w-11 h-11 bg-card rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+            </Link>
+           </div>
         </div>
       </header>
 
@@ -215,7 +217,7 @@ export default function HomePage() {
               ) : (
                 <div className="text-3xl font-bold tracking-wider mt-2" dir="rtl">
                   {balanceVisible ? (
-                    <span className="flex items-baseline gap-2">
+                    <span className="flex items-baseline gap-2 justify-end">
                        <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US')}</span>
                        <span className="text-sm font-normal">ريال يمني</span>
                     </span>
@@ -242,21 +244,27 @@ export default function HomePage() {
                     <Button variant="link" className="text-primary p-0 h-auto">عرض الكل</Button>
                 </Link>
             </div>
-            {isLastOperationLoading ? (
-                <Card className="shadow-md rounded-xl bg-card">
-                    <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Skeleton className="h-10 w-10 rounded-full" />
-                            <div className="space-y-1">
-                                <Skeleton className="h-4 w-24" />
-                                <Skeleton className="h-3 w-20" />
-                            </div>
-                        </div>
-                        <Skeleton className="h-5 w-16" />
-                    </CardContent>
-                </Card>
-            ) : lastOperation && lastOperation.length > 0 ? (
-                <LastOperationItem operation={lastOperation[0]} />
+            {areLastOperationsLoading ? (
+                <div className="space-y-2">
+                    {[...Array(2)].map((_, i) => (
+                        <Card key={i} className="shadow-md rounded-xl bg-card">
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                    <div className="space-y-1">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-3 w-20" />
+                                    </div>
+                                </div>
+                                <Skeleton className="h-5 w-16" />
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            ) : lastOperations && lastOperations.length > 0 ? (
+                 <div className="space-y-2">
+                    {lastOperations.map(op => <LastOperationItem key={op.id} operation={op} />)}
+                 </div>
             ) : (
                  <Card className="shadow-md rounded-xl bg-card">
                     <CardContent className="p-4 text-center text-muted-foreground text-sm">
@@ -314,5 +322,3 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
-
-    
