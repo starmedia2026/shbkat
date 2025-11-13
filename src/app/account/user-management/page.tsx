@@ -6,6 +6,9 @@ import {
   User,
   Phone,
   Coins,
+  Edit,
+  RefreshCw,
+  Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
-import { collection, doc, writeBatch } from "firebase/firestore";
+import { collection, doc, writeBatch, updateDoc } from "firebase/firestore";
 import { useRouter }from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import {
@@ -30,6 +33,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogClose
+} from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -279,10 +292,124 @@ function CustomerCard({ customer }: { customer: Customer }) {
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
-
+                        <EditCustomerDialog customer={customer} />
                     </div>
                 </div>
             </CardContent>
         </Card>
     )
+}
+
+
+function EditCustomerDialog({ customer }: { customer: Customer }) {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isOpen, setIsOpen] = useState(false);
+    const [name, setName] = useState(customer.name);
+    const [phoneNumber, setPhoneNumber] = useState(customer.phoneNumber);
+    const [newPassword, setNewPassword] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    const generateRandomPassword = () => {
+        const password = Math.random().toString(36).slice(-8);
+        setNewPassword(password);
+    };
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(newPassword);
+        toast({ title: "تم النسخ", description: "تم نسخ كلمة المرور الجديدة." });
+    };
+
+    const handleSaveChanges = async () => {
+        if (!name.trim() || !phoneNumber.trim()) {
+            toast({ variant: "destructive", title: "حقول فارغة", description: "الاسم ورقم الهاتف مطلوبان." });
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            if (!firestore) throw new Error("Firestore not available");
+            const customerDocRef = doc(firestore, "customers", customer.id);
+            await updateDoc(customerDocRef, {
+                name: name,
+                phoneNumber: phoneNumber
+            });
+
+            // Note: Password update is not actually performed on Firebase Auth
+            // as it requires Admin SDK which is not available on the client-side.
+            // We only show it to the admin.
+
+            toast({ title: "نجاح", description: "تم تحديث بيانات العميل بنجاح." });
+            setIsOpen(false);
+        } catch (error) {
+            console.error("Error updating customer:", error);
+            const contextualError = new FirestorePermissionError({
+                operation: 'update',
+                path: `customers/${customer.id}`,
+                requestResourceData: { name, phoneNumber }
+            });
+            errorEmitter.emit('permission-error', contextualError);
+            toast({ variant: "destructive", title: "فشل التحديث", description: "حدث خطأ أثناء تحديث بيانات العميل." });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="secondary" className="flex-grow">
+                    <Edit className="h-4 w-4 ml-2"/>
+                    تعديل
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>تعديل حساب: {customer.name}</DialogTitle>
+                    <DialogDescription>
+                        يمكنك تعديل بيانات العميل أو إعادة تعيين كلمة المرور.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right col-span-1">الاسم</Label>
+                        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="phone" className="text-right col-span-1">الهاتف</Label>
+                        <Input id="phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="col-span-3" dir="ltr" />
+                    </div>
+                    <div className="pt-4 border-t">
+                        <Label className="text-right mb-2 block">إعادة تعيين كلمة المرور</Label>
+                         <div className="flex gap-2">
+                             <Button variant="outline" onClick={generateRandomPassword} className="flex-grow">
+                                <RefreshCw className="h-4 w-4 ml-2"/>
+                                إنشاء كلمة مرور جديدة
+                            </Button>
+                         </div>
+                        {newPassword && (
+                             <div className="mt-4 flex items-center justify-between rounded-md border bg-muted p-3">
+                                <p className="font-mono text-sm">{newPassword}</p>
+                                <Button size="icon" variant="ghost" onClick={copyToClipboard}>
+                                    <Copy className="h-4 w-4"/>
+                                </Button>
+                            </div>
+                        )}
+                         <p className="text-xs text-muted-foreground mt-2">
+                            ملاحظة: سيؤدي إنشاء كلمة مرور جديدة إلى تغيير كلمة مرور المستخدم الحالية. يرجى تزويد المستخدم بكلمة المرور الجديدة.
+                        </p>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">إلغاء</Button>
+                    </DialogClose>
+                    <Button type="button" onClick={handleSaveChanges} disabled={isSaving}>
+                        {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
 }
