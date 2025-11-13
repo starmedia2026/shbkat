@@ -93,8 +93,12 @@ service cloud.firestore {
 
     // This rule governs access to navigation items.
     match /nav_items/{itemId} {
-        allow read, list: if isSignedIn();
+        allow read: if isSignedIn();
         allow write: if isAdmin();
+    }
+    
+    match /nav_items {
+        allow list: if isSignedIn();
     }
     
 
