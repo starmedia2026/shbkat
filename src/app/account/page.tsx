@@ -171,37 +171,6 @@ export default function AccountPage() {
         </Card>
         
         <Card className="w-full shadow-lg rounded-xl">
-            <CardContent className="p-4">
-                <h3 className="font-semibold text-center text-sm text-muted-foreground my-2">
-                    الخط المفضل
-                </h3>
-                {isClient ? (
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                    {fontOptions.map((fontOpt) => (
-                        <div
-                        key={fontOpt.class}
-                        onClick={() => setFont(fontOpt.class)}
-                        className={cn(
-                            "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
-                            font === fontOpt.class
-                            ? "bg-primary/10 border-primary"
-                            : "border-transparent bg-muted/50 hover:bg-muted"
-                        )}
-                        >
-                        <Type className="mx-auto h-6 w-6 mb-2" />
-                        <span className={`text-sm font-semibold ${fontOpt.class}`}>{fontOpt.name}</span>
-                        </div>
-                    ))}
-                </div>
-                ) : (
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-[92px] w-full" />)}
-                </div>
-                )}
-          </CardContent>
-        </Card>
-
-        <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-4">
             <h3 className="font-semibold text-center text-sm text-muted-foreground my-2">
               الوضع المفضل
@@ -248,6 +217,39 @@ export default function AccountPage() {
                 <LayoutDashboard className="h-5 w-5" />
                 <h2>لوحة التحكم</h2>
             </div>
+             <Card className="w-full shadow-lg rounded-xl">
+                <CardContent className="p-4">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <Type className="h-5 w-5 text-muted-foreground"/>
+                        <h3 className="font-semibold text-center text-sm text-muted-foreground">
+                            الخط المفضل
+                        </h3>
+                    </div>
+                    {isClient ? (
+                    <div className="grid grid-cols-3 gap-4 mt-4">
+                        {fontOptions.map((fontOpt) => (
+                            <div
+                            key={fontOpt.class}
+                            onClick={() => setFont(fontOpt.class)}
+                            className={cn(
+                                "cursor-pointer rounded-lg p-4 text-center border-2 transition-all",
+                                font === fontOpt.class
+                                ? "bg-primary/10 border-primary"
+                                : "border-transparent bg-muted/50 hover:bg-muted"
+                            )}
+                            >
+                            <Type className="mx-auto h-6 w-6 mb-2" />
+                            <span className={`text-sm font-semibold ${fontOpt.class}`}>{fontOpt.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                    ) : (
+                    <div className="grid grid-cols-3 gap-4 mt-4">
+                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-[92px] w-full" />)}
+                    </div>
+                    )}
+              </CardContent>
+            </Card>
             <Card className="w-full shadow-lg rounded-xl">
                 <CardContent className="p-4">
                 <div className="flex items-center justify-center gap-2 mb-4">
@@ -388,3 +390,5 @@ function AccountItem({
     </li>
   );
 }
+
+    
