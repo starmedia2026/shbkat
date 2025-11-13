@@ -93,14 +93,11 @@ service cloud.firestore {
 
     // This rule governs access to navigation items.
     match /nav_items/{itemId} {
+        // Allow any signed-in user to get individual items or list the whole collection.
         allow read: if isSignedIn();
+        // Only allow admin to create, update, or delete items.
         allow write: if isAdmin();
     }
-    
-    match /nav_items {
-        allow list: if isSignedIn();
-    }
-    
 
     match /adverts/{advertId} {
         // Allow anyone to see the adverts.
