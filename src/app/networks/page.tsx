@@ -27,35 +27,39 @@ export default function NetworksPage() {
       </header>
       <main className="p-4 space-y-4">
         {allNetworks.map((network) => (
-          <Link href={`/networks/${network.id}`} key={network.id} className="block">
+          <div key={network.id} className="block">
             <Card className="w-full shadow-lg rounded-2xl hover:shadow-xl transition-shadow cursor-pointer bg-primary text-primary-foreground overflow-hidden">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-black/10 rounded-full flex items-center justify-center">
+                    <Link href={`/networks/${network.id}`} className="w-12 h-12 bg-black/10 rounded-full flex items-center justify-center shrink-0">
                         <Wifi className="h-7 w-7"/>
-                    </div>
+                    </Link>
                     <div className="flex-grow text-right">
-                        <h2 className="font-bold text-lg">{network.name}</h2>
-                        <div className="flex items-center justify-end gap-4 text-xs text-primary-foreground/90 mt-1">
+                        <Link href={`/networks/${network.id}`}>
+                            <h2 className="font-bold text-lg">{network.name}</h2>
+                        </Link>
+                        <div className="flex flex-col items-start gap-1 text-xs text-primary-foreground/90 mt-1">
                            {network.ownerPhone && (
-                           <div className="flex items-center gap-2">
-                            <span dir="ltr">{network.ownerPhone}</span>
-                            <Phone className="h-3 w-3" />
-                           </div>
+                            <a href={`tel:${network.ownerPhone}`} className="flex items-center gap-2">
+                                <Phone className="h-3 w-3" />
+                                <span dir="ltr">{network.ownerPhone}</span>
+                            </a>
                            )}
                            {network.address && (
                            <div className="flex items-center gap-2">
-                            <span>{network.address}</span>
                             <MapPin className="h-3 w-3" />
+                            <span>{network.address}</span>
                            </div>
                            )}
                         </div>
                     </div>
                 </div>
-                <ChevronLeft className="w-8 h-8 opacity-70" />
+                <Link href={`/networks/${network.id}`}>
+                    <ChevronLeft className="w-8 h-8 opacity-70" />
+                </Link>
               </CardContent>
             </Card>
-          </Link>
+          </div>
         ))}
       </main>
     </div>
@@ -68,6 +72,3 @@ const Button = ({ onClick, children, className, ...props }: any) => (
     {children}
   </button>
 );
-
-
-
