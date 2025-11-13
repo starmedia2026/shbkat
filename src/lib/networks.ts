@@ -19,46 +19,6 @@ interface Network {
 
 export const networks: Network[] = [
   {
-    "id": "new-network-1763067922593",
-    "name": "شبكة ببحم",
-    "logo": "",
-    "address": "مديرية شبام",
-    "ownerPhone": "",
-    "categories": []
-  },
-  {
-    "id": "new-network-1763068099085",
-    "name": "شبكة ببحم",
-    "logo": "",
-    "address": "مديرية شبام",
-    "ownerPhone": "",
-    "categories": []
-  },
-  {
-    "id": "new-network-1763069042842",
-    "name": "شبكة ببحم",
-    "logo": "",
-    "address": "مديرية شبام",
-    "ownerPhone": "",
-    "categories": [
-      {
-        "id": "new-cat-1763069053708",
-        "name": "",
-        "price": 0,
-        "validity": "",
-        "capacity": ""
-      }
-    ]
-  },
-  {
-    "id": "new-network-1763069353286",
-    "name": "شبكة بيحم",
-    "logo": "",
-    "address": "شبام",
-    "ownerPhone": "",
-    "categories": []
-  },
-  {
     "id": "network-1763069797774",
     "name": "شبكة بيحم",
     "address": "مديرية شبام",
@@ -78,6 +38,13 @@ export const networks: Network[] = [
         "price": 1000,
         "validity": "شهر",
         "capacity": "8"
+      },
+      {
+        "id": "new-cat-1763071362558",
+        "name": "4 قيقا",
+        "price": 500,
+        "validity": "اسبوع",
+        "capacity": "2"
       }
     ]
   }
