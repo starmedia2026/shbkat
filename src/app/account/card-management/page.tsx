@@ -91,7 +91,7 @@ export default function CardManagementPage() {
     }
   }, [isAdmin, isOwner, isAuthorizing, router]);
 
-  if (isAuthorized === null || isAuthorized === false) {
+  if (isAuthorizing || isAuthorized === null || isAuthorized === false) {
     return <LoadingScreen />;
   }
 
@@ -116,6 +116,7 @@ function CardManagementContent() {
     failed: number;
   } | null>(null);
 
+  const ALL_NETWORKS_VALUE = "all";
 
   const displayedNetworks = useMemo(() => {
     if (isAdmin) return networks;
@@ -245,8 +246,6 @@ function CardManagementContent() {
     });
   };
 
-  const ALL_NETWORKS_VALUE = "all";
-
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
@@ -370,5 +369,3 @@ function CardManagementContent() {
     </div>
   );
 }
-
-    
