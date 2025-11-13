@@ -21,9 +21,8 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useFirestore } from "@/firebase";
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { doc } from "firebase/firestore";
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
@@ -98,14 +97,21 @@ export default function SignupPage() {
         
         const userDocRef = doc(firestore, "customers", user.uid);
         
-        setDocumentNonBlocking(userDocRef, customerData, { merge: false });
-
-        toast({
-          title: "تم إنشاء الحساب بنجاح!",
-          description: "يتم تسجيل دخولك الآن...",
+        // Use setDoc with proper error handling
+        setDoc(userDocRef, customerData).then(() => {
+            toast({
+              title: "تم إنشاء الحساب بنجاح!",
+              description: "يتم تسجيل دخولك الآن...",
+            });
+            router.push("/home");
+        }).catch(async (serverError) => {
+             const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'create',
+                requestResourceData: customerData
+            });
+            errorEmitter.emit('permission-error', permissionError);
         });
-
-        router.push("/home");
       }
     } catch (error: any) {
       console.error("Signup error:", error);
