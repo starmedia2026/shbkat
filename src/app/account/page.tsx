@@ -16,6 +16,7 @@ import {
   Users,
   Wifi,
   CreditCard,
+  BarChart3,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -205,6 +206,11 @@ export default function AccountPage() {
                     icon={CreditCard}
                     label="إدارة الكروت"
                     href="/account/card-management"
+                  />
+                   <AccountItem
+                    icon={BarChart3}
+                    label="تقرير مبيعات الكروت"
+                    href="/account/card-sales"
                   />
                 </>
               )}

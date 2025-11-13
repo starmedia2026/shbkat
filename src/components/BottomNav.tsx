@@ -36,11 +36,7 @@ export function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 bg-background/80 backdrop-blur-lg border-t">
       <div className="flex justify-around items-center h-full max-w-md mx-auto">
         {navItems.map((item) => {
-          // Determine if the link is active
-          const isActive = (pathname.startsWith(item.href) && item.href !== '/account') || 
-                           (pathname === item.href) ||
-                           (item.href === "/account" && pathname === "/account" && !pathname.includes('/user-management') && !pathname.includes('/create-user'));
-
+          const isActive = pathname.startsWith(item.href) && (item.href !== '/account' || pathname === '/account');
 
           return (
             <Link href={item.href} key={item.href} className="flex-1">
