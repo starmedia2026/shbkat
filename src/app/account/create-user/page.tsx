@@ -1,8 +1,9 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { useAdmin } from "@/hooks/useAdmin";
 import { doc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -35,17 +36,20 @@ export default function CreateUserPageWrapper() {
   const { isAdmin, isLoading } = useAdmin();
   const router = useRouter();
 
-  if (isLoading) {
+  useEffect(() => {
+    // Only redirect when loading is finished and the user is explicitly not an admin.
+    if (!isLoading && !isAdmin) {
+      router.replace('/account');
+    }
+  }, [isAdmin, isLoading, router]);
+
+
+  if (isLoading || !isAdmin) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-          <p>جاري التحميل...</p>
+          <p>جاري التحميل والتحقق من الصلاحيات...</p>
       </div>
     );
-  }
-
-  if (!isAdmin) {
-    router.replace('/account');
-    return null;
   }
 
   return <CreateUserPage />;
@@ -262,3 +266,5 @@ function CreateUserPage() {
     </div>
   );
 }
+
+    
