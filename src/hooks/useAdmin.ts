@@ -23,20 +23,31 @@ export function useAdmin() {
 
   const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
   
-  const baseIsLoading = isUserLoading || isCustomerLoading;
+  const isLoading = useMemo(() => {
+      // If we already know the phone number matches, we are not loading.
+      if (customer?.phoneNumber === ADMIN_PHONE_NUMBER) {
+          return false;
+      }
+      // Otherwise, we are loading if either user or customer data is loading.
+      return isUserLoading || isCustomerLoading;
+  }, [customer, isUserLoading, isCustomerLoading]);
 
   const isAdmin = useMemo(() => {
-    // If we are not loading and have the customer data, check the phone number.
-    if (!baseIsLoading && customer) {
+    // Priority check for the admin phone number to avoid flicker.
+    if (customer?.phoneNumber === ADMIN_PHONE_NUMBER) {
+        return true;
+    }
+    // If not loading and we have customer data, determine admin status.
+    if (!isLoading && customer) {
         return customer.phoneNumber === ADMIN_PHONE_NUMBER;
     }
-    // While loading, we can't determine the admin status.
+    // Return null while loading.
     return null;
-  }, [customer, baseIsLoading]);
+  }, [customer, isLoading]);
 
 
   return {
     isAdmin: isAdmin,
-    isLoading: baseIsLoading,
+    isLoading: isLoading,
   };
 }
