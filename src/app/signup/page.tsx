@@ -20,14 +20,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
+
+
+interface AppSettings {
+    logoUrl?: string;
+}
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -43,6 +49,14 @@ export default function SignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const appSettingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "app");
+  }, [firestore]);
+
+  const { data: appSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(appSettingsDocRef);
+
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,18 +148,24 @@ export default function SignupPage() {
     }
   };
 
+  const logoUrl = appSettings?.logoUrl || "https://i.postimg.cc/76FCwnKs/44.png";
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-4 flex items-center gap-3">
-          <Image
-            src="https://i.postimg.cc/76FCwnKs/44.png"
-            alt="Shabakat Logo"
-            width={120}
-            height={60}
-            priority
-          />
+          {isSettingsLoading ? (
+            <Skeleton className="h-[90px] w-[150px]" />
+          ) : (
+            <Image
+                src={logoUrl}
+                alt="Shabakat Logo"
+                width={150}
+                height={90}
+                priority
+                className="object-contain"
+            />
+          )}
         </div>
         <Card className="w-full shadow-2xl">
           <CardHeader className="space-y-1 text-center">

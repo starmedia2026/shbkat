@@ -15,12 +15,17 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/firebase";
+import { useAuth, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
+interface AppSettings {
+    logoUrl?: string;
+}
 
 export default function LoginPage() {
   const [phone, setPhone] = useState("");
@@ -31,7 +36,15 @@ export default function LoginPage() {
   const [lastUserName, setLastUserName] = useState<string | null>(null);
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
+
+  const appSettingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "app");
+  }, [firestore]);
+
+  const { data: appSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(appSettingsDocRef);
 
   useEffect(() => {
     const storedName = localStorage.getItem('lastUserName');
@@ -88,19 +101,25 @@ export default function LoginPage() {
   };
 
   const displayName = formatDisplayName(lastUserName);
+  const logoUrl = appSettings?.logoUrl || "https://i.postimg.cc/76FCwnKs/44.png";
 
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 relative">
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-4 flex flex-col items-center gap-2">
-            <Image
-                src="https://i.postimg.cc/76FCwnKs/44.png"
-                alt="Shabakat Logo"
-                width={120}
-                height={60}
-                priority
-            />
+            {isSettingsLoading ? (
+                 <Skeleton className="h-[90px] w-[150px]" />
+            ) : (
+                <Image
+                    src={logoUrl}
+                    alt="Shabakat Logo"
+                    width={150}
+                    height={90}
+                    priority
+                    className="object-contain"
+                />
+            )}
           <p className="text-xl text-muted-foreground font-semibold mt-2">
             {displayName ? `أهلاً ${displayName}` : 'أهلاً بك'}
           </p>
