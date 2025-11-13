@@ -154,7 +154,7 @@ export default function HomePage() {
           <ServiceButton icon={History} label="العمليات" href="/operations" iconClassName="text-chart-2" />
           <ServiceButton icon={Heart} label="المفضلة" href="/favorites" iconClassName="text-chart-3" />
           <ServiceButton icon={Wallet} label="غذي حسابك" href="/top-up" iconClassName="text-chart-4" />
-          <ServiceButton icon={Send} label="تحويل رصيد" href="/transfer" iconClassName="text-chart-5" />
+          <ServiceButton icon={Send} label="تحويل لمشترك" href="/transfer" iconClassName="text-chart-5" />
           <ServiceButton icon={Phone} label="تواصل معنا" href="/contact" iconClassName="text-chart-6" />
         </div>
       </main>
