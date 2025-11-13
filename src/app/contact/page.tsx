@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 
 // WhatsApp icon component for the button
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -38,7 +39,7 @@ export default function ContactPage() {
   const { data: appSettings, isLoading } = useDoc<AppSettings>(appSettingsDocRef);
 
   const phoneNumber = appSettings?.supportPhoneNumber || DEFAULT_SUPPORT_PHONE;
-  const whatsappMessage = encodeURIComponent("مرحباً، أود التواصل معكم.");
+  const whatsappMessage = encodeURIComponent("مرحباً، أود التواصل معكم بخصوص تطبيق شبكات.");
 
   const handleWhatsAppRedirect = () => {
     window.open(`https://wa.me/${phoneNumber}?text=${whatsappMessage}`, "_blank");
@@ -54,38 +55,59 @@ export default function ContactPage() {
         <BackButton />
         <h1 className="text-lg font-normal text-right flex-grow mr-4">تواصل معنا</h1>
       </header>
-      <main className="p-4 flex flex-col items-center justify-center text-center flex-grow space-y-8 mt-16">
-        <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-          للمساعدة أو الاستفسار، يمكنك التواصل معنا مباشرة عبر واتساب أو الاتصال.
-        </p>
+      <main className="p-4 flex flex-col items-center justify-center text-center flex-grow space-y-6">
+        
+        <Card className="w-full max-w-sm shadow-lg rounded-2xl bg-primary/5 border-primary/20">
+            <CardContent className="p-6 flex flex-col items-center gap-4">
+                <div className="p-4 bg-primary/10 rounded-full">
+                    <MessageCircle className="h-8 w-8 text-primary"/>
+                </div>
+                <div className="text-center">
+                    <h2 className="text-lg font-bold">يسعدنا تواصلك معنا</h2>
+                    <p className="text-muted-foreground text-sm mt-1">
+                        اختر طريقة التواصل التي تناسبك وسنكون في خدمتك.
+                    </p>
+                </div>
+            </CardContent>
+        </Card>
+
         <div className="w-full max-w-sm space-y-4">
-            <Button 
-                onClick={handleCallRedirect}
-                className="w-full py-7 text-base font-bold flex items-center justify-center gap-3 bg-card border-2 border-transparent hover:border-primary hover:bg-primary/10 hover:text-primary transition-all text-foreground"
-                variant="outline"
-                size="lg"
-                disabled={isLoading}
-            >
-                <Phone className="h-6 w-6"/>
-                اتصال
-            </Button>
-            <Button 
-                onClick={handleWhatsAppRedirect}
-                className="w-full py-7 text-base font-bold flex items-center justify-center gap-3 bg-card border-2 border-transparent hover:border-primary hover:bg-primary/10 hover:text-primary transition-all text-foreground"
-                variant="outline"
-                size="lg"
-                disabled={isLoading}
-            >
-                <WhatsAppIcon className="h-6 w-6"/>
-                واتساب
-            </Button>
+            <Card className="w-full shadow-md rounded-xl hover:shadow-lg transition-all">
+                <CardContent className="p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Phone className="h-6 w-6 text-primary"/>
+                        <div className="text-right">
+                            <h3 className="font-semibold">اتصال مباشر</h3>
+                            <p className="text-xs text-muted-foreground">تحدث مع أحد ممثلينا</p>
+                        </div>
+                    </div>
+                    <Button onClick={handleCallRedirect} size="sm" disabled={isLoading}>اتصل الآن</Button>
+                </CardContent>
+            </Card>
+
+            <Card className="w-full shadow-md rounded-xl hover:shadow-lg transition-all">
+                <CardContent className="p-5 flex items-center justify-between">
+                     <div className="flex items-center gap-4">
+                        <WhatsAppIcon className="h-6 w-6 text-green-500"/>
+                        <div className="text-right">
+                            <h3 className="font-semibold">محادثة واتساب</h3>
+                            <p className="text-xs text-muted-foreground">أرسل لنا رسالة نصية</p>
+                        </div>
+                    </div>
+                    <Button onClick={handleWhatsAppRedirect} size="sm" disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white">ابدأ المحادثة</Button>
+                </CardContent>
+            </Card>
         </div>
+
         {isLoading ? (
-            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-8 w-40 mt-4" />
         ) : (
-            <p className="font-mono text-xl tracking-widest text-primary font-semibold mt-4">
-                {phoneNumber}
-            </p>
+            <div className="text-center pt-4">
+                 <p className="text-sm text-muted-foreground">رقم التواصل الموحد</p>
+                 <p className="font-mono text-xl tracking-widest text-primary font-semibold mt-1">
+                    {phoneNumber}
+                </p>
+            </div>
         )}
       </main>
     </div>
