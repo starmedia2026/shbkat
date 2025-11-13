@@ -114,7 +114,7 @@ export default function CardSalesPage() {
           >
             <ArrowRight className="h-6 w-6" />
           </Button>
-          <h1 className="text-lg font-normal text-right flex-grow">
+          <h1 className="text-lg font-normal text-right flex-grow mr-4">
             تقرير مبيعات الكروت
           </h1>
         </header>
@@ -227,7 +227,7 @@ function CardSalesContent() {
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow">
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">
           تقرير مبيعات الكروت
         </h1>
       </header>
@@ -399,7 +399,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                 </div>
                 <div className="mt-4 pt-3 border-t flex gap-2">
                     <Button onClick={handleWhatsAppRedirect} variant="outline" className="w-full bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
-                        <WhatsAppIcon className="h-6 w-6 ml-2"/>
+                        <WhatsAppIcon className="h-8 w-8 ml-2"/>
                         إرسال عبر واتساب
                     </Button>
                      <AlertDialog>

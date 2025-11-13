@@ -197,7 +197,7 @@ export default function TransferPage() {
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow">
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">
           تحويل رصيد
         </h1>
       </header>

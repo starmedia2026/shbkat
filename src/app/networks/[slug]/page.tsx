@@ -87,7 +87,7 @@ export default function NetworkDetailPage() {
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
         <BackButton />
-        <h1 className="text-lg font-normal text-right flex-grow">
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">
           {network.name}
         </h1>
       </header>

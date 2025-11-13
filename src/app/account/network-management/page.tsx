@@ -73,7 +73,7 @@ export default function NetworkManagementPage() {
           >
             <ArrowRight className="h-6 w-6" />
           </Button>
-          <h1 className="text-lg font-normal text-right flex-grow">
+          <h1 className="text-lg font-normal text-right flex-grow mr-4">
             إدارة الشبكات
           </h1>
         </header>
@@ -179,7 +179,7 @@ function NetworkManagementContent() {
         >
             <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow">
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">
           إدارة الشبكات
         </h1>
         <Button onClick={handleSave} disabled={isSaving}>

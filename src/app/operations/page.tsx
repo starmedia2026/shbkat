@@ -60,7 +60,7 @@ export default function OperationsPage() {
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
         <BackButton />
-        <h1 className="text-lg font-normal text-right flex-grow">العمليات</h1>
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">العمليات</h1>
       </header>
       <main className="p-4 space-y-4">
         {isLoading ? (

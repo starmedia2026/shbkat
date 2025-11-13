@@ -79,7 +79,7 @@ export default function TopUpPage() {
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
         <BackButton />
-        <h1 className="text-lg font-normal text-right flex-grow">غذي حسابك</h1>
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">غذي حسابك</h1>
       </header>
       <main className="p-4 space-y-6">
         <h2 className="text-right font-bold text-lg px-2">طريقة الدفع</h2>

@@ -79,7 +79,7 @@ export default function UserManagementPage() {
           >
             <ArrowRight className="h-6 w-6" />
           </Button>
-          <h1 className="text-lg font-normal text-right flex-grow">
+          <h1 className="text-lg font-normal text-right flex-grow mr-4">
             إدارة المستخدمين
           </h1>
         </header>
@@ -125,7 +125,7 @@ function UserManagementContent() {
           >
             <ArrowRight className="h-6 w-6" />
           </Button>
-          <h1 className="text-lg font-normal text-right flex-grow">
+          <h1 className="text-lg font-normal text-right flex-grow mr-4">
             إدارة المستخدمين
           </h1>
         </header>

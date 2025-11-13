@@ -64,7 +64,7 @@ export default function CardManagementPage() {
           >
             <ArrowRight className="h-6 w-6" />
           </Button>
-          <h1 className="text-lg font-normal text-right flex-grow">
+          <h1 className="text-lg font-normal text-right flex-grow mr-4">
             إدارة الكروت
           </h1>
         </header>
@@ -183,7 +183,7 @@ function CardManagementContent() {
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow">
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">
           إدارة الكروت
         </h1>
       </header>

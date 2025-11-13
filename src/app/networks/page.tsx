@@ -35,7 +35,7 @@ export default function NetworksPage() {
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow">الشبكات</h1>
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">الشبكات</h1>
       </header>
       <main className="p-4 space-y-4">
         {allNetworks.map((network) => (

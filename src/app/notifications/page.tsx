@@ -57,7 +57,7 @@ export default function NotificationsPage() {
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow">الإشعارات</h1>
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">الإشعارات</h1>
       </header>
       <main className="p-4 space-y-4">
         {isLoading ? (
