@@ -8,12 +8,14 @@ import {
   Trash2,
   Save,
   X,
-  Image as ImageIcon
+  ImageIcon,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -51,6 +53,14 @@ interface Network {
   logo?: string;
   categories: Category[];
 }
+
+const initialGlobalCategoryState: Omit<Category, 'id'> = {
+    name: "",
+    price: 0,
+    validity: "",
+    capacity: "",
+};
+
 
 export default function NetworkManagementPage() {
   const router = useRouter();
@@ -96,6 +106,8 @@ function NetworkManagementContent() {
   const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string}>({name: "", logo: ""});
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
+
+  const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id'>>(initialGlobalCategoryState);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -177,10 +189,37 @@ function NetworkManagementContent() {
     ));
   };
 
+  const handleAddGlobalCategory = () => {
+    if (!globalCategory.name || globalCategory.price <= 0) {
+        toast({
+            variant: "destructive",
+            title: "بيانات ناقصة",
+            description: "الرجاء إدخال اسم وسعر صالحين للفئة الموحدة.",
+        });
+        return;
+    }
+
+    setNetworks(prevNetworks => 
+        prevNetworks.map(network => ({
+            ...network,
+            categories: [
+                ...network.categories,
+                { ...globalCategory, id: `cat-${Date.now()}-${network.id}` } // Ensure unique ID per network
+            ]
+        }))
+    );
+
+    toast({
+        title: "تمت الإضافة مؤقتًا",
+        description: `تمت إضافة فئة "${globalCategory.name}" لجميع الشبكات. اضغط "حفظ" لتأكيد التغييرات.`,
+    });
+    setGlobalCategory(initialGlobalCategoryState); // Reset form
+  };
+
 
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
-      <header className="p-4 flex items-center justify-between relative border-b">
+      <header className="p-4 flex items-center justify-between relative border-b sticky top-0 bg-background z-10">
         <Button
             variant="ghost"
             size="icon"
@@ -192,11 +231,32 @@ function NetworkManagementContent() {
           إدارة الشبكات
         </h1>
         <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving ? "جاري الحفظ..." : "حفظ"}
+          {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
         </Button>
       </header>
       <main className="p-4">
         <div className="space-y-6">
+            <Card className="w-full shadow-md rounded-2xl bg-card/50">
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <Globe className="h-5 w-5 text-primary"/>
+                        <CardTitle>إضافة فئة موحدة لجميع الشبكات</CardTitle>
+                    </div>
+                    <CardDescription>
+                        أدخل تفاصيل الفئة هنا لإضافتها إلى جميع الشبكات الموجودة دفعة واحدة.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <CategoryEditForm 
+                        category={globalCategory}
+                        setCategory={setGlobalCategory}
+                        onSave={handleAddGlobalCategory}
+                        onCancel={() => setGlobalCategory(initialGlobalCategoryState)}
+                        isGlobalForm={true}
+                    />
+                </CardContent>
+            </Card>
+
           {networks.map((network) => (
             <Card key={network.id} className="w-full shadow-md rounded-2xl bg-card/50">
               <CardHeader className="flex-row items-center justify-between">
@@ -311,7 +371,7 @@ const CategoryCard = ({ category, onEdit, onDelete }: { category: Category, onEd
     </div>
 );
 
-const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { category: any, setCategory: any, onSave: () => void, onCancel: () => void }) => {
+const CategoryEditForm = ({ category, setCategory, onSave, onCancel, isGlobalForm = false }: { category: any, setCategory: any, onSave: () => void, onCancel: () => void, isGlobalForm?: boolean }) => {
     
     const handleChange = (field: keyof Category, value: string | number) => {
         setCategory({ ...category, [field]: value });
@@ -321,26 +381,28 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         <div className="p-4 border rounded-lg bg-background space-y-4">
              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="cat-name">اسم الباقة</Label>
-                    <Input id="cat-name" value={category.name} onChange={e => handleChange('name', e.target.value)} />
+                    <Label htmlFor={`cat-name-${category.id}`}>اسم الباقة</Label>
+                    <Input id={`cat-name-${category.id}`} value={category.name} onChange={e => handleChange('name', e.target.value)} />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="cat-price">السعر</Label>
-                    <Input id="cat-price" type="number" value={category.price} onChange={e => handleChange('price', Number(e.target.value))} />
+                    <Label htmlFor={`cat-price-${category.id}`}>السعر</Label>
+                    <Input id={`cat-price-${category.id}`} type="number" value={category.price === 0 && isGlobalForm ? '' : category.price} onChange={e => handleChange('price', Number(e.target.value))} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="cat-capacity">السعة</Label>
-                    <Input id="cat-capacity" value={category.capacity} onChange={e => handleChange('capacity', e.target.value)} />
+                    <Label htmlFor={`cat-capacity-${category.id}`}>السعة</Label>
+                    <Input id={`cat-capacity-${category.id}`} value={category.capacity} onChange={e => handleChange('capacity', e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="cat-validity">الصلاحية</Label>
-                    <Input id="cat-validity" value={category.validity} onChange={e => handleChange('validity', e.target.value)} />
+                    <Label htmlFor={`cat-validity-${category.id}`}>الصلاحية</Label>
+                    <Input id={`cat-validity-${category.id}`} value={category.validity} onChange={e => handleChange('validity', e.target.value)} />
                 </div>
             </div>
             <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={onCancel}>إلغاء</Button>
-                <Button onClick={onSave}>حفظ الباقة</Button>
+                <Button variant="ghost" onClick={onCancel}>{isGlobalForm ? 'إفراغ' : 'إلغاء'}</Button>
+                <Button onClick={onSave}>{isGlobalForm ? 'إضافة الفئة للجميع' : 'حفظ الباقة'}</Button>
             </div>
         </div>
     )
 };
+
+    
