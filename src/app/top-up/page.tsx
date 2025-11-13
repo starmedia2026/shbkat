@@ -3,71 +3,16 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Copy, Upload, Wallet, Building, CircleDollarSign } from "lucide-react";
+import { ArrowRight, Copy, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState } from "react";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-
-interface PaymentMethod {
-    id: string;
-    name: string;
-    description: string;
-    icon: React.ElementType;
-    accountName: string;
-    accountNumber: string;
-    theme: {
-        iconBg: string;
-        iconColor: string;
-        borderColor: string;
-    };
-}
-
-const paymentMethods: PaymentMethod[] = [
-    {
-        id: "kareemi",
-        name: "خدمة حاسب | بنك الكريمي",
-        description: "تحويل بنكي عبر حاسب",
-        icon: Wallet,
-        accountName: "كافتيريا وبروست وينك امس",
-        accountNumber: "1203378#1",
-        theme: {
-            iconBg: "bg-purple-100 dark:bg-purple-900/50",
-            iconColor: "text-purple-600 dark:text-purple-400",
-            borderColor: "border-purple-500",
-        },
-    },
-    {
-        id: "amqi",
-        name: "شركة العمقي للصرافة",
-        description: "تحويل عبر العمقي",
-        icon: Building,
-        accountName: "كافتيريا وبروست وينك امس",
-        accountNumber: "2345678",
-        theme: {
-            iconBg: "bg-green-100 dark:bg-green-900/50",
-            iconColor: "text-green-600 dark:text-green-400",
-            borderColor: "border-green-500",
-        },
-    },
-    {
-        id: "busairi",
-        name: "بنك البسيري - بي كاش",
-        description: "تحويل عبر بي كاش",
-        icon: CircleDollarSign,
-        accountName: "كافتيريا وبروست وينك امس",
-        accountNumber: "3456789",
-        theme: {
-            iconBg: "bg-blue-100 dark:bg-blue-900/50",
-            iconColor: "text-blue-600 dark:text-blue-400",
-            borderColor: "border-blue-500",
-        },
-    },
-];
+import { paymentMethods as initialPaymentMethods, PaymentMethod } from "@/lib/payment-methods";
+import Image from "next/image";
 
 export default function TopUpPage() {
-  const [selectedPayment, setSelectedPayment] = useState("kareemi");
+  const [selectedPayment, setSelectedPayment] = useState(initialPaymentMethods[0]?.id || "");
 
   const handleWhatsAppRedirect = () => {
     const phoneNumber = "770326828";
@@ -85,7 +30,7 @@ export default function TopUpPage() {
         <h2 className="text-right font-bold text-lg px-2">طريقة الدفع</h2>
         
         <div className="grid gap-4">
-            {paymentMethods.map((method) => (
+            {initialPaymentMethods.map((method) => (
                 <PaymentOption 
                     key={method.id}
                     method={method}
@@ -135,8 +80,12 @@ function PaymentOption({ method, isSelected, onSelect }: { method: PaymentMethod
         >
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center space-x-3 space-x-reverse">
-                    <div className={cn("p-2 rounded-lg", method.theme.iconBg)}>
-                      <method.icon className={cn("h-6 w-6", method.theme.iconColor)} />
+                    <div className={cn("p-2 rounded-lg relative h-12 w-12 flex items-center justify-center", method.theme.iconBg)}>
+                      {method.logoUrl ? (
+                          <Image src={method.logoUrl} alt={method.name} width={40} height={40} className="object-contain" />
+                      ) : (
+                          <div className={cn("h-6 w-6", method.theme.iconColor)}></div>
+                      )}
                     </div>
                     <div>
                         <p className="font-semibold text-sm">{method.name}</p>

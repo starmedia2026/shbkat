@@ -22,6 +22,7 @@ import {
   Type,
   LayoutDashboard,
   Navigation,
+  Wallet,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -83,8 +84,8 @@ const adminAccountItems = [
   { href: "/account/network-management", icon: Wifi, label: "إدارة الشبكات" },
   { href: "/account/card-management", icon: CreditCard, label: "إدارة الكروت" },
   { href: "/account/card-sales", icon: BarChart3, label: "تقرير مبيعات الكروت" },
+  { href: "/account/payment-management", icon: Wallet, label: "إدارة الدفع" },
   { href: "/account/ad-management", icon: ImageIcon, label: "إدارة الإعلانات" },
-  { href: "/account/nav-management", icon: Navigation, label: "إدارة القوائم" },
   { href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
   { href: "/contact", icon: Share2, label: "شارك التطبيق" },
   { href: "#", icon: HelpCircle, label: "مركز المساعدة" },
