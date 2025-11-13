@@ -191,14 +191,14 @@ export default function HomePage() {
              {isLoading ? (
                  <Skeleton className="h-10 w-48 mt-2 bg-white/30" />
               ) : (
-                <div className="text-3xl font-bold tracking-wider mt-2" dir="ltr">
+                <div className="text-3xl font-bold tracking-wider mt-2" dir="rtl">
                   {balanceVisible ? (
                     <span className="flex items-baseline gap-2">
                        <span className="font-mono">{(customer?.balance ?? 0).toLocaleString('en-US')}</span>
                        <span className="text-sm font-normal">ريال يمني</span>
                     </span>
                   ) : (
-                    "••••••••"
+                    "******"
                   )}
                 </div>
               )}
@@ -292,4 +292,3 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
-
