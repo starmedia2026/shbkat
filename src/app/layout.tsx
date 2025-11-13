@@ -45,7 +45,7 @@ export default function RootLayout({
       <head>
         <ThemeScript />
       </head>
-      <body className={cn(tajawal.variable)}>
+      <body className={cn("font-sans", tajawal.variable)}>
         <FirebaseClientProvider>
           <ThemeProvider>
             {children}
