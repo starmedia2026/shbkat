@@ -68,11 +68,16 @@ export default function TransferPage() {
 
   useEffect(() => {
     const findRecipient = async () => {
+      // Clear previous state on new search
+      setRecipient(null);
+      setRecipientError(null);
+      
       if (recipientPhone.length >= 9) { // Assuming a valid length for a phone number
         setIsRecipientLoading(true);
-        setRecipient(null);
-        setRecipientError(null);
         try {
+          if (!firestore) {
+            throw new Error("Firestore service is not available.");
+          }
           const customersRef = collection(firestore, "customers");
           const q = query(customersRef, where("phoneNumber", "==", recipientPhone));
           const querySnapshot = await getDocs(q);
@@ -92,9 +97,6 @@ export default function TransferPage() {
         } finally {
           setIsRecipientLoading(false);
         }
-      } else {
-        setRecipient(null);
-        setRecipientError(null);
       }
     };
 
@@ -167,6 +169,7 @@ export default function TransferPage() {
         setRecipientPhone("");
         setAmount("");
         setRecipient(null);
+        setRecipientError(null);
 
     } catch (error) {
         const contextualError = new FirestorePermissionError({
@@ -197,7 +200,7 @@ export default function TransferPage() {
           <ArrowRight className="h-6 w-6" />
         </Button>
         <h1 className="text-lg font-normal text-right flex-grow mr-4">
-          تحويل رصيد
+          تحويل لمشترك
         </h1>
       </header>
       <main className="p-4 space-y-6">
