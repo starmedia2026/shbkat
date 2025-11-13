@@ -316,6 +316,8 @@ function PackageCard({ category, networkId, networkName, isClient }: { category:
 
 function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInfo, isOpen: boolean, onClose: () => void }) {
     const { toast } = useToast();
+    const [smsDialogOpen, setSmsDialogOpen] = useState(false);
+    const [smsRecipient, setSmsRecipient] = useState("");
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(card.cardNumber);
@@ -324,48 +326,86 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
           description: "تم نسخ رقم الكرت إلى الحافظة.",
         });
     };
-
+    
     const handleSendSms = () => {
+        if (!smsRecipient.trim()) {
+            toast({
+                variant: "destructive",
+                title: "رقم الجوال مطلوب",
+                description: "الرجاء إدخال رقم جوال صحيح.",
+            });
+            return;
+        }
         const messageBody = encodeURIComponent(`تم شراء ${card.categoryName} من ${card.networkName}.\nرقم الكرت: ${card.cardNumber}`);
-        window.location.href = `sms:?body=${messageBody}`;
+        window.location.href = `sms:${smsRecipient}?body=${messageBody}`;
+        setSmsDialogOpen(false);
         onClose();
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>تم الشراء بنجاح!</DialogTitle>
-                    <DialogDescription>
-                        يمكنك الآن نسخ رقم الكرت أو إرساله عبر رسالة نصية.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="card-number">رقم الكرت</Label>
-                        <div className="flex items-center gap-2">
+        <>
+            <Dialog open={isOpen && !smsDialogOpen} onOpenChange={(open) => !open && onClose()}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>تم الشراء بنجاح!</DialogTitle>
+                        <DialogDescription>
+                            هذا هو رقم الكرت الذي قمت بشرائه.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="card-number" className="text-right">رقم الكرت</Label>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    id="card-number"
+                                    value={card.cardNumber}
+                                    readOnly
+                                    className="text-base font-mono tracking-wider text-center bg-muted"
+                                    dir="ltr"
+                                />
+                                <Button type="button" size="icon" variant="outline" onClick={copyToClipboard}>
+                                    <Copy className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                        <Button type="button" variant="secondary" className="w-full" onClick={() => setSmsDialogOpen(true)}>
+                            <Send className="ml-2 h-4 w-4"/>
+                            ارسال SMS
+                        </Button>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" className="w-full" onClick={onClose}>إغلاق</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={smsDialogOpen} onOpenChange={setSmsDialogOpen}>
+                <DialogContent className="sm:max-w-[425px] bg-white">
+                    <DialogHeader>
+                         <DialogDescription className="text-center text-muted-foreground p-4">
+                            يمكنك ارسال معلومات الكرت برسالة نصية SMS الى اي رقم. يرجى إدخال رقم الجوال الذي تريد إرسال الكرت اليه.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="px-4 pb-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="sms-recipient" className="text-right">رقم الجوال</Label>
                             <Input
-                                id="card-number"
-                                value={card.cardNumber}
-                                readOnly
-                                className="text-base font-mono tracking-wider text-center bg-muted"
+                                id="sms-recipient"
+                                type="tel"
+                                placeholder="77xxxxxxxx"
+                                value={smsRecipient}
+                                onChange={(e) => setSmsRecipient(e.target.value)}
                                 dir="ltr"
                             />
-                            <Button type="button" size="icon" variant="outline" onClick={copyToClipboard}>
-                                <Copy className="h-4 w-4" />
-                            </Button>
                         </div>
                     </div>
-                     <Button type="button" className="w-full" onClick={handleSendSms}>
-                       <Send className="ml-2 h-4 w-4"/>
-                       ارسال SMS
-                    </Button>
-                </div>
-                <DialogFooter>
-                    <Button type="button" variant="secondary" className="w-full" onClick={onClose}>إغلاق</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                    <DialogFooter className="grid grid-cols-2 gap-2 p-4 pt-0">
+                        <Button onClick={handleSendSms} >تأكيد</Button>
+                        <Button variant="outline" onClick={() => setSmsDialogOpen(false)}>إلغاء</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
 
