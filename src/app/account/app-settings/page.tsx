@@ -6,6 +6,7 @@ import {
   Loader2,
   Image as ImageIcon,
   Save,
+  Link as LinkIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +21,15 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
-import { useCollection, useFirestore, useMemoFirebase, errorEmitter, FirestorePermissionError, useDoc } from "@/firebase";
-import { collection, addDoc, deleteDoc, doc, serverTimestamp, orderBy, query, setDoc } from "firebase/firestore";
+import { useFirestore, useMemoFirebase, errorEmitter, FirestorePermissionError, useDoc } from "@/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface AppSettings {
   logoUrl?: string;
+  shareLink?: string;
 }
 
 export default function AppSettingsPage() {
@@ -71,6 +73,7 @@ function AppSettingsContent() {
   const { toast } = useToast();
 
   const [logoUrl, setLogoUrl] = useState("");
+  const [shareLink, setShareLink] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   
   const appSettingsDocRef = useMemoFirebase(() => {
@@ -81,8 +84,9 @@ function AppSettingsContent() {
   const { data: appSettings, isLoading } = useDoc<AppSettings>(appSettingsDocRef);
 
   useEffect(() => {
-    if (appSettings?.logoUrl) {
-      setLogoUrl(appSettings.logoUrl);
+    if (appSettings) {
+      setLogoUrl(appSettings.logoUrl || "");
+      setShareLink(appSettings.shareLink || "");
     }
   }, [appSettings]);
 
@@ -105,6 +109,7 @@ function AppSettingsContent() {
     setIsSaving(true);
     const newSettings = {
         logoUrl,
+        shareLink,
     };
 
     try {
@@ -142,14 +147,15 @@ function AppSettingsContent() {
       <main className="p-4 space-y-6">
         <Card className="w-full shadow-lg rounded-2xl">
           <CardHeader>
-            <CardTitle>تغيير شعار التطبيق</CardTitle>
+            <CardTitle>إعدادات التطبيق العامة</CardTitle>
             <CardDescription>
-              أدخل رابط الشعار الجديد ليتم عرضه في صفحات تسجيل الدخول والتحميل.
+              تغيير الشعار ورابط المشاركة الخاص بالتطبيق.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {isLoading ? (
                 <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-40 w-full" />
                     <Skeleton className="h-10 w-full" />
@@ -162,6 +168,13 @@ function AppSettingsContent() {
                             <span>رابط الشعار (مطلوب)</span>
                         </Label>
                         <Input id="logoUrl" placeholder="https://example.com/logo.png" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} dir="ltr" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="shareLink" className="flex items-center gap-2">
+                            <LinkIcon className="h-4 w-4" />
+                            <span>رابط مشاركة التطبيق</span>
+                        </Label>
+                        <Input id="shareLink" placeholder="https://play.google.com/store/apps/..." value={shareLink} onChange={(e) => setShareLink(e.target.value)} dir="ltr" />
                     </div>
                     {logoUrl && (
                         <div>

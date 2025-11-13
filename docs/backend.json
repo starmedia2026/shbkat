@@ -235,6 +235,10 @@
         "logoUrl": {
           "type": "string",
           "description": "The URL for the application logo."
+        },
+        "shareLink": {
+          "type": "string",
+          "description": "The URL to be shared when a user clicks the 'Share App' button."
         }
       },
       "required": [

@@ -75,23 +75,27 @@ const colorOptions = [
 ];
 
 const userAccountItems = [
-  { href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
-  { href: "/contact", icon: Share2, label: "شارك التطبيق" },
-  { href: "#", icon: HelpCircle, label: "مركز المساعدة" },
+  { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
+  { id: "share", icon: Share2, label: "شارك التطبيق" },
+  { id: "help", href: "#", icon: HelpCircle, label: "مركز المساعدة" },
 ];
 
 const adminAccountItems = [
-  { href: "/account/user-management", icon: Users, label: "إدارة المستخدمين" },
-  { href: "/account/network-management", icon: Wifi, label: "إدارة الشبكات" },
-  { href: "/account/card-management", icon: CreditCard, label: "إدارة الكروت" },
-  { href: "/account/card-sales", icon: BarChart3, label: "تقرير مبيعات الكروت" },
-  { href: "/account/payment-management", icon: Wallet, label: "إدارة الدفع" },
-  { href: "/account/ad-management", icon: ImageIcon, label: "إدارة الإعلانات" },
-  { href: "/account/app-settings", icon: Settings, label: "إعدادات التطبيق" },
-  { href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
-  { href: "/contact", icon: Share2, label: "شارك التطبيق" },
-  { href: "#", icon: HelpCircle, label: "مركز المساعدة" },
+  { id: "user-management", href: "/account/user-management", icon: Users, label: "إدارة المستخدمين" },
+  { id: "network-management", href: "/account/network-management", icon: Wifi, label: "إدارة الشبكات" },
+  { id: "card-management", href: "/account/card-management", icon: CreditCard, label: "إدارة الكروت" },
+  { id: "card-sales", href: "/account/card-sales", icon: BarChart3, label: "تقرير مبيعات الكروت" },
+  { id: "payment-management", href: "/account/payment-management", icon: Wallet, label: "إدارة الدفع" },
+  { id: "ad-management", href: "/account/ad-management", icon: ImageIcon, label: "إدارة الإعلانات" },
+  { id: "app-settings", href: "/account/app-settings", icon: Settings, label: "إعدادات التطبيق" },
+  { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
+  { id: "share", icon: Share2, label: "شارك التطبيق" },
+  { id: "help", href: "#", icon: HelpCircle, label: "مركز المساعدة" },
 ];
+
+interface AppSettings {
+  shareLink?: string;
+}
 
 export default function AccountPage() {
   const { 
@@ -117,8 +121,13 @@ export default function AccountPage() {
     return doc(firestore, "customers", user.uid);
   }, [firestore, user?.uid]);
 
-  const { data: customer, isLoading: isCustomerLoading } =
-    useDoc(customerDocRef);
+  const appSettingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "app");
+  }, [firestore]);
+
+  const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
+  const { data: appSettings } = useDoc<AppSettings>(appSettingsDocRef);
 
   const isLoading = isUserLoading || isCustomerLoading;
   const accountItems = isAdmin ? adminAccountItems : userAccountItems;
@@ -157,6 +166,35 @@ export default function AccountPage() {
     if (!locationKey) return "";
     return locationMap[locationKey] || locationKey;
   };
+  
+  const handleShare = async () => {
+    const shareUrl = appSettings?.shareLink || window.location.origin;
+    const shareData = {
+      title: "تطبيق شبكات",
+      text: "اكتشف تطبيق شبكات لخدمات الاتصالات!",
+      url: shareUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback for browsers that don't support the Web Share API
+        navigator.clipboard.writeText(shareUrl);
+        toast({
+          title: "تم نسخ الرابط",
+          description: "تم نسخ رابط التطبيق إلى الحافظة. يمكنك مشاركته الآن!",
+        });
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      toast({
+        variant: "destructive",
+        title: "فشلت المشاركة",
+        description: "حدث خطأ أثناء محاولة مشاركة التطبيق.",
+      });
+    }
+  };
+
 
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
@@ -286,7 +324,13 @@ export default function AccountPage() {
                   ))
               ) : (
                  accountItems.map((item) => (
-                    <AccountItem key={item.href} icon={item.icon} label={item.label} href={item.href} />
+                    <AccountItem 
+                        key={item.id} 
+                        icon={item.icon} 
+                        label={item.label} 
+                        href={item.href}
+                        onClick={item.id === 'share' ? handleShare : undefined}
+                    />
                  ))
               )}
             </ul>
@@ -330,23 +374,36 @@ function AccountItem({
   icon: Icon,
   label,
   href,
+  onClick,
 }: {
   icon: React.ElementType;
   label: string;
-  href: string;
+  href?: string;
+  onClick?: () => void;
 }) {
-  return (
-    <li>
-      <Link
-        href={href}
-        className="flex items-center justify-between py-4 px-4 cursor-pointer"
-      >
-        <div className="flex items-center space-x-4 space-x-reverse text-sm font-medium">
-          <Icon className="h-6 w-6" />
-          <span>{label}</span>
-        </div>
-        <ChevronLeft className="h-6 w-6" />
-      </Link>
-    </li>
+  const content = (
+    <div className="flex items-center justify-between py-4 px-4 cursor-pointer">
+      <div className="flex items-center space-x-4 space-x-reverse text-sm font-medium">
+        <Icon className="h-6 w-6" />
+        <span>{label}</span>
+      </div>
+      <ChevronLeft className="h-6 w-6" />
+    </div>
   );
+
+  if (onClick) {
+    return <li onClick={onClick}>{content}</li>;
+  }
+  
+  if (href) {
+    return (
+      <li>
+        <Link href={href}>
+          {content}
+        </Link>
+      </li>
+    );
+  }
+
+  return <li>{content}</li>;
 }
