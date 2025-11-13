@@ -192,14 +192,15 @@ export default function AccountPage() {
       }
     } catch (error) {
       // Don't show an error toast if the user cancels the share sheet
-      if (error instanceof Error && error.name === 'AbortError') {
+      // or if permission is denied, as this is expected user behavior.
+      if (error instanceof Error && (error.name === 'AbortError' || error.name === 'PermissionDeniedError')) {
         return;
       }
       console.error("Error sharing:", error);
       toast({
         variant: "destructive",
         title: "فشلت المشاركة",
-        description: "حدث خطأ أثناء محاولة مشاركة التطبيق.",
+        description: "حدث خطأ غير متوقع أثناء محاولة مشاركة التطبيق.",
       });
     }
   };
@@ -427,5 +428,3 @@ function AccountItem({
   return <li>{content}</li>;
 }
 
-
-    
