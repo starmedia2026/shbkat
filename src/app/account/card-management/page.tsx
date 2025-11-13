@@ -95,16 +95,15 @@ export default function CardManagementPage() {
     return <LoadingScreen />;
   }
 
-  return <CardManagementContent />;
+  return <CardManagementContent isAdmin={isAdmin} isOwner={isOwner} />;
 }
 
 
-function CardManagementContent() {
+function CardManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | null, isOwner: boolean }) {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { isAdmin } = useAdmin();
-  const { isOwner, ownedNetwork } = useNetworkOwner();
+  const { ownedNetwork } = useNetworkOwner();
 
   const [selectedNetworkId, setSelectedNetworkId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
@@ -369,3 +368,5 @@ function CardManagementContent() {
     </div>
   );
 }
+
+    
