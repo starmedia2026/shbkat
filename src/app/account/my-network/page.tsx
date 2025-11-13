@@ -108,8 +108,9 @@ function MyNetworkContent() {
   const { user } = useUser();
   
   const ownerNetwork = useMemo(() => {
-    return networks.find(n => n.ownerPhone === user?.phoneNumber);
-  }, [networks, user]);
+    if (!user?.phoneNumber) return null;
+    return networks.find(n => n.ownerPhone === user.phoneNumber);
+  }, [networks, user?.phoneNumber]);
 
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
     setIsSaving(true);
@@ -125,6 +126,9 @@ function MyNetworkContent() {
       if (!response.ok) {
         throw new Error('فشل في حفظ البيانات على الخادم');
       }
+      
+      // Update local state after successful save
+      setNetworks(updatedNetworks);
 
       toast({
         title: "تم الحفظ",
@@ -143,7 +147,7 @@ function MyNetworkContent() {
   }, [toast]);
   
   const updateAndSave = (newNetworks: Network[]) => {
-    setNetworks(newNetworks);
+    // No need to call setNetworks here, handleSave will do it
     handleSave(newNetworks);
   };
   
@@ -155,7 +159,7 @@ function MyNetworkContent() {
     const newId = `new-network-${Date.now()}`;
     const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: user?.phoneNumber || "", categories: [] };
     const newNetworks = [...networks, newNetwork];
-    setNetworks(newNetworks);
+    setNetworks(newNetworks); // Show the new network form immediately
     setEditingNetworkId(newId);
     setEditingNetworkData({name: "", logo: "", address: "", ownerPhone: user?.phoneNumber || ""});
   };
@@ -236,7 +240,9 @@ function MyNetworkContent() {
                             <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(networkToDisplay.id)}><Save className="h-4 w-4"/></Button>
                             <Button size="icon" variant="ghost" onClick={() => {
                                 setEditingNetworkId(null);
-                                if (networkToDisplay.name === "") {
+                                // If the network was new and not saved, remove it from the local state
+                                const originalNetwork = initialNetworks.find(n => n.id === networkToDisplay.id);
+                                if (!originalNetwork) {
                                     setNetworks(networks.filter(n => n.id !== networkToDisplay.id));
                                 }
                             }}><X className="h-4 w-4"/></Button>
@@ -370,3 +376,5 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
+
+    

@@ -17,4 +17,13 @@ interface Network {
   categories: Category[];
 }
 
-export const networks: Network[] = [];
+export const networks: Network[] = [
+  {
+    "id": "new-network-1763067922593",
+    "name": "شبكة ببحم",
+    "logo": "",
+    "address": "مديرية شبام",
+    "ownerPhone": "",
+    "categories": []
+  }
+];
