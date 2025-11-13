@@ -33,6 +33,7 @@ import { useState, useEffect } from "react";
 import { networks } from "@/lib/networks";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Image from "next/image";
 
 
 const networkData = networks.reduce((acc, network) => {
@@ -345,13 +346,14 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
     return (
         <>
             <Dialog open={isOpen && !smsDialogOpen} onOpenChange={(open) => !open && onClose()}>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[425px] rounded-2xl">
                     <DialogHeader>
-                        <DialogTitle>تم الشراء بنجاح!</DialogTitle>
+                        <DialogTitle className="text-center text-lg">تم الشراء بنجاح!</DialogTitle>
                     </DialogHeader>
-                    <div className="py-4 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="card-number" className="text-right">رقم الكرت</Label>
+                    <div className="py-4 space-y-4 flex flex-col items-center">
+                        <Image src="https://smartgum.com.br/wp-content/uploads/2020/03/ok.png" alt="Success" width={80} height={80} />
+                        <div className="w-full space-y-2">
+                            <Label htmlFor="card-number" className="text-right sr-only">رقم الكرت</Label>
                             <div className="flex items-center gap-2">
                                 <Input
                                     id="card-number"
