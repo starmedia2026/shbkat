@@ -91,11 +91,11 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
-        <div className="mb-8 flex flex-col items-center gap-2">
+        <div className="mb-6 flex flex-col items-center gap-2">
           <h1 className="text-4xl font-bold tracking-tight text-primary">
             شبكات
           </h1>
-          <p className="text-lg text-muted-foreground mt-4">مرحباً بك</p>
+          <p className="text-lg text-muted-foreground mt-2">مرحباً بك</p>
           {displayName && <p className="text-xl text-muted-foreground font-semibold">{displayName}</p>}
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
@@ -103,7 +103,7 @@ export default function LoginPage() {
             <CardTitle className="text-xl">تسجيل الدخول</CardTitle>
           </CardHeader>
           <form onSubmit={handleLogin}>
-            <CardContent className="grid gap-4 p-6">
+            <CardContent className="grid gap-4 p-6 pt-2">
               <div className="grid gap-2 text-right">
                 <Label htmlFor="phone">رقم الهاتف</Label>
                 <Input
@@ -144,14 +144,14 @@ export default function LoginPage() {
               <div className="text-left text-sm">
                 <Link
                   href="/forgot-password"
-                  className="font-medium text-primary hover:underline"
+                  className="font-medium text-primary hover:underline text-sm"
                 >
                   نسيت كلمة المرور؟
                 </Link>
               </div>
                {error && <p className="text-destructive text-sm mt-2">{error}</p>}
             </CardContent>
-            <CardFooter className="flex flex-col gap-4 p-6 pt-0">
+            <CardFooter className="flex flex-col gap-3 p-6 pt-0">
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base" disabled={isLoading}>
                 {isLoading ? "جاري الدخول..." : "دخول"}
               </Button>
