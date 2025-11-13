@@ -1,6 +1,4 @@
 
-import data from './networks.json';
-
 // In a real app, you'd fetch this from a server or have an API endpoint to update it.
 // For now, we'll read from the JSON file.
 
@@ -19,4 +17,4 @@ interface Network {
   categories: Category[];
 }
 
-export const networks: Network[] = data.networks;
+export const networks: Network[] = [];
