@@ -10,6 +10,7 @@ import {
   X,
   ImageIcon,
   Globe,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { networks as initialNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -108,8 +109,10 @@ function NetworkManagementContent() {
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
 
   const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id'>>(initialGlobalCategoryState);
+  
+  const isInitialMount = useRef(true);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async (updatedNetworks: Network[]) => {
     setIsSaving(true);
     try {
       const response = await fetch('/api/save-networks', {
@@ -117,7 +120,7 @@ function NetworkManagementContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ networks }),
+        body: JSON.stringify({ networks: updatedNetworks }),
       });
 
       if (!response.ok) {
@@ -138,24 +141,32 @@ function NetworkManagementContent() {
     } finally {
       setIsSaving(false);
     }
+  }, [toast]);
+  
+  const updateAndSave = (newNetworks: Network[]) => {
+    setNetworks(newNetworks);
+    handleSave(newNetworks);
   };
-
+  
   const handleAddNetwork = () => {
     const newId = `new-network-${Date.now()}`;
-    const newNetwork: Network = { id: newId, name: "شبكة جديدة", logo: "", categories: [] };
-    setNetworks([...networks, newNetwork]);
+    const newNetwork: Network = { id: newId, name: "", logo: "", categories: [] };
+    const newNetworks = [...networks, newNetwork];
+    setNetworks(newNetworks); // Update state locally first
     setEditingNetworkId(newId);
-    setEditingNetworkData({name: "شبكة جديدة", logo: ""});
+    setEditingNetworkData({name: "", logo: ""});
   };
 
   const handleUpdateNetwork = (networkId: string) => {
-    setNetworks(networks.map(n => n.id === networkId ? { ...n, name: editingNetworkData.name, logo: editingNetworkData.logo } : n));
+    const newNetworks = networks.map(n => n.id === networkId ? { ...n, name: editingNetworkData.name, logo: editingNetworkData.logo } : n);
+    updateAndSave(newNetworks);
     setEditingNetworkId(null);
     setEditingNetworkData({name: "", logo: ""});
   };
 
   const handleDeleteNetwork = (networkId: string) => {
-    setNetworks(networks.filter(n => n.id !== networkId));
+    const newNetworks = networks.filter(n => n.id !== networkId);
+    updateAndSave(newNetworks);
   };
   
   const handleAddCategory = (networkId: string) => {
@@ -165,28 +176,31 @@ function NetworkManagementContent() {
     setEditingCategory(newCategory);
 
     // Add placeholder to the list to show the form
-    setNetworks(networks.map(n => n.id === networkId ? { ...n, categories: [...n.categories, newCategory] } : n));
+    const newNetworks = networks.map(n => n.id === networkId ? { ...n, categories: [...n.categories, newCategory] } : n)
+    setNetworks(newNetworks);
   };
 
   const handleUpdateCategory = (networkId: string) => {
     if (!editingCategory || !editingCategoryId) return;
 
-    setNetworks(networks.map(n => 
+    const newNetworks = networks.map(n => 
       n.id === networkId 
         ? { ...n, categories: n.categories.map(c => c.id === editingCategoryId ? editingCategory as Category : c) } 
         : n
-    ));
+    );
+    updateAndSave(newNetworks);
 
     setEditingCategoryId(null);
     setEditingCategory(null);
   };
   
   const handleDeleteCategory = (networkId: string, categoryId: string) => {
-    setNetworks(networks.map(n => 
+     const newNetworks = networks.map(n => 
         n.id === networkId 
         ? { ...n, categories: n.categories.filter(c => c.id !== categoryId) } 
         : n
-    ));
+    );
+    updateAndSave(newNetworks);
   };
 
   const handleAddGlobalCategory = () => {
@@ -199,19 +213,18 @@ function NetworkManagementContent() {
         return;
     }
 
-    setNetworks(prevNetworks => 
-        prevNetworks.map(network => ({
-            ...network,
-            categories: [
-                ...network.categories,
-                { ...globalCategory, id: `cat-${Date.now()}-${network.id}` } // Ensure unique ID per network
-            ]
-        }))
-    );
+    const newNetworks = networks.map(network => ({
+        ...network,
+        categories: [
+            ...network.categories,
+            { ...globalCategory, id: `cat-${Date.now()}-${network.id}` }
+        ]
+    }));
+    updateAndSave(newNetworks);
 
     toast({
-        title: "تمت الإضافة مؤقتًا",
-        description: `تمت إضافة فئة "${globalCategory.name}" لجميع الشبكات. اضغط "حفظ" لتأكيد التغييرات.`,
+        title: "تمت الإضافة والحفظ",
+        description: `تمت إضافة فئة "${globalCategory.name}" لجميع الشبكات.`,
     });
     setGlobalCategory(initialGlobalCategoryState); // Reset form
   };
@@ -230,9 +243,12 @@ function NetworkManagementContent() {
         <h1 className="text-lg font-normal text-right flex-grow mr-4">
           إدارة الشبكات
         </h1>
-        <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
-        </Button>
+        {isSaving && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin"/>
+                <span>جاري الحفظ...</span>
+            </div>
+        )}
       </header>
       <main className="p-4">
         <div className="space-y-6">
@@ -265,13 +281,19 @@ function NetworkManagementContent() {
                     <Input placeholder="اسم الشبكة" value={editingNetworkData.name} onChange={e => setEditingNetworkData(prev => ({...prev, name: e.target.value}))} className="flex-grow"/>
                     <Input placeholder="رابط الشعار" value={editingNetworkData.logo} onChange={e => setEditingNetworkData(prev => ({...prev, logo: e.target.value}))} className="flex-grow"/>
                     <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(network.id)}><Save className="h-4 w-4"/></Button>
-                    <Button size="icon" variant="ghost" onClick={() => setEditingNetworkId(null)}><X className="h-4 w-4"/></Button>
+                    <Button size="icon" variant="ghost" onClick={() => {
+                        setEditingNetworkId(null);
+                        // If the name is empty, it means it was a new network that was cancelled, so remove it.
+                        if (network.name === "") {
+                            setNetworks(networks.filter(n => n.id !== network.id));
+                        }
+                    }}><X className="h-4 w-4"/></Button>
                   </div>
                 ) : (
                     <div className="flex items-center gap-3">
                         {network.logo && <Image src={network.logo} alt={network.name} width={40} height={40} className="rounded-full"/>}
                         {!network.logo && <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center"><ImageIcon className="h-5 w-5 text-muted-foreground"/></div>}
-                        <CardTitle className="text-lg">{network.name}</CardTitle>
+                        <CardTitle className="text-lg">{network.name || "شبكة بدون اسم"}</CardTitle>
                     </div>
                 )}
                 <div className="flex items-center gap-1">
@@ -309,7 +331,7 @@ function NetworkManagementContent() {
                             onSave={() => handleUpdateCategory(network.id)}
                             onCancel={() => {
                                 // If it was a new category, remove the placeholder
-                                if (category.name === "") handleDeleteCategory(network.id, category.id);
+                                if (category.name === "") setNetworks(networks.map(n => n.id === network.id ? { ...n, categories: n.categories.filter(c => c.id !== category.id)} : n))
                                 setEditingCategoryId(null);
                                 setEditingCategory(null);
                             }}
@@ -404,5 +426,3 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel, isGlobalFor
         </div>
     )
 };
-
-    
