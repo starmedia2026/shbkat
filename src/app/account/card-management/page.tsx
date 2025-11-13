@@ -50,15 +50,15 @@ export default function CardManagementPage() {
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
   const { isOwner, isLoading: isOwnerLoading } = useNetworkOwner();
 
+  const isAuthorizing = isAdminLoading || isOwnerLoading;
 
   useEffect(() => {
-    const isAuthorizing = isAdminLoading || isOwnerLoading;
     if (!isAuthorizing && !isAdmin && !isOwner) {
       router.replace("/account");
     }
-  }, [isAdmin, isOwner, isAdminLoading, isOwnerLoading, router]);
+  }, [isAdmin, isOwner, isAuthorizing, router]);
 
-  if (isAdminLoading || isOwnerLoading) {
+  if (isAuthorizing) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="p-4 flex items-center justify-between relative border-b">
@@ -80,7 +80,13 @@ export default function CardManagementPage() {
     );
   }
   
-  return <CardManagementContent />;
+  // Render content only when authorization is complete and user is authorized
+  if (isAdmin || isOwner) {
+    return <CardManagementContent />;
+  }
+
+  // Fallback for unauthorized users, though the useEffect should handle redirection.
+  return null;
 }
 
 const ALL_NETWORKS_VALUE = "all";
@@ -89,8 +95,8 @@ function CardManagementContent() {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
-  const { isOwner, ownedNetwork, isLoading: isOwnerLoading } = useNetworkOwner();
+  const { isAdmin } = useAdmin();
+  const { isOwner, ownedNetwork } = useNetworkOwner();
 
   const [selectedNetworkId, setSelectedNetworkId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
@@ -102,14 +108,12 @@ function CardManagementContent() {
     failed: number;
   } | null>(null);
 
-  const isAuthorizing = isAdminLoading || isOwnerLoading;
 
   const displayedNetworks = useMemo(() => {
-    if (isAuthorizing) return []; // Return empty array while authorizing to prevent flash
     if (isAdmin) return networks;
     if (isOwner && ownedNetwork) return [ownedNetwork];
     return [];
-  }, [isAdmin, isOwner, ownedNetwork, isAuthorizing]);
+  }, [isAdmin, isOwner, ownedNetwork]);
 
   const availableCategories = useMemo(() => {
     if (selectedNetworkId === ALL_NETWORKS_VALUE && isAdmin) return [];
@@ -256,61 +260,53 @@ function CardManagementContent() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-             {isAuthorizing ? (
-                <div className="grid grid-cols-2 gap-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-             ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="network">الشبكة</Label>
-                    <Select
-                      dir="rtl"
-                      onValueChange={setSelectedNetworkId}
-                      value={selectedNetworkId}
-                      disabled={!isAdmin && isOwner}
-                    >
-                      <SelectTrigger id="network">
-                        <SelectValue placeholder="اختر الشبكة" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {isAdmin && (
-                            <SelectItem value={ALL_NETWORKS_VALUE}>
-                                -- جميع الشبكات --
-                            </SelectItem>
-                        )}
-                        {displayedNetworks.map((network) => (
-                          <SelectItem key={network.id} value={network.id}>
-                            {network.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category">الفئة</Label>
-                    <Select
-                      dir="rtl"
-                      onValueChange={setSelectedCategoryId}
-                      value={selectedCategoryId}
-                      disabled={!selectedNetworkId || (selectedNetworkId === ALL_NETWORKS_VALUE && isAdmin)}
-                    >
-                      <SelectTrigger id="category">
-                        <SelectValue placeholder={selectedNetworkId === ALL_NETWORKS_VALUE ? "لجميع الفئات" : "اختر الفئة"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableCategories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name} ({cat.price} ريال)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-             )}
-
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="network">الشبكة</Label>
+                <Select
+                  dir="rtl"
+                  onValueChange={setSelectedNetworkId}
+                  value={selectedNetworkId}
+                  disabled={!isAdmin && isOwner}
+                >
+                  <SelectTrigger id="network">
+                    <SelectValue placeholder="اختر الشبكة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isAdmin && (
+                        <SelectItem value={ALL_NETWORKS_VALUE}>
+                            -- جميع الشبكات --
+                        </SelectItem>
+                    )}
+                    {displayedNetworks.map((network) => (
+                      <SelectItem key={network.id} value={network.id}>
+                        {network.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">الفئة</Label>
+                <Select
+                  dir="rtl"
+                  onValueChange={setSelectedCategoryId}
+                  value={selectedCategoryId}
+                  disabled={!selectedNetworkId || (selectedNetworkId === ALL_NETWORKS_VALUE && isAdmin)}
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder={selectedNetworkId === ALL_NETWORKS_VALUE ? "لجميع الفئات" : "اختر الفئة"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCategories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name} ({cat.price} ريال)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="cards-input">
