@@ -351,7 +351,7 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
                         <DialogTitle className="text-center text-lg">تم الشراء بنجاح!</DialogTitle>
                     </DialogHeader>
                     <div className="py-4 space-y-4 flex flex-col items-center">
-                        <Image src="https://smartgum.com.br/wp-content/uploads/2020/03/ok.png" alt="Success" width={80} height={80} />
+                        <Image src="https://smartgum.com.br/wp-content/uploads/2020/03/ok.png" alt="Success" width={120} height={120} />
                         <div className="w-full space-y-2">
                             <Label htmlFor="card-number" className="text-right sr-only">رقم الكرت</Label>
                             <div className="flex items-center gap-2">
@@ -423,3 +423,4 @@ function BackButton() {
         </button>
     );
 }
+
