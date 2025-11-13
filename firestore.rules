@@ -9,6 +9,7 @@
  * - /customers/{customerId}: Stores public and private data for each customer.
  * - /customers/{customerId}/operations/{operationId}: A log of financial transactions for a customer.
  * - /customers/{customerId}/notifications/{notificationId}: Notifications for a customer.
+ * - /customers/{customerId}/favorites/{networkId}: A user's favorite networks.
  * - /cards/{cardId}: Stores scratch card information.
  * - /settings/theme: Stores global theme settings.
  * - /adverts/{advertId}: Stores advertisement images for the home page carousel.
@@ -66,6 +67,11 @@ service cloud.firestore {
         // This simpler rule is necessary for batch writes to function correctly.
         allow update: if isOwner(customerId) || isAdmin();
       }
+
+      match /favorites/{networkId} {
+        // User can only read and write to their own favorites subcollection.
+        allow read, list, write, delete: if isOwner(customerId);
+      }
     }
 
     match /cards/{cardId} {
@@ -98,3 +104,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
