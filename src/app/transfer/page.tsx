@@ -151,8 +151,8 @@ export default function TransferPage() {
             const now = new Date().toISOString();
             const senderOpData = { type: 'transfer_sent', amount: -transferAmount, date: now, description: `تحويل إلى ${recipient.name} (${recipient.phoneNumber})`, status: 'completed' };
             const recipientOpData = { type: 'transfer_received', amount: transferAmount, date: now, description: `استلام من ${sender.name} (${sender.phoneNumber})`, status: 'completed' };
-            const senderNotifData = { type: 'transfer_sent', title: 'تم إرسال حوالة', body: `تم تحويل ${transferAmount.toLocaleString('ar-EG')} ريال إلى ${recipient.name}.`, amount: -transferAmount, date: now, read: false, };
-            const recipientNotifData = { type: 'transfer_received', title: 'تم استلام حوالة', body: `تم استلام ${transferAmount.toLocaleString('ar-EG')} ريال من ${sender.name}.`, amount: transferAmount, date: now, read: false, };
+            const senderNotifData = { type: 'transfer_sent', title: 'تم إرسال حوالة', body: `تم تحويل ${transferAmount.toLocaleString('en-US')} ريال إلى ${recipient.name}.`, amount: -transferAmount, date: now, read: false, };
+            const recipientNotifData = { type: 'transfer_received', title: 'تم استلام حوالة', body: `تم استلام ${transferAmount.toLocaleString('en-US')} ريال من ${sender.name}.`, amount: transferAmount, date: now, read: false, };
             
             transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), senderOpData);
             transaction.set(doc(collection(firestore, `customers/${recipient.id}/operations`)), recipientOpData);
@@ -162,7 +162,7 @@ export default function TransferPage() {
 
         toast({
             title: "نجاح",
-            description: `تم تحويل مبلغ ${transferAmount.toLocaleString('ar-EG')} ريال إلى ${recipient.name} بنجاح.`,
+            description: `تم تحويل مبلغ ${transferAmount.toLocaleString('en-US')} ريال إلى ${recipient.name} بنجاح.`,
         });
         setRecipientPhone("");
         setAmount("");
@@ -210,8 +210,8 @@ export default function TransferPage() {
               {isLoading ? (
                 <Skeleton className="h-7 w-28 mt-1" />
               ) : (
-                <p className="text-xl font-bold text-primary flex items-baseline gap-2" dir="rtl">
-                  <span>{(sender?.balance || 0).toLocaleString('ar-EG')}</span>
+                <p className="text-xl font-bold text-primary flex items-baseline gap-2" dir="ltr">
+                  <span>{(sender?.balance || 0).toLocaleString('en-US')}</span>
                   <span className="text-sm font-normal">ريال يمني</span>
                 </p>
               )}
@@ -282,7 +282,7 @@ export default function TransferPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>تأكيد عملية التحويل</AlertDialogTitle>
               <AlertDialogDescription>
-                هل أنت متأكد من رغبتك في تحويل مبلغ <span className="font-bold text-primary">{Number(amount).toLocaleString('ar-EG')}</span> ريال يمني إلى <span className="font-bold text-primary">{recipient?.name}</span>؟
+                هل أنت متأكد من رغبتك في تحويل مبلغ <span className="font-bold text-primary" dir="ltr">{Number(amount).toLocaleString('en-US')}</span> ريال يمني إلى <span className="font-bold text-primary">{recipient?.name}</span>؟
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -114,8 +114,8 @@ export default function HomePage() {
               ) : (
                 <div className="text-3xl font-bold tracking-wider mt-1">
                   {balanceVisible ? (
-                    <span className="flex items-baseline gap-2">
-                       <span>{(customer?.balance || 0).toLocaleString('ar-EG')}</span>
+                    <span className="flex items-baseline gap-2" dir="ltr">
+                       <span>{(customer?.balance || 0).toLocaleString('en-US')}</span>
                        <span className="text-sm font-normal">ريال يمني</span>
                     </span>
                   ) : (

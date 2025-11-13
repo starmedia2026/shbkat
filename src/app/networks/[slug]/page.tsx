@@ -259,8 +259,8 @@ function PackageCard({ category, networkId, networkName, isClient }: { category:
                     <div className="flex justify-between items-start">
                         <div>
                             <p className="font-semibold text-base">{category.name}</p>
-                            <p className="text-sm font-bold text-primary mt-1">
-                                {isClient ? category.price.toLocaleString('ar-EG') : category.price} ريال يمني
+                            <p className="text-sm font-bold text-primary mt-1" dir="ltr">
+                                {isClient ? category.price.toLocaleString('en-US') : category.price} ريال يمني
                             </p>
                         </div>
                         <AlertDialog>
@@ -276,7 +276,7 @@ function PackageCard({ category, networkId, networkName, isClient }: { category:
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>تأكيد عملية الشراء</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        هل أنت متأكد من رغبتك في شراء "{category.name}" بمبلغ <span className="font-bold text-primary">{isClient ? category.price.toLocaleString('ar-EG') : category.price}</span> ريال؟
+                                        هل أنت متأكد من رغبتك في شراء "{category.name}" بمبلغ <span className="font-bold text-primary" dir="ltr">{isClient ? category.price.toLocaleString('en-US') : category.price}</span> ريال؟
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -347,9 +347,6 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>تم الشراء بنجاح!</DialogTitle>
-                        <DialogDescription>
-                            هذا هو رقم الكرت الذي قمت بشرائه.
-                        </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-4">
                         <div className="space-y-2">
@@ -373,7 +370,9 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
                         </Button>
                     </div>
                     <DialogFooter>
-                        <Button type="button" className="w-full" onClick={onClose}>إغلاق</Button>
+                        <DialogClose asChild>
+                            <Button type="button" className="w-full">إغلاق</Button>
+                        </DialogClose>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

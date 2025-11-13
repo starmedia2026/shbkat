@@ -195,7 +195,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
         const notificationData = {
             type: "topup_admin",
             title: "تمت إضافة رصيد إلى حسابك",
-            body: `تمت إضافة ${topUpAmount.toLocaleString('ar-EG')} ريال إلى رصيدك من قبل الإدارة.`,
+            body: `تمت إضافة ${topUpAmount.toLocaleString('en-US')} ريال إلى رصيدك من قبل الإدارة.`,
             amount: topUpAmount,
             date: new Date().toISOString(),
             read: false
@@ -209,7 +209,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
         batch.commit().then(() => {
             toast({
                 title: "نجاح",
-                description: `تم تغذية حساب ${customer.name} بمبلغ ${amount} ريال. الرصيد الجديد: ${newBalance.toLocaleString('ar-EG')}`,
+                description: `تم تغذية حساب ${customer.name} بمبلغ ${amount} ريال. الرصيد الجديد: ${newBalance.toLocaleString('en-US')}`,
             });
             setAmount(""); // Clear input
         }).catch(async (serverError) => {
@@ -268,7 +268,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
                     </div>
                     <div className="text-left">
                         <p className="font-bold text-sm text-green-500 flex items-center justify-end gap-1" dir="ltr">
-                            {customer.balance.toLocaleString('ar-EG')}
+                            {customer.balance.toLocaleString('en-US')}
                              <span className="text-xs">ريال يمني</span>
                         </p>
                          {customer.requiresPasswordChange && (
@@ -289,7 +289,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
                                 <AlertDialogHeader>
                                 <AlertDialogTitle>تغذية حساب: {customer.name}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    أدخل المبلغ الذي تود إضافته إلى رصيد العميل. الرصيد الحالي هو {customer.balance.toLocaleString('ar-EG')} ريال.
+                                    أدخل المبلغ الذي تود إضافته إلى رصيد العميل. الرصيد الحالي هو {customer.balance.toLocaleString('en-US')} ريال.
                                 </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <div className="space-y-2 text-right">

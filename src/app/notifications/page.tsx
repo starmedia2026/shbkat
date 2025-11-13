@@ -94,7 +94,7 @@ function NotificationCard({ notification }: { notification: Notification }) {
                 <div className="text-left flex-shrink-0">
                     {notification.amount !== undefined ? (
                          <p className={`font-bold text-sm ${isAmountPositive ? 'text-green-500' : 'text-red-500'}`} dir="ltr">
-                            {isAmountPositive ? '+' : ''}{notification.amount.toLocaleString('ar-EG')} ريال
+                            {isAmountPositive ? '+' : ''}{notification.amount.toLocaleString('en-US')} ريال
                          </p>
                     ) : <div className="h-[20px]"></div>}
                     <p className="text-xs text-muted-foreground mt-1">
