@@ -43,6 +43,7 @@ export default function LoginPage() {
       localStorage.setItem('sessionExpiry', expiryTime.toString());
        toast({
           title: "تم تسجيل الدخول بنجاح!",
+          description: "أهلاً بك مجدداً في شبكات.",
         });
       router.push("/home");
     } catch (error: any) {
@@ -102,7 +103,8 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pr-10"
+                    className="pr-10 text-right"
+                    dir="ltr"
                     disabled={isLoading}
                   />
                   <button

@@ -79,6 +79,7 @@ export default function AccountPage() {
       await signOut(auth);
       toast({
         title: "تم تسجيل الخروج بنجاح",
+        description: "نأمل رؤيتك مرة أخرى قريباً.",
       });
       router.push("/");
     } catch (error) {
