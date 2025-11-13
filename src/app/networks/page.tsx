@@ -45,7 +45,7 @@ export default function NetworksPage() {
                         {network.address && (
                            <div className="flex items-center justify-end gap-2 text-xs text-primary-foreground/90">
                             <span>{network.address}</span>
-                            <MapPin className="h-3 w-3" />
+                             <MapPin className="h-3 w-3" />
                            </div>
                         )}
                     </div>
@@ -66,3 +66,4 @@ const Button = ({ onClick, children, className, ...props }: any) => (
     {children}
   </button>
 );
+
