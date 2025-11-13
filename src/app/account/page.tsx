@@ -71,8 +71,21 @@ const colorOptions = [
   { name: 'gray', hsl: '215 14% 47%' },
 ];
 
+const fontOptions = [
+    { name: 'Tajawal', className: 'font-tajawal' },
+    { name: 'Cairo', className: 'font-cairo' },
+    { name: 'Almarai', className: 'font-almarai' },
+];
+
 export default function AccountPage() {
-  const { darkMode, setTheme, primaryColor, setPrimaryColor } = useTheme();
+  const { 
+    darkMode, 
+    setTheme, 
+    primaryColor, 
+    setPrimaryColor, 
+    font, 
+    setFont 
+  } = useTheme();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
@@ -213,31 +226,68 @@ export default function AccountPage() {
             </div>
             <Card className="w-full shadow-lg rounded-xl">
                 <CardContent className="p-4">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                    <Palette className="h-5 w-5 text-muted-foreground"/>
-                    <h3 className="font-semibold text-center text-sm text-muted-foreground">
-                    اللون الأساسي للتطبيق
-                    </h3>
-                </div>
-                {isClient ? (
-                    <div className="flex justify-center flex-wrap gap-3 mt-4">
-                    {colorOptions.map((color) => (
-                        <div key={color.name}
-                        onClick={() => setPrimaryColor(color.hsl)}
-                        style={{ backgroundColor: `hsl(${color.hsl})` }}
-                        className={cn(
-                            "cursor-pointer h-8 w-8 rounded-full border-2 transition-all transform hover:scale-110",
-                            primaryColor === color.hsl ? 'border-card' : 'border-transparent'
-                        )}
-                        />
-                    ))}
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <Palette className="h-5 w-5 text-muted-foreground"/>
+                        <h3 className="font-semibold text-center text-sm text-muted-foreground">
+                        اللون الأساسي للتطبيق
+                        </h3>
                     </div>
-                ) : (
-                    <div className="flex justify-center gap-3 mt-4">
-                    {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-8 rounded-full" />)}
-                    </div>
-                )}
+                    {isClient ? (
+                        <div className="flex justify-center flex-wrap gap-3 mt-4">
+                        {colorOptions.map((color) => (
+                            <div key={color.name}
+                            onClick={() => setPrimaryColor(color.hsl)}
+                            style={{ backgroundColor: `hsl(${color.hsl})` }}
+                            className={cn(
+                                "cursor-pointer h-8 w-8 rounded-full border-2 transition-all transform hover:scale-110",
+                                primaryColor === color.hsl ? 'border-card' : 'border-transparent'
+                            )}
+                            />
+                        ))}
+                        </div>
+                    ) : (
+                        <div className="flex justify-center gap-3 mt-4">
+                        {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-8 rounded-full" />)}
+                        </div>
+                    )}
                 </CardContent>
+            </Card>
+
+            <Card className="w-full shadow-lg rounded-xl">
+              <CardContent className="p-4">
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                      <Type className="h-5 w-5 text-muted-foreground"/>
+                      <h3 className="font-semibold text-center text-sm text-muted-foreground">
+                          الخط المفضل للتطبيق
+                      </h3>
+                  </div>
+                  {isClient ? (
+                      <div className="grid grid-cols-3 gap-2 mt-4">
+                          {fontOptions.map((fontOption) => (
+                              <div
+                                  key={fontOption.className}
+                                  onClick={() => setFont(fontOption.className)}
+                                  className={cn(
+                                      "cursor-pointer rounded-lg p-3 text-center border-2 transition-all",
+                                      font === fontOption.className
+                                          ? "bg-primary/10 border-primary"
+                                          : "border-transparent bg-muted/50 hover:bg-muted"
+                                  )}
+                              >
+                                  <span className={cn("text-sm font-semibold", fontOption.className)}>
+                                      {fontOption.name}
+                                  </span>
+                              </div>
+                          ))}
+                      </div>
+                  ) : (
+                      <div className="grid grid-cols-3 gap-2 mt-4">
+                          <Skeleton className="h-[48px] w-full" />
+                          <Skeleton className="h-[48px] w-full" />
+                          <Skeleton className="h-[48px] w-full" />
+                      </div>
+                  )}
+              </CardContent>
             </Card>
             </>
         )}

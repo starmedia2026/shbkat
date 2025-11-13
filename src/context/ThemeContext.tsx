@@ -5,17 +5,21 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useAdmin } from "@/hooks/useAdmin";
+import { cn } from "@/lib/utils";
 
 interface ThemeContextType {
   darkMode: boolean;
   setTheme: (theme: 'dark' | 'light') => void;
   primaryColor: string;
   setPrimaryColor: (hslColor: string) => void;
+  font: string;
+  setFont: (fontClass: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const DEFAULT_PRIMARY_COLOR = "210 100% 56%"; // Default blue
+const DEFAULT_FONT = "font-tajawal";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkMode] = useState(false);
@@ -23,28 +27,28 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { isAdmin } = useAdmin();
   const { user, isUserLoading } = useUser();
 
-  // Firestore reference to the global theme document
   const themeDocRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, "settings", "theme");
   }, [firestore]);
 
-  // Use useDoc to listen for real-time theme changes
   const { data: themeData, isLoading: isThemeLoading } = useDoc(themeDocRef);
   
-  // The primary color state is now driven by Firestore data
   const primaryColor = themeData?.primaryColor || DEFAULT_PRIMARY_COLOR;
+  const font = themeData?.font || DEFAULT_FONT;
 
-  // Apply the primary color to the document root whenever it changes
   useEffect(() => {
-    if(primaryColor) {
+    if (primaryColor) {
       document.documentElement.style.setProperty('--primary', primaryColor);
     }
-  }, [primaryColor]);
+    // Remove all other font classes and add the current one
+    document.body.classList.remove('font-tajawal', 'font-cairo', 'font-almarai');
+    if (font) {
+      document.body.classList.add(font);
+    }
+  }, [primaryColor, font]);
 
-  // Initialize dark mode from localStorage
   useEffect(() => {
-    // Only run on client
     const storedDarkMode = localStorage.getItem('darkMode') === 'true';
     setDarkMode(storedDarkMode);
     if (storedDarkMode) {
@@ -66,26 +70,36 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // setPrimaryColor now writes to Firestore if the user is an admin
   const setPrimaryColor = useCallback((hslColor: string) => {
     if (isAdmin && themeDocRef) {
-        // Optimistically update the UI
-        document.documentElement.style.setProperty('--primary', hslColor); 
-        // Write the new color to Firestore
-        setDoc(themeDocRef, { primaryColor: hslColor }, { merge: true }).catch(error => {
-            console.error("Failed to save theme color:", error);
-            // Revert optimistic update if write fails
-            document.documentElement.style.setProperty('--primary', primaryColor);
-        });
+      document.documentElement.style.setProperty('--primary', hslColor); 
+      setDoc(themeDocRef, { primaryColor: hslColor }, { merge: true }).catch(error => {
+          console.error("Failed to save theme color:", error);
+          document.documentElement.style.setProperty('--primary', primaryColor);
+      });
     }
   }, [isAdmin, themeDocRef, primaryColor]);
 
-  // Wait for user to be checked before rendering children to avoid permission errors
-  if (isUserLoading && !themeData) {
+  const setFont = useCallback((fontClass: string) => {
+    if (isAdmin && themeDocRef) {
+      // Optimistic update
+      document.body.classList.remove('font-tajawal', 'font-cairo', 'font-almarai');
+      document.body.classList.add(fontClass);
+      
+      setDoc(themeDocRef, { font: fontClass }, { merge: true }).catch(error => {
+          console.error("Failed to save font:", error);
+          // Revert on failure
+          document.body.classList.remove('font-tajawal', 'font-cairo', 'font-almarai');
+          document.body.classList.add(font);
+      });
+    }
+  }, [isAdmin, themeDocRef, font]);
+
+  if (isUserLoading && isThemeLoading) {
       return null;
   }
 
-  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor };
+  const contextValue = { darkMode, setTheme, primaryColor, setPrimaryColor, font, setFont };
 
   return (
     <ThemeContext.Provider value={contextValue}>

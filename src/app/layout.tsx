@@ -22,8 +22,8 @@ const ThemeScript = () => (
             if (darkMode) {
               document.documentElement.classList.add('dark');
             }
-            // Primary color is removed from here to prevent a flash of the default color.
-            // It will be set by the ThemeProvider once the app hydrates.
+            // Primary color and font are removed from here to prevent a flash of the default color.
+            // They will be set by the ThemeProvider once the app hydrates.
           } catch (e) {}
         })();
       `,
@@ -47,7 +47,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Cairo:wght@400;700&family=Tajawal:wght@400;700&display=swap"
           rel="stylesheet"
         />
       </head>
