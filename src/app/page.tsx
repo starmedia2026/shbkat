@@ -76,14 +76,16 @@ export default function LoginPage() {
     }
   };
   
-  const formatDisplayName = (fullName?: string | null): string => {
-    if (!fullName) return "مرحبا بك";
+  const formatDisplayName = (fullName?: string | null): string | null => {
+    if (!fullName) return null;
     const nameParts = fullName.trim().split(" ");
     if (nameParts.length > 1) {
-      return `مرحباً بك، ${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
+      return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
     }
-    return `مرحباً بك، ${fullName}`;
+    return fullName;
   };
+
+  const displayName = formatDisplayName(lastUserName);
 
 
   return (
@@ -93,7 +95,8 @@ export default function LoginPage() {
           <h1 className="text-4xl font-bold tracking-tight text-primary">
             شبكات
           </h1>
-          <p className="text-muted-foreground">{formatDisplayName(lastUserName)}</p>
+          <p className="text-muted-foreground">مرحباً بك</p>
+          {displayName && <p className="text-muted-foreground font-semibold">{displayName}</p>}
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
           <CardHeader className="space-y-1 text-center">
