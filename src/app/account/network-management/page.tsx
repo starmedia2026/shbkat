@@ -25,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { networks as initialNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -119,7 +119,6 @@ export default function NetworkManagementPage() {
 
 function NetworkManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | null, isOwner: boolean }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
   const [isSaving, setIsSaving] = useState(false);
@@ -129,9 +128,7 @@ function NetworkManagementContent({ isAdmin, isOwner }: { isAdmin: boolean | nul
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
   const { ownedNetwork } = useNetworkOwner();
-  const ownerNetworkId = searchParams.get('id');
-
-
+  
   const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id'>>(initialGlobalCategoryState);
   
   const displayedNetworks = useMemo(() => {
