@@ -183,7 +183,7 @@ function CardSalesContent() {
   const isLoading = areCardsLoading || areCustomersLoading;
 
   const handleCopyToClipboard = () => {
-    const headers = "رقم الكرت\tالشبكة\tالفئة\tالسعر\tتاريخ البيع\tاسم المشتري\tرقم المشتري";
+    const headers = "رقم الكرت	الشبكة	الفئة	السعر	تاريخ البيع	اسم المشتري	رقم المشتري";
     const rows = filteredSoldCards.map(card => {
       const customer = card.usedBy ? customerMap.get(card.usedBy) : undefined;
       const networkName = networkLookup[card.networkId]?.name || 'غير معروف';
@@ -200,7 +200,7 @@ function CardSalesContent() {
         usedDate,
         customer?.name || 'N/A',
         customer?.phoneNumber || 'N/A'
-      ].join('\t');
+      ].join('	');
     }).join('\n');
 
     const tsv = `${headers}\n${rows}`;
@@ -401,7 +401,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                 </div>
                 <div className="mt-4 pt-3 border-t flex gap-2">
                     <Button onClick={handleWhatsAppRedirect} variant="outline" className="w-full bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
-                        <WhatsAppIcon className="h-5 w-5 ml-2"/>
+                        <WhatsAppIcon className="h-6 w-6 ml-2"/>
                         إرسال عبر واتساب
                     </Button>
                      <AlertDialog>
@@ -486,4 +486,5 @@ function CardSkeleton() {
 }
 
     
+
 
