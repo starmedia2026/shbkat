@@ -90,17 +90,15 @@ export default function NetworksPage() {
           const isToggling = togglingFavorites[network.id];
 
           return (
-          <div key={network.id} className="block">
+          <Link href={`/networks/${network.id}`} key={network.id} className="block">
             <Card className="w-full shadow-lg rounded-2xl hover:shadow-xl transition-shadow cursor-pointer bg-primary text-primary-foreground overflow-hidden">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Link href={`/networks/${network.id}`} className="w-12 h-12 bg-black/10 rounded-full flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 bg-black/10 rounded-full flex items-center justify-center shrink-0">
                         <Wifi className="h-7 w-7"/>
-                    </Link>
+                    </div>
                     <div className="flex-grow text-right">
-                        <Link href={`/networks/${network.id}`}>
-                            <h2 className="font-bold text-lg">{network.name}</h2>
-                        </Link>
+                        <h2 className="font-bold text-lg">{network.name}</h2>
                         <div className="flex flex-col items-start gap-1 text-xs text-primary-foreground/90 mt-1">
                            {network.ownerPhone && (
                             <a href={`tel:${network.ownerPhone}`} className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -123,6 +121,7 @@ export default function NetworksPage() {
                         variant="ghost" 
                         className="rounded-full h-10 w-10 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground"
                         onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             toggleFavorite(network.id, isFavorite);
                         }}
@@ -134,13 +133,11 @@ export default function NetworksPage() {
                            <Heart className={cn("h-5 w-5 transition-all", isFavorite && "fill-red-500 text-red-500")} />
                        )}
                     </Button>
-                    <Link href={`/networks/${network.id}`}>
-                        <ChevronLeft className="w-8 h-8 opacity-70" />
-                    </Link>
+                    <ChevronLeft className="w-8 h-8 opacity-70" />
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </Link>
         )})}
       </main>
     </div>
@@ -156,5 +153,3 @@ const BackButton = () => {
         </button>
     );
 };
-
-    
