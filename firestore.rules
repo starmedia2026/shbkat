@@ -30,9 +30,9 @@ service cloud.firestore {
       return isOwner(customerId) && resource != null;
     }
 
-    // The admin is a specific user identified by their phone number.
+    // The admin is a specific user identified by their phone number/email.
     function isAdmin() {
-       return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.accountType == "admin";
+       return isSignedIn() && request.auth.token.email == "770326828@shabakat.app";
     }
     
     function isNetworkOwner() {
