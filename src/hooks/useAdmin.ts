@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
-import { useMemo } from "react";
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+import { useState, useEffect } from "react";
 
 const ADMIN_PHONE_NUMBER = "770326828";
 
@@ -29,37 +29,42 @@ interface UseAdminResult {
 export function useAdmin(): UseAdminResult {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const [customerData, setCustomerData] = useState<CustomerData | null>(null);
+  const [isCustomerDataLoading, setIsCustomerDataLoading] = useState(true);
 
-  const customerDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, "customers", user.uid);
-  }, [firestore, user?.uid]);
+  useEffect(() => {
+    // If user is not logged in or still loading auth status, we wait.
+    if (isUserLoading || !user?.uid) {
+        setIsCustomerDataLoading(true);
+        setCustomerData(null);
+        return;
+    }
+    
+    // Once we have a user, we fetch their customer document.
+    const customerDocRef = doc(firestore, "customers", user.uid);
+    const unsubscribe = onSnapshot(customerDocRef, (snapshot) => {
+        if (snapshot.exists()) {
+            setCustomerData(snapshot.data() as CustomerData);
+        } else {
+            // If the document doesn't exist, they have no special roles.
+            setCustomerData(null);
+        }
+        // Mark customer data loading as complete.
+        setIsCustomerDataLoading(false);
+    }, (error) => {
+        console.error("Failed to fetch customer data:", error);
+        setCustomerData(null);
+        setIsCustomerDataLoading(false);
+    });
 
-  const { data: customer, isLoading: isCustomerLoading } = useDoc<CustomerData>(customerDocRef);
+    // Cleanup the listener when the component unmounts or the user changes.
+    return () => unsubscribe();
+  }, [user, isUserLoading, firestore]);
+
+  const isLoading = isUserLoading || isCustomerDataLoading;
   
-  const { isAdmin, isOwner } = useMemo(() => {
-    // If essential data is still loading, we can't determine roles yet.
-    if (isUserLoading || isCustomerLoading) {
-        return { isAdmin: null, isOwner: null };
-    }
-    
-    // If not loading, but we have no customer data, they have no special roles.
-    if (!customer) {
-        return { isAdmin: false, isOwner: false };
-    }
-    
-    // Determine roles based on customer data.
-    const adminStatus = customer.accountType === 'admin' || customer.phoneNumber === ADMIN_PHONE_NUMBER;
-    const ownerStatus = customer.accountType === 'network-owner';
-
-    return { isAdmin: adminStatus, isOwner: ownerStatus };
-    
-  }, [customer, isUserLoading, isCustomerLoading]);
-
-  // The final loading state is true if the initial loads are happening OR if roles are still undetermined (null).
-  const isLoading = useMemo(() => {
-      return isUserLoading || isCustomerLoading || isAdmin === null || isOwner === null;
-  }, [isUserLoading, isCustomerLoading, isAdmin, isOwner]);
+  const isAdmin = isLoading ? null : (customerData?.accountType === 'admin' || customerData?.phoneNumber === ADMIN_PHONE_NUMBER);
+  const isOwner = isLoading ? null : customerData?.accountType === 'network-owner';
 
   return {
     isAdmin,
