@@ -25,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { networks as initialNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -39,7 +39,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog";
-import { useNetworkOwner } from "@/hooks/useNetworkOwner";
+import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,7 +68,14 @@ interface Network {
 
 export default function MyNetworkPage() {
   const router = useRouter();
-  const { isOwner, ownedNetwork, isLoading } = useNetworkOwner();
+  const { isOwner, isLoading } = useAdmin();
+
+  const ownedNetwork = useMemo(() => {
+    const { user } = useUser();
+    if (!isOwner || !user || !user.email) return null;
+    const phone = user.email.split('@')[0];
+    return initialNetworks.find(n => n.ownerPhone === phone) || null;
+  }, [isOwner]);
 
   useEffect(() => {
     if (!isLoading && isOwner === false) {
@@ -132,7 +139,9 @@ function MyNetworkContent({ initialNetwork }: { initialNetwork: Network | null }
         throw new Error('فشل في حفظ البيانات على الخادم');
       }
       
-      const updatedNetwork = updatedNetworks.find(n => n.ownerPhone === user?.phoneNumber);
+      const phone = user?.email?.split('@')[0];
+      const updatedNetwork = updatedNetworks.find(n => n.ownerPhone === phone);
+
       if(updatedNetwork) {
         setNetwork(updatedNetwork);
       }
@@ -151,7 +160,7 @@ function MyNetworkContent({ initialNetwork }: { initialNetwork: Network | null }
     } finally {
       setIsSaving(false);
     }
-  }, [toast, user?.phoneNumber]);
+  }, [toast, user?.email]);
   
   const updateAndSave = (updatedNetwork: Network) => {
     const allNetworks = initialNetworks.map(n => n.id === updatedNetwork.id ? updatedNetwork : n);
@@ -163,8 +172,13 @@ function MyNetworkContent({ initialNetwork }: { initialNetwork: Network | null }
         toast({ variant: "destructive", title: "لا يمكن الإضافة", description: "يمكنك إدارة شبكة واحدة فقط." });
         return;
     }
+    const phone = user?.email?.split('@')[0];
+    if (!phone) {
+        toast({ variant: "destructive", title: "خطأ", description: "لا يمكن تحديد رقم الهاتف." });
+        return;
+    }
     const newId = `new-network-${Date.now()}`;
-    const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: user?.phoneNumber || "", categories: [] };
+    const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: phone, categories: [] };
     setNetwork(newNetwork);
     setEditingNetworkId(newId);
     setEditingNetworkData({name: "", logo: "", address: ""});
@@ -172,7 +186,9 @@ function MyNetworkContent({ initialNetwork }: { initialNetwork: Network | null }
 
   const handleUpdateNetwork = () => {
     if(!network) return;
-    const updatedNetwork = { ...network, ...editingNetworkData, ownerPhone: network.ownerPhone || user?.phoneNumber };
+    const phone = user?.email?.split('@')[0];
+    if (!phone) return;
+    const updatedNetwork = { ...network, ...editingNetworkData, ownerPhone: network.ownerPhone || phone };
     
     // Check if it's a new network or an existing one
     const isNew = !initialNetworks.some(n => n.id === updatedNetwork.id);

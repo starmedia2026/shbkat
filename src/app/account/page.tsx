@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -53,7 +53,6 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/useAdmin";
-import { useNetworkOwner } from "@/hooks/useNetworkOwner";
 
 
 const locationMap: { [key: string]: string } = {
@@ -125,8 +124,7 @@ export default function AccountPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
-  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
-  const { isOwner, isLoading: isOwnerLoading } = useNetworkOwner();
+  const { isAdmin, isOwner, isLoading: areRolesLoading } = useAdmin();
 
 
   useEffect(() => {
@@ -146,13 +144,16 @@ export default function AccountPage() {
   const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
   const { data: appSettings } = useDoc<AppSettings>(appSettingsDocRef);
 
-  const isLoading = isUserLoading || isCustomerLoading || isAdminLoading || isOwnerLoading;
+  const isLoading = isUserLoading || isCustomerLoading || areRolesLoading;
   
-  const accountItems = isAdmin 
+  const accountItems = useMemo(() => {
+    if (isLoading) return []; // Return empty array while loading to prevent flicker
+    return isAdmin 
       ? adminAccountItems 
       : isOwner 
       ? networkOwnerAccountItems 
       : userAccountItems;
+  }, [isAdmin, isOwner, isLoading]);
   
   useEffect(() => {
     if (!isLoading && user && customer?.requiresPasswordChange) {
@@ -205,7 +206,9 @@ export default function AccountPage() {
             });
         }).catch(err => {
             // This error can happen if the document is not focused.
-            console.error("Failed to copy to clipboard:", err);
+            if (err.name !== 'NotAllowedError') {
+                 console.error("Failed to copy to clipboard:", err);
+            }
         });
     };
 
@@ -449,4 +452,5 @@ function AccountItem({
     
 
     
+
 

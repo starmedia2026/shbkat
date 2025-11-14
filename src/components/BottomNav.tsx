@@ -8,13 +8,11 @@ import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useUser } from "@/firebase";
-import { useNetworkOwner } from "@/hooks/useNetworkOwner";
 import { Skeleton } from "./ui/skeleton";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
-  const { isOwner, isLoading: isOwnerLoading } = useNetworkOwner();
+  const { isAdmin, isOwner, isLoading: areRolesLoading } = useAdmin();
   const { user, isUserLoading } = useUser();
 
   // Hide BottomNav on these pages
@@ -23,7 +21,7 @@ export function BottomNav() {
     return null;
   }
   
-  const isLoading = isAdminLoading || isUserLoading || isOwnerLoading;
+  const isLoading = areRolesLoading || isUserLoading;
 
   const navItems = useMemo(() => {
     // Return an empty array if we are still loading, to prevent flicker
@@ -40,7 +38,7 @@ export function BottomNav() {
     }
     items.push({ href: "/account", icon: User, label: "حسابي" });
     return items;
-  }, [isAdmin, isLoading]);
+  }, [isAdmin, isOwner, isLoading]);
 
 
   return (

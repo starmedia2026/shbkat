@@ -35,7 +35,7 @@ import { ar } from "date-fns/locale";
 import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { useNetworkOwner } from "@/hooks/useNetworkOwner";
+import { useAdmin } from "@/hooks/useAdmin";
 
 
 interface Notification {
@@ -92,7 +92,7 @@ export default function HomePage() {
   const firestore = useFirestore();
   const router = useRouter();
   const autoplay = useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
-  const { isOwner: isNetworkOwner, isLoading: isOwnerLoading } = useNetworkOwner();
+  const { isOwner: isNetworkOwner, isLoading: areRolesLoading } = useAdmin();
 
 
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function HomePage() {
 
   const { data: adverts, isLoading: areAdvertsLoading } = useCollection<Advert>(advertsQuery);
 
-  const isLoading = isUserLoading || isCustomerLoading || isHomeLoading || isOwnerLoading;
+  const isLoading = isUserLoading || isCustomerLoading || isHomeLoading || areRolesLoading;
   const hasNotifications = !areNotificationsLoading && notifications && notifications.length > 0;
   
   const services = useMemo(() => {
