@@ -57,16 +57,16 @@ service cloud.firestore {
 
       match /operations/{operationId} {
         allow read, list: if isOwner(customerId) || isAdmin();
-        // Allow creating an operation for self, for another user (transfers), or allow a network owner to create a withdraw operation
-        allow create: if isSignedIn() && (isOwner(customerId) || isNetworkOwner());
+        // Allow creating an operation for self, for another user (transfers), or allow admin/network-owner
+        allow create: if isSignedIn() && (isOwner(customerId) || isNetworkOwner() || isAdmin());
         // Allow admin to update any operation (e.g. to confirm a withdrawal)
         allow update: if isAdmin();
       }
       
       match /notifications/{notificationId} {
         allow read, list: if isOwner(customerId) || isAdmin();
-        // Allow creating a notification for self, for another user, or allow a network owner to create a withdraw notification
-        allow create: if isSignedIn() && (isOwner(customerId) || isNetworkOwner());
+        // Allow creating a notification for self, for another user, or allow admin/network-owner
+        allow create: if isSignedIn() && (isOwner(customerId) || isNetworkOwner() || isAdmin());
         // Allow user/admin to update notifications. The client-side code only updates the 'read' field.
         // This simpler rule is necessary for batch writes to function correctly.
         allow update: if isOwner(customerId) || isAdmin();
