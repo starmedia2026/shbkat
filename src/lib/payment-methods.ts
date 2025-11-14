@@ -33,7 +33,7 @@ export const paymentMethods: PaymentMethod[] = [
     "name": "شركة العمقي للصرافة",
     "description": "تحويل عبر العمقي",
     "accountName": "محمد راضي ربيع باشادي ",
-    "accountNumber": "2345678",
+    "accountNumber": "254157699",
     "logoUrl": "https://i.postimg.cc/KjDV05js/50483610868-c75478b1c1-z.png",
     "theme": {
       "iconBg": "bg-gray-100 dark:bg-gray-900/50",
@@ -47,7 +47,7 @@ export const paymentMethods: PaymentMethod[] = [
     "description": "تحويل عبر بي كاش",
     "accountName": "تطبيق كرتي",
     "accountNumber": "3456789",
-    "logoUrl": "",
+    "logoUrl": "https://i.postimg.cc/bvTfC85Z/1200x630wa.png",
     "theme": {
       "iconBg": "bg-gray-100 dark:bg-gray-900/50",
       "iconColor": "text-gray-600 dark:text-gray-400",

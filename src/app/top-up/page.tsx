@@ -10,12 +10,28 @@ import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { paymentMethods, type PaymentMethod } from "@/lib/payment-methods";
 import Image from "next/image";
+import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+
+const DEFAULT_SUPPORT_PHONE = "770326828";
+
+interface AppSettings {
+  supportPhoneNumber?: string;
+}
 
 export default function TopUpPage() {
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(paymentMethods[0] || null);
+  const firestore = useFirestore();
+
+  const appSettingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "app");
+  }, [firestore]);
+
+  const { data: appSettings } = useDoc<AppSettings>(appSettingsDocRef);
 
   const handleWhatsAppRedirect = () => {
-    const phoneNumber = "770326828";
+    const phoneNumber = appSettings?.supportPhoneNumber || DEFAULT_SUPPORT_PHONE;
     const message = encodeURIComponent("مرحباً، أود إرسال إشعار الدفع.");
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
@@ -58,11 +74,11 @@ export default function TopUpPage() {
                 <Card className="w-full shadow-lg rounded-2xl mt-2">
                     <CardContent className="p-4 space-y-3 text-center">
                         <div className="flex justify-center">
-                            <div className={cn("p-3 rounded-lg flex items-center justify-center", selectedPayment.theme.iconBg)}>
+                            <div className={cn("p-3 rounded-lg flex items-center justify-center", method.theme.iconBg)}>
                                 {selectedPayment.logoUrl ? (
                                     <Image src={selectedPayment.logoUrl} alt={selectedPayment.name} width={48} height={48} className="object-contain" />
                                 ) : (
-                                    <Wallet className={cn("h-8 w-8", selectedPayment.theme.iconColor)} />
+                                    <Wallet className={cn("h-8 w-8", method.theme.iconColor)} />
                                 )}
                             </div>
                         </div>
