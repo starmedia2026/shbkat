@@ -103,7 +103,7 @@ export default function NetworksPage() {
                         </Link>
                         <div className="flex flex-col items-start gap-1 text-xs text-primary-foreground/90 mt-1">
                            {network.ownerPhone && (
-                            <a href={`tel:${network.ownerPhone}`} className="flex items-center gap-2">
+                            <a href={`tel:${network.ownerPhone}`} className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                 <Phone className="h-3 w-3" />
                                 <span dir="ltr">{network.ownerPhone}</span>
                             </a>
@@ -122,7 +122,10 @@ export default function NetworksPage() {
                         size="icon" 
                         variant="ghost" 
                         className="rounded-full h-10 w-10 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground"
-                        onClick={() => toggleFavorite(network.id, isFavorite)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(network.id, isFavorite);
+                        }}
                         disabled={isLoading || isToggling}
                     >
                        {isToggling ? (
