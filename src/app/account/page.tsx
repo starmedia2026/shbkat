@@ -88,7 +88,6 @@ const userAccountItems = [
 
 const networkOwnerAccountItems = [
   { id: "my-network", href: "/account/my-network", icon: Briefcase, label: "إدارة شبكتي" },
-  { id: "transfer", href: "/transfer", icon: Send, label: "تحويل لمشترك" },
   { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
   { id: "share", icon: Share2, label: "شارك التطبيق" },
   { id: "help", icon: Headset, label: "مركز المساعدة" },
@@ -440,7 +439,5 @@ function AccountItem({
 
   return <li>{content}</li>;
 }
-
-    
 
     
