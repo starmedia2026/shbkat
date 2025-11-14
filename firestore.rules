@@ -40,7 +40,9 @@ service cloud.firestore {
     }
 
     match /customers/{customerId} {
-      allow get: if isOwner(customerId) || isAdmin();
+      // Allow any signed-in user to read any other customer's document.
+      // This is necessary for the card purchase transaction to read the balances of the buyer, network owner, and admin.
+      allow get: if isSignedIn();
       allow list: if isAdmin();
 
       // Any signed in user can create their own customer document.
