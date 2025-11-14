@@ -3,7 +3,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, ArrowUp, ArrowDown, CreditCard, History, Coins, Send, Copy, ChevronLeft } from "lucide-react";
+import { ArrowRight, ArrowUp, ArrowDown, CreditCard, History, Coins, Send, Copy, ChevronLeft, Banknote } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
@@ -27,7 +27,7 @@ import Link from "next/link";
 
 interface Operation {
   id: string;
-  type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase";
+  type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase" | "withdraw";
   amount: number;
   date: string; // ISO string
   description: string;
@@ -40,6 +40,7 @@ const operationConfig = {
   transfer_received: { icon: ArrowDown, color: "text-green-500", label: "تحويل مستلم" },
   topup_admin: { icon: Coins, color: "text-green-500", label: "تعبئة رصيد" },
   purchase: { icon: CreditCard, color: "text-red-500", label: "شراء كرت" },
+  withdraw: { icon: Banknote, color: "text-orange-500", label: "طلب سحب" },
 };
 
 export default function OperationsPage() {
@@ -92,7 +93,7 @@ function OperationCard({ operation }: { operation: Operation }) {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 space-x-reverse">
-              <div className={`p-2 rounded-full bg-muted ${isIncome ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`p-2 rounded-full bg-muted ${isIncome ? 'text-green-500' : config.color}`}>
                 <Icon className="h-5 w-5" />
               </div>
               <div>

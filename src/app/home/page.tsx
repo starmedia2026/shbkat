@@ -22,6 +22,7 @@ import {
   Headset,
   Ticket,
   Banknote,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -72,9 +73,9 @@ interface Operation {
 
 const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; color: string; } } = {
   transfer_sent: { icon: ArrowUp, color: "text-red-500" },
-  transfer_received: { icon: ArrowUp, color: "text-green-500" }, // Icon might need adjustment
+  transfer_received: { icon: ArrowDown, color: "text-green-500" },
   topup_admin: { icon: Coins, color: "text-green-500" },
-  purchase: { icon: CreditCard, color: "text-blue-500" },
+  purchase: { icon: CreditCard, color: "text-red-500" },
   withdraw: { icon: Banknote, color: "text-orange-500" },
 };
 
@@ -432,8 +433,8 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         <Card className="shadow-md rounded-xl bg-card">
             <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-muted rounded-full">
-                        <Icon className={cn("h-5 w-5", config.color)} />
+                    <div className={cn("p-2.5 bg-muted rounded-full", isIncome ? 'text-green-500' : config.color)}>
+                        <Icon className="h-5 w-5" />
                     </div>
                     <div>
                         <p className="text-sm font-bold">{operation.description}</p>
@@ -449,5 +450,3 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
-
-    
