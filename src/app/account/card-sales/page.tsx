@@ -96,12 +96,12 @@ const networkLookup = networks.reduce((acc, net) => {
         logo: net.logo,
         ownerPhone: net.ownerPhone,
         categories: net.categories.reduce((catAcc, cat) => {
-            catAcc[cat.id] = { name: cat.name, price: cat.price };
+            catAcc[cat.id] = { name: cat.name, price: cat.price, capacity: cat.capacity };
             return catAcc;
-        }, {} as Record<string, { name: string; price: number }>)
+        }, {} as Record<string, { name: string; price: number, capacity: string }>)
     };
     return acc;
-}, {} as Record<string, { name: string; logo?: string; ownerPhone?: string; categories: Record<string, { name: string; price: number }> }>);
+}, {} as Record<string, { name: string; logo?: string; ownerPhone?: string; categories: Record<string, { name: string; price: number, capacity: string }> }>);
 
 
 export default function CardSalesPage() {
@@ -164,9 +164,11 @@ function CardSalesContent() {
     // Admin sees all cards. Owner sees only their network's cards.
     const cardsCollectionRef = useMemoFirebase(() => {
         if (!firestore) return null;
-        let q = query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
-        
+        if (!isAdmin && !isOwner) return null; // Don't query if user role isn't determined yet
+
+        let q;
         if (isAdmin) {
+             q = query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
              if (filterNetwork) {
                  q = query(q, where("networkId", "==", filterNetwork));
              }
@@ -370,6 +372,7 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
     const categoryInfo = networkLookup[card.networkId]?.categories[card.categoryId];
     const categoryName = categoryInfo?.name || 'فئة غير معروفة';
     const categoryPrice = categoryInfo?.price || 0;
+    const categoryCapacity = categoryInfo?.capacity || 'غير محدد';
     
     const { toast } = useToast();
     const [isTransferring, setIsTransferring] = useState(false);
@@ -502,6 +505,7 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
 
 📃 *معلومات الكرت*
 📡 الفئة: ${networkName} (${categoryPrice} ريال)
+📶 السعة: ${categoryCapacity}
 🔢 رقم الكرت: ${card.id}
 🗓️ تاريخ الشراء: ${formattedDate}
 
@@ -696,5 +700,7 @@ function CardSkeleton() {
     
 
 
+
+    
 
     
