@@ -95,16 +95,17 @@ export default function WithdrawalRequestsPage() {
 
 function WithdrawalRequestsContent() {
   const firestore = useFirestore();
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
   
   const withdrawalRequestsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAdmin) return null;
     return query(
       collectionGroup(firestore, "operations"), 
       where("type", "==", "withdraw")
     );
-  }, [firestore]);
+  }, [firestore, isAdmin]);
   
-  const { data: operations, isLoading } = useCollection<Operation>(withdrawalRequestsQuery, {
+  const { data: operations, isLoading: isOperationsLoading } = useCollection<Operation>(withdrawalRequestsQuery, {
       transform: (doc) => ({
         id: doc.id,
         path: doc.ref.path,
@@ -116,6 +117,8 @@ function WithdrawalRequestsContent() {
       if(!operations) return [];
       return operations.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [operations]);
+
+  const isLoading = isAdminLoading || isOperationsLoading;
 
 
   return (
