@@ -24,6 +24,7 @@ import {
   Navigation,
   Wallet,
   Settings,
+  Headset,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -77,7 +78,7 @@ const colorOptions = [
 const userAccountItems = [
   { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
   { id: "share", icon: Share2, label: "شارك التطبيق" },
-  { id: "help", href: "#", icon: HelpCircle, label: "مركز المساعدة" },
+  { id: "help", href: "#", icon: Headset, label: "مركز المساعدة" },
 ];
 
 const adminAccountItems = [
@@ -90,7 +91,7 @@ const adminAccountItems = [
   { id: "app-settings", href: "/account/app-settings", icon: Settings, label: "إعدادات التطبيق" },
   { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
   { id: "share", icon: Share2, label: "شارك التطبيق" },
-  { id: "help", icon: HelpCircle, label: "مركز المساعدة" },
+  { id: "help", icon: Headset, label: "مركز المساعدة" },
 ];
 
 interface AppSettings {
@@ -169,35 +170,33 @@ export default function AccountPage() {
   };
   
   const handleShare = () => {
-    const shareUrl = appSettings?.shareLink;
+    const shareUrl = appSettings?.shareLink || window.location.origin;
     const shareData: ShareData = {
       title: "تطبيق شبكات",
       text: "اكتشف تطبيق شبكات لخدمات الاتصالات!",
+      url: shareUrl,
     };
     
-    if (shareUrl) {
-      shareData.url = shareUrl;
-    }
-
-    if (navigator.share) {
-      navigator.share(shareData).catch((error) => {
-        // We only log an error if it's not an AbortError (user cancellation).
-        if (error.name !== 'AbortError') {
-          console.error("Error sharing:", error);
-           toast({
-            variant: "destructive",
-            title: "فشلت المشاركة",
-            description: "حدث خطأ غير متوقع أثناء محاولة مشاركة التطبيق.",
-          });
-        }
-      });
-    } else {
-      // Fallback for browsers that don't support the Web Share API
-      navigator.clipboard.writeText(shareUrl || window.location.origin);
+    const fallbackCopy = () => {
+      navigator.clipboard.writeText(shareUrl);
       toast({
         title: "تم نسخ الرابط",
         description: "تم نسخ رابط التطبيق إلى الحافظة. يمكنك مشاركته الآن!",
       });
+    };
+
+    if (navigator.share) {
+      navigator.share(shareData).catch((error) => {
+        // If sharing fails (e.g., permission denied, user cancellation), fall back to copying.
+        // We don't need to show an error for user cancellation (AbortError).
+        if (error.name !== 'AbortError') {
+          console.warn("Web Share API failed, falling back to clipboard:", error);
+          fallbackCopy();
+        }
+      });
+    } else {
+      // Fallback for browsers that don't support the Web Share API
+      fallbackCopy();
     }
   };
   
