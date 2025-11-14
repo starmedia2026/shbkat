@@ -74,11 +74,11 @@ export default function TopUpPage() {
                 <Card className="w-full shadow-lg rounded-2xl mt-2">
                     <CardContent className="p-4 space-y-3 text-center">
                         <div className="flex justify-center">
-                            <div className={cn("p-3 rounded-lg flex items-center justify-center", method.theme.iconBg)}>
+                            <div className={cn("p-3 rounded-lg flex items-center justify-center", selectedPayment.theme.iconBg)}>
                                 {selectedPayment.logoUrl ? (
                                     <Image src={selectedPayment.logoUrl} alt={selectedPayment.name} width={48} height={48} className="object-contain" />
                                 ) : (
-                                    <Wallet className={cn("h-8 w-8", method.theme.iconColor)} />
+                                    <Wallet className={cn("h-8 w-8", selectedPayment.theme.iconColor)} />
                                 )}
                             </div>
                         </div>
