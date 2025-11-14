@@ -11,10 +11,6 @@ import {
   Wifi,
   Tag,
   Trash2,
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
   Send,
   Loader2
 } from "lucide-react";
@@ -38,6 +34,12 @@ import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -530,3 +532,6 @@ function CardSkeleton() {
         </Card>
     );
 }
+
+
+    
