@@ -135,6 +135,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
         setIsPurchasing(true);
 
         try {
+            // Find an available card first, outside the transaction for read efficiency.
             const cardsRef = collection(firestore, "cards");
             const q = query(
                 cardsRef,
@@ -158,50 +159,70 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             const cardRef = cardToPurchaseDoc.ref;
             
             const purchasedCardNumber = await runTransaction(firestore, async (transaction) => {
-                // Get network owner's account
-                const ownerQuery = query(collection(firestore, "customers"), where("phoneNumber", "==", network.ownerPhone), limit(1));
+                // 1. Get all account references first
+                const customersCollection = collection(firestore, "customers");
+                const ownerQuery = query(customersCollection, where("phoneNumber", "==", network.ownerPhone), limit(1));
+                const adminQuery = query(customersCollection, where("accountType", "==", "admin"), limit(1));
+                
+                // Execute reads to get owner and admin documents
                 const ownerSnapshot = await getDocs(ownerQuery);
-                 if (ownerSnapshot.empty) {
-                    throw new Error(`مالك الشبكة بالرقم ${network.ownerPhone} غير موجود.`);
-                }
+                const adminSnapshot = await getDocs(adminQuery);
+        
+                if (ownerSnapshot.empty) throw new Error(`مالك الشبكة بالرقم ${network.ownerPhone} غير موجود.`);
+                if (adminSnapshot.empty) throw new Error("حساب المشرف غير موجود.");
+                
                 const ownerDoc = ownerSnapshot.docs[0];
-                const ownerRef = ownerDoc.ref;
-
+                const adminDoc = adminSnapshot.docs[0];
+                
+                // 2. Now get all documents within the transaction
                 const senderDoc = await transaction.get(customerDocRef);
                 const cardDoc = await transaction.get(cardRef);
-                const networkOwnerDoc = await transaction.get(ownerRef);
-                
+                const networkOwnerDoc = await transaction.get(ownerDoc.ref);
+                const adminAccountDoc = await transaction.get(adminDoc.ref);
+
+                // 3. Validate all documents
                 if (!senderDoc.exists()) throw new Error("لم يتم العثور على حساب العميل.");
                 if (!networkOwnerDoc.exists()) throw new Error("لم يتم العثور على حساب مالك الشبكة.");
+                if (!adminAccountDoc.exists()) throw new Error("لم يتم العثور على حساب المشرف.");
                 if (!cardDoc.exists() || cardDoc.data().status !== 'available') throw new Error("هذا الكرت لم يعد متاحًا. الرجاء المحاولة مرة أخرى.");
                 
                 const senderBalance = senderDoc.data().balance;
                 if (senderBalance < category.price) throw new Error("رصيد غير كافٍ.");
 
+                // 4. Perform calculations
                 const now = new Date().toISOString();
                 const netAmount = category.price * 0.90;
-
-                // 1. Update card status
+                const commission = category.price * 0.10;
+                
+                // 5. Execute all writes
+                // Update card status
                 transaction.update(cardRef, { status: "used", usedAt: now, usedBy: user.uid });
 
-                // 2. Deduct full price from buyer
-                const newSenderBalance = senderBalance - category.price;
-                transaction.update(customerDocRef, { balance: newSenderBalance });
+                // Deduct full price from buyer
+                transaction.update(customerDocRef, { balance: senderBalance - category.price });
                 
-                // 3. Add net amount to network owner
-                const ownerBalance = networkOwnerDoc.data().balance;
-                const newOwnerBalance = ownerBalance + netAmount;
-                transaction.update(ownerRef, { balance: newOwnerBalance });
+                // Add net amount to network owner
+                transaction.update(networkOwnerDoc.ref, { balance: networkOwnerDoc.data().balance + netAmount });
 
-                // 4. Log operations and notifications
-                const baseOpData = { date: now, status: 'completed', cardNumber: cardDoc.id };
+                // Add commission to admin
+                transaction.update(adminAccountDoc.ref, { balance: adminAccountDoc.data().balance + commission });
+
+                // 6. Log all operations and notifications
+                const baseOpData = { date: now, status: 'completed' as const, cardNumber: cardDoc.id };
+                const baseNotifData = { date: now, read: false, cardNumber: cardDoc.id };
+                
                 // Buyer logs
                 transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name}`, amount: -category.price });
-                transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseOpData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح.`, amount: -category.price, read: false });
+                transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseNotifData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح.`, amount: -category.price });
                 
                 // Network Owner logs
                 transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/operations`)), { ...baseOpData, type: "purchase", description: `مقابل كرت: ${category.name}`, amount: netAmount });
-                transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/notifications`)), { ...baseOpData, type: 'purchase', title: 'ربح من بيع كرت', body: `تم إيداع ${netAmount.toLocaleString('en-US')} ريال مقابل بيع كرت ${category.name}.`, amount: netAmount, read: false });
+                transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/notifications`)), { ...baseNotifData, type: 'purchase', title: 'ربح من بيع كرت', body: `تم إيداع ${netAmount.toLocaleString('en-US')} ريال مقابل بيع كرت ${category.name}.`, amount: netAmount });
+                
+                // Admin logs (optional but good for tracking)
+                transaction.set(doc(collection(firestore, `customers/${adminDoc.id}/operations`)), { ...baseOpData, type: "purchase", description: `عمولة من كرت ${category.name}`, amount: commission });
+                transaction.set(doc(collection(firestore, `customers/${adminDoc.id}/notifications`)), { ...baseNotifData, type: 'purchase', title: 'تحصيل عمولة', body: `تم تحصيل عمولة ${commission.toLocaleString('en-US')} ريال من بيع كرت ${category.name}.`, amount: commission });
+
 
                 return cardDoc.id;
             });
