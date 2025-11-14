@@ -72,7 +72,7 @@ export default function WithdrawPage() {
           <ArrowRight className="h-6 w-6" />
         </Button>
         <h1 className="text-lg font-normal text-right flex-grow mr-4">
-          سحب إلى الحساب البنكي
+          سحب
         </h1>
       </header>
       <main className="p-4 space-y-6">
@@ -114,6 +114,10 @@ function WithdrawContent() {
 
     if (!selectedMethod || !recipientName || !recipientAccount || !owner || !user || !firestore) {
         toast({ variant: "destructive", title: "بيانات ناقصة", description: "الرجاء تعبئة جميع الحقول." });
+        return;
+    }
+    if (recipientName.trim().split(/\s+/).length < 4) {
+        toast({ variant: "destructive", title: "اسم المستلم غير مكتمل", description: "الرجاء إدخال الاسم الرباعي الكامل للمستلم." });
         return;
     }
     if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
