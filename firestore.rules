@@ -61,6 +61,8 @@ service cloud.firestore {
         allow create: if isSignedIn() && (isOwner(customerId) || isNetworkOwner() || isAdmin());
         // Allow admin to update any operation (e.g. to confirm a withdrawal)
         allow update: if isAdmin();
+        // Allow owner to delete their own operations (archive)
+        allow delete: if isOwner(customerId) || isAdmin();
       }
       
       match /notifications/{notificationId} {
@@ -70,6 +72,8 @@ service cloud.firestore {
         // Allow user/admin to update notifications. The client-side code only updates the 'read' field.
         // This simpler rule is necessary for batch writes to function correctly.
         allow update: if isOwner(customerId) || isAdmin();
+        // Allow owner to delete their own notifications (archive)
+        allow delete: if isOwner(customerId) || isAdmin();
       }
 
       match /favorites/{networkId} {
