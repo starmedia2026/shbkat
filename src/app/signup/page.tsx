@@ -111,7 +111,6 @@ export default function SignupPage() {
     const email = `${phone}@shabakat.app`;
 
     try {
-        // Check if phone number (email) is already in use
         const q = query(collection(firestore, "customers"), where("phoneNumber", "==", phone));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
@@ -121,8 +120,7 @@ export default function SignupPage() {
             setIsLoading(false);
             return;
         }
-        
-        // Check if name is already in use
+
         const nameQuery = query(collection(firestore, "customers"), where("name", "==", name.trim()));
         const nameSnapshot = await getDocs(nameQuery);
         if (!nameSnapshot.empty) {
@@ -133,6 +131,10 @@ export default function SignupPage() {
             return;
         }
 
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      if (user) {
         if (accountType === 'network-owner') {
              const newNetwork = {
                 id: `network-${Date.now()}`,
@@ -142,11 +144,9 @@ export default function SignupPage() {
                 ownerPhone: phone,
                 categories: [],
             };
-            // Fetch latest networks before updating
             const currentNetworksRes = await fetch('/api/get-networks');
             if(!currentNetworksRes.ok) throw new Error("Failed to get current networks list.");
             const currentNetworks = await currentNetworksRes.json();
-
             const updatedNetworks = [...currentNetworks, newNetwork];
 
             const saveRes = await fetch('/api/save-networks', {
@@ -158,12 +158,7 @@ export default function SignupPage() {
                 throw new Error("Failed to save the new network.");
             }
         }
-
-
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      if (user) {
+        
         const customerData = {
           id: user.uid,
           name: name,
@@ -176,18 +171,7 @@ export default function SignupPage() {
         
         const userDocRef = doc(firestore, "customers", user.uid);
         
-        try {
-            await setDoc(userDocRef, customerData);
-        } catch (e) {
-            const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'create',
-                requestResourceData: customerData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            // We re-throw the error to stop execution if creating the user doc fails
-            throw e;
-        }
+        await setDoc(userDocRef, customerData);
         
         toast({
           title: "تم إنشاء الحساب بنجاح!",
@@ -196,24 +180,29 @@ export default function SignupPage() {
         router.push("/home");
       }
     } catch (error: any) {
-      console.error("Signup error:", error);
-      // Don't show permission errors on the UI from the emitter
-      if (error instanceof FirestorePermissionError) return;
-      
-      let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "رقم الهاتف هذا مسجل بالفعل.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "رقم الهاتف غير صالح.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "كلمة المرور ضعيفة جدا. يجب أن تتكون من 6 أحرف على الأقل.";
+      if (error.code === 'firestore/permission-denied') {
+          const permissionError = new FirestorePermissionError({
+              path: `customers`,
+              operation: 'list',
+              requestResourceData: { note: 'Failed to query customers collection during signup' }
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      } else {
+        let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = "رقم الهاتف هذا مسجل بالفعل.";
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = "رقم الهاتف غير صالح.";
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = "كلمة المرور ضعيفة جدا. يجب أن تتكون من 6 أحرف على الأقل.";
+        }
+        setError(errorMessage);
+        toast({
+          variant: "destructive",
+          title: "خطأ في إنشاء الحساب",
+          description: errorMessage,
+        });
       }
-      setError(errorMessage);
-      toast({
-        variant: "destructive",
-        title: "خطأ في إنشاء الحساب",
-        description: errorMessage,
-      });
     } finally {
         setIsLoading(false);
     }
@@ -363,3 +352,5 @@ export default function SignupPage() {
     </main>
   );
 }
+
+    
