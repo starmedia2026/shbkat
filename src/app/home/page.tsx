@@ -18,7 +18,7 @@ import {
   Briefcase,
   BarChart3,
   HelpCircle,
-  Headset,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -390,7 +390,7 @@ function ServiceIcon({ id, className }: { id: string; className?: string }) {
     case "top-up": return <Wallet {...commonProps} />;
     case "operations": return <History {...commonProps} />;
     case "favorites": return <Heart {...commonProps} />;
-    case "contact": return <Headset {...commonProps} />;
+    case "contact": return <MessageCircle {...commonProps} />;
     default: return <HelpCircle {...commonProps} />;
   }
 }
