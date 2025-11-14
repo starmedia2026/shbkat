@@ -77,6 +77,14 @@ service cloud.firestore {
         allow read, list, write, delete: if isOwner(customerId);
       }
     }
+    
+    // Rule for the collection group query on 'operations'
+    match /{path=**}/operations/{operationId} {
+      // Allow admin to read from any 'operations' subcollection.
+      allow get, list: if isAdmin();
+      // Allow admin to update any operation.
+      allow update: if isAdmin();
+    }
 
     match /cards/{cardId} {
         // Admin or Network owner can create, delete, and list cards.

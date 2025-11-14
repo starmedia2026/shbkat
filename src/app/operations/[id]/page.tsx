@@ -15,7 +15,8 @@ import {
   Copy,
   CheckCircle2,
   XCircle,
-  Clock
+  Clock,
+  Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +30,7 @@ import { ar } from "date-fns/locale";
 
 interface Operation {
   id: string;
-  type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase";
+  type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase" | "withdraw";
   amount: number;
   date: string; // ISO string
   description: string;
@@ -48,6 +49,7 @@ const operationConfig: {
   transfer_received: { icon: ArrowDown, color: "text-green-500", label: "تحويل مستلم" },
   topup_admin: { icon: Coins, color: "text-green-500", label: "تعبئة رصيد" },
   purchase: { icon: CreditCard, color: "text-red-500", label: "شراء كرت" },
+  withdraw: { icon: Banknote, color: "text-orange-500", label: "طلب سحب" },
 };
 
 const statusConfig = {

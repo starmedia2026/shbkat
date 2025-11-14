@@ -28,6 +28,7 @@ import {
   Send,
   Briefcase,
   MessageCircle,
+  Banknote,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -97,6 +98,7 @@ const adminAccountItems = [
   { id: "network-management", href: "/account/network-management", icon: Wifi, label: "إدارة الشبكات" },
   { id: "card-management", href: "/account/card-management", icon: CreditCard, label: "إدارة الكروت" },
   { id: "card-sales", href: "/account/card-sales", icon: BarChart3, label: "تقرير مبيعات الكروت" },
+  { id: "withdrawal-requests", href: "/account/withdrawal-requests", icon: Banknote, label: "طلبات السحب" },
   { id: "payment-management", href: "/account/payment-management", icon: Wallet, label: "إدارة الدفع" },
   { id: "ad-management", href: "/account/ad-management", icon: ImageIcon, label: "إدارة الإعلانات" },
   { id: "app-settings", href: "/account/app-settings", icon: Settings, label: "إعدادات التطبيق" },
@@ -448,9 +450,3 @@ function AccountItem({
 
   return <li>{content}</li>;
 }
-
-    
-
-    
-
-

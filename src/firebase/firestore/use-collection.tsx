@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import {
   FirestoreError,
   QuerySnapshot,
   CollectionReference,
+  DocumentSnapshot,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -23,6 +25,10 @@ export interface UseCollectionResult<T> {
   data: WithId<T>[] | null; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
   error: FirestoreError | Error | null; // Error object, or null.
+}
+
+interface UseCollectionOptions<T> {
+    transform?: (doc: DocumentSnapshot<DocumentData>) => T;
 }
 
 /* Internal implementation of Query:
@@ -53,6 +59,7 @@ export interface InternalQuery extends Query<DocumentData> {
  */
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
+    options?: UseCollectionOptions<any>
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
@@ -78,7 +85,8 @@ export function useCollection<T = any>(
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results: ResultItemType[] = [];
         for (const doc of snapshot.docs) {
-          results.push({ ...(doc.data() as T), id: doc.id });
+          const transformedData = options?.transform ? options.transform(doc) : { ...doc.data(), id: doc.id };
+          results.push(transformedData as ResultItemType);
         }
         setData(results);
         setError(null);
