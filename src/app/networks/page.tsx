@@ -101,10 +101,17 @@ export default function NetworksPage() {
                         <h2 className="font-bold text-lg">{network.name}</h2>
                         <div className="flex flex-col items-start gap-1 text-xs text-primary-foreground/90 mt-1">
                            {network.ownerPhone && (
-                            <a href={`tel:${network.ownerPhone}`} className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                                className="flex items-center gap-2"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    window.location.href = `tel:${network.ownerPhone}`;
+                                }}
+                            >
                                 <Phone className="h-3 w-3" />
                                 <span dir="ltr">{network.ownerPhone}</span>
-                            </a>
+                            </button>
                            )}
                            {network.address && (
                            <div className="flex items-center gap-2">
