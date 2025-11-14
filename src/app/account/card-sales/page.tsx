@@ -24,7 +24,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, errorEmitter, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, deleteDoc, writeBatch, runTransaction, getDocs, where } from "firebase/firestore";
+import { collection, query, orderBy, doc, deleteDoc, writeBatch, runTransaction, getDocs, where, limit } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -536,7 +536,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                             </AlertDialog>
                              <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                     <Button variant="outline" size="sm" className="bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20" disabled={isTransferring}>
+                                    <Button variant="outline" size="sm" className="bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20" disabled={isTransferring}>
                                         {isTransferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <WhatsAppIcon className="h-4 w-4"/>}
                                         تحويل وإبلاغ
                                     </Button>
