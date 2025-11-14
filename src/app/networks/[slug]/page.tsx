@@ -339,16 +339,21 @@ function PurchasedCardDialog({ card, isOpen, onClose, onSendSms }: { card: Purch
                         <div className="w-full space-y-4 mt-4">
                             <div className="w-full space-y-2">
                                 <Label htmlFor="card-number" className="text-right sr-only">رقم الكرت</Label>
-                                <div className="flex items-center gap-2">
+                                <div 
+                                    className="flex items-center gap-2 cursor-pointer"
+                                    onClick={() => copyToClipboard(card.cardNumber, "رقم الكرت")}
+                                >
                                     <Input
                                         id="card-number"
                                         value={card.cardNumber}
                                         readOnly
-                                        className="text-base font-mono tracking-wider text-center bg-muted"
+                                        className="text-base font-mono tracking-wider text-center bg-muted pointer-events-none"
                                         dir="ltr"
                                     />
-                                    <Button type="button" size="icon" variant="outline" onClick={() => copyToClipboard(card.cardNumber, "رقم الكرت")}>
-                                        <Copy className="h-4 w-4" />
+                                    <Button type="button" size="icon" variant="outline" asChild>
+                                        <div>
+                                            <Copy className="h-4 w-4" />
+                                        </div>
                                     </Button>
                                 </div>
                             </div>
@@ -411,3 +416,4 @@ function BackButton() {
 }
 
     
+
