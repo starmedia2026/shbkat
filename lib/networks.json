@@ -1,0 +1,35 @@
+
+[
+  {
+    "id": "network-1763069797774",
+    "name": "شبكة بيحم",
+    "address": "مديرية شبام",
+    "logo": "",
+    "ownerPhone": "773108411",
+    "categories": [
+      {
+        "id": "new-cat-1763070278710",
+        "name": "500 ميقا",
+        "price": 100,
+        "validity": "يوم واحد",
+        "capacity": "0.5 GB"
+      },
+      {
+        "id": "new-cat-1763070687524",
+        "name": "8 قيقا",
+        "price": 1000,
+        "validity": "شهر",
+        "capacity": "8"
+      },
+      {
+        "id": "new-cat-1763071362558",
+        "name": "4 قيقا",
+        "price": 500,
+        "validity": "اسبوع",
+        "capacity": "2"
+      }
+    ]
+  }
+]
+
+    

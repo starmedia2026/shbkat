@@ -16,6 +16,7 @@ import {
   CheckCircle,
   XCircle,
   CreditCard,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -595,9 +596,5 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
-
-    
-
-    
 
     
