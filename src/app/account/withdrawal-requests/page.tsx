@@ -98,7 +98,7 @@ function WithdrawalRequestsContent() {
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
   
   const withdrawalRequestsQuery = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
+    if (!firestore || isAdmin !== true) return null;
     return query(
       collectionGroup(firestore, "operations"), 
       where("type", "==", "withdraw")
