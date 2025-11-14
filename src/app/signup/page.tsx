@@ -29,7 +29,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
-import { networks as initialNetworks } from "@/lib/networks";
 import { locations } from "@/lib/locations";
 
 
@@ -134,6 +133,33 @@ export default function SignupPage() {
             return;
         }
 
+        if (accountType === 'network-owner') {
+             const newNetwork = {
+                id: `network-${Date.now()}`,
+                name: networkName,
+                address: networkAddress,
+                logo: "",
+                ownerPhone: phone,
+                categories: [],
+            };
+            // Fetch latest networks before updating
+            const currentNetworksRes = await fetch('/api/get-networks');
+            if(!currentNetworksRes.ok) throw new Error("Failed to get current networks list.");
+            const currentNetworks = await currentNetworksRes.json();
+
+            const updatedNetworks = [...currentNetworks, newNetwork];
+
+            const saveRes = await fetch('/api/save-networks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ networks: updatedNetworks }),
+            });
+            if (!saveRes.ok) {
+                throw new Error("Failed to save the new network.");
+            }
+        }
+
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
@@ -161,25 +187,6 @@ export default function SignupPage() {
             errorEmitter.emit('permission-error', permissionError);
             // We re-throw the error to stop execution if creating the user doc fails
             throw e;
-        }
-
-
-        if (accountType === 'network-owner') {
-             const newNetwork = {
-                id: `network-${Date.now()}`,
-                name: networkName,
-                address: networkAddress,
-                logo: "",
-                ownerPhone: phone,
-                categories: [],
-            };
-            const updatedNetworks = [...initialNetworks, newNetwork];
-
-            await fetch('/api/save-networks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ networks: updatedNetworks }),
-            });
         }
         
         toast({
@@ -356,4 +363,3 @@ export default function SignupPage() {
     </main>
   );
 }
-
