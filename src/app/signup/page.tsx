@@ -122,6 +122,17 @@ export default function SignupPage() {
             setIsLoading(false);
             return;
         }
+        
+        // Check if name is already in use
+        const nameQuery = query(collection(firestore, "customers"), where("name", "==", name.trim()));
+        const nameSnapshot = await getDocs(nameQuery);
+        if (!nameSnapshot.empty) {
+            const msg = "هذا الاسم مسجل لدينا.";
+            setError(msg);
+            toast({ variant: "destructive", title: "خطأ في إنشاء الحساب", description: msg });
+            setIsLoading(false);
+            return;
+        }
 
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -345,3 +356,4 @@ export default function SignupPage() {
     </main>
   );
 }
+
