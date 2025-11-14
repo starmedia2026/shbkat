@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
-import { collection, query, orderBy, doc, deleteDoc, where, writeBatch, runTransaction } from "firebase/firestore";
+import { useCollection, useFirestore, useMemoFirebase, errorEmitter, useUser } from "@/firebase";
+import { collection, query, orderBy, doc, deleteDoc, writeBatch, runTransaction, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -151,46 +151,55 @@ export default function CardSalesPage() {
 }
 
 function CardSalesContent() {
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+    const firestore = useFirestore();
+    const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+    const cardsCollectionRef = useMemoFirebase(() => {
+        if (!firestore || !isAdmin) return null;
+        return query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
+    }, [firestore, isAdmin]);
 
-  const cardsCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
-    return query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
-  }, [firestore, isAdmin]);
+    const { data: allCards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
 
-  const { data: cards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
-  const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(
-    useMemoFirebase(() => {
-      if (!firestore || !isAdmin) return null;
-      return collection(firestore, "customers");
-    }, [firestore, isAdmin])
-  );
+    const [customerMap, setCustomerMap] = useState<Map<string, Customer>>(new Map());
+    const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
 
-  const customerMap = useMemo(() => {
-    if (!customers) return new Map<string, Customer>();
-    return new Map(customers.map(c => [c.id, c]));
-  }, [customers]);
+    useEffect(() => {
+        if (!firestore || !isAdmin) {
+            setIsLoadingCustomers(false);
+            return;
+        };
 
-  const isLoading = areCardsLoading || areCustomersLoading || isAdminLoading;
+        const fetchCustomers = async () => {
+            setIsLoadingCustomers(true);
+            const customersRef = collection(firestore, "customers");
+            const snapshot = await getDocs(customersRef);
+            const map = new Map<string, Customer>();
+            snapshot.forEach(doc => {
+                map.set(doc.id, { id: doc.id, ...doc.data() } as Customer);
+            });
+            setCustomerMap(map);
+            setIsLoadingCustomers(false);
+        };
 
+        fetchCustomers();
+    }, [firestore, isAdmin]);
 
-  return (
-    <Accordion type="single" collapsible className="w-full space-y-4">
-      {networks.map(network => (
-        <NetworkAccordionItem 
-            key={network.id} 
-            network={network} 
-            allCards={cards} 
-            customerMap={customerMap}
-            isLoading={isLoading}
-        />
-      ))}
-    </Accordion>
-  );
+    const isLoading = areCardsLoading || isLoadingCustomers || isAdminLoading;
+
+    return (
+        <Accordion type="single" collapsible className="w-full space-y-4">
+            {networks.map(network => (
+                <NetworkAccordionItem 
+                    key={network.id} 
+                    network={network} 
+                    allCards={allCards} 
+                    customerMap={customerMap}
+                    isLoading={isLoading}
+                />
+            ))}
+        </Accordion>
+    );
 }
 
 function NetworkAccordionItem({ network, allCards, customerMap, isLoading } : { network: typeof networks[0], allCards: CardData[] | null, customerMap: Map<string, Customer>, isLoading: boolean }) {
@@ -209,8 +218,6 @@ function NetworkAccordionItem({ network, allCards, customerMap, isLoading } : { 
 
     const getOwner = (phone: string | undefined): Customer | undefined => {
         if (!phone) return undefined;
-        // This is inefficient but necessary with the current data structure.
-        // For better performance, we'd store owner UID on the network object.
         const owner = Array.from(customerMap.values()).find(c => c.phoneNumber === phone && c.accountType === 'network-owner');
         return owner;
     }
@@ -286,6 +293,7 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
     
     const { toast } = useToast();
     const [isTransferring, setIsTransferring] = useState(false);
+    const profitAmount = categoryPrice * 0.90; // 90% for the owner
 
     const performTransfer = async (): Promise<number | null> => {
         if (!networkOwner || !firestore || card.status === 'transferred') {
@@ -294,8 +302,6 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
         }
 
         setIsTransferring(true);
-        const cardPrice = categoryPrice;
-        const profitAmount = cardPrice * 0.90; // 90% for the owner
         const cardRef = doc(firestore, 'cards', card.id);
         const ownerRef = doc(firestore, 'customers', networkOwner.id);
 
@@ -445,20 +451,21 @@ ${customer.balance.toLocaleString('en-US')} ريال
                          <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer?.phoneNumber || 'لا يوجد رقم'}</span> <Phone className="h-4 w-4 text-primary"/> </p>
                     </div>
                 </div>
-                <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2">
+                <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2 flex-wrap">
                      {card.status === 'used' && networkOwner && (
                         <>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="secondary" size="icon" disabled={isTransferring}>
-                                         {isTransferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 text-primary"/>}
+                                    <Button variant="secondary" size="sm" disabled={isTransferring}>
+                                         {isTransferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                                        تحويل
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
                                     <AlertDialogTitle>تأكيد تحويل الربح</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        هل أنت متأكد من تحويل مبلغ <span className="font-bold text-primary">{(categoryPrice * 0.90).toLocaleString('en-US')}</span> ريال (بعد خصم 10% عمولة) إلى حساب مالك الشبكة <span className="font-bold">{networkOwner.name}</span>؟
+                                        هل أنت متأكد من تحويل مبلغ <span className="font-bold text-primary">{profitAmount.toLocaleString('en-US')}</span> ريال (بعد خصم 10% عمولة) إلى حساب مالك الشبكة <span className="font-bold">{networkOwner.name}</span>؟
                                     </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -469,15 +476,16 @@ ${customer.balance.toLocaleString('en-US')} ريال
                             </AlertDialog>
                              <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                     <Button variant="outline" size="icon" className="h-9 w-9 bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20" disabled={isTransferring}>
+                                     <Button variant="outline" size="sm" className="bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20" disabled={isTransferring}>
                                         {isTransferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <WhatsAppNotifyIcon className="h-4 w-4"/>}
+                                        تحويل وإبلاغ
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
                                     <AlertDialogTitle>تأكيد التحويل والإبلاغ</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        سيتم تحويل الربح إلى مالك الشبكة وفتح واتساب لإرسال رسالة إبلاغ. هل تريد المتابعة؟
+                                        سيتم تحويل مبلغ <span className="font-bold text-primary">{profitAmount.toLocaleString('en-US')}</span> ريال إلى مالك الشبكة وفتح واتساب لإرسال رسالة إبلاغ. هل تريد المتابعة؟
                                     </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -581,12 +589,5 @@ function CardSkeleton() {
         </Card>
     );
 }
-
-
-    
-
-    
-
-    
 
     
