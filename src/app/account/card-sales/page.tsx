@@ -5,26 +5,30 @@ import {
   ArrowRight,
   User,
   Phone,
-  Ticket,
   Clock,
   Calendar as CalendarIcon,
   Copy,
   Wifi,
   Tag,
   Trash2,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  Send,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
-import { collection, query, orderBy, doc, deleteDoc } from "firebase/firestore";
+import { collection, query, orderBy, doc, deleteDoc, where, writeBatch, runTransaction } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -48,6 +52,8 @@ import {
 import { DateRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import Image from "next/image";
+import { generateOperationNumber } from "@/lib/utils";
 
 
 // WhatsApp icon component for the button
@@ -68,13 +74,14 @@ interface Customer {
   name: string;
   phoneNumber: string;
   balance: number;
+  accountType?: string;
 }
 
 interface CardData {
   id: string; // card number
   networkId: string;
   categoryId: string;
-  status: "available" | "used";
+  status: "available" | "used" | "transferred";
   createdAt: string; // ISO Date
   usedAt?: string; // ISO Date
   usedBy?: string; // UID of user
@@ -84,13 +91,15 @@ interface CardData {
 const networkLookup = networks.reduce((acc, net) => {
     acc[net.id] = {
         name: net.name,
+        logo: net.logo,
+        ownerPhone: net.ownerPhone,
         categories: net.categories.reduce((catAcc, cat) => {
             catAcc[cat.id] = { name: cat.name, price: cat.price };
             return catAcc;
         }, {} as Record<string, { name: string; price: number }>)
     };
     return acc;
-}, {} as Record<string, { name: string; categories: Record<string, { name: string; price: number }> }>);
+}, {} as Record<string, { name: string; logo?: string; ownerPhone?: string; categories: Record<string, { name: string; price: number }> }>);
 
 
 export default function CardSalesPage() {
@@ -158,169 +167,179 @@ function CardSalesContent() {
     return new Map(customers.map(c => [c.id, c]));
   }, [customers]);
 
-  const { soldCards, availableCards, filteredSoldCards } = useMemo(() => {
-    if (!cards) return { soldCards: [], availableCards: [], filteredSoldCards: [] };
-    
-    const sold = cards.filter(card => card.status === 'used');
-    const available = cards.filter(card => card.status === 'available');
-
-    const dateFilteredSold = sold.filter(card => {
-        if (!dateRange || !card.usedAt) return true;
-        const cardDate = new Date(card.usedAt);
-        const from = dateRange.from ? new Date(dateRange.from) : null;
-        const to = dateRange.to ? new Date(dateRange.to) : null;
-
-        if (from) from.setHours(0, 0, 0, 0); // Start of the day
-        if (to) to.setHours(23, 59, 59, 999); // End of the day
-        
-        if (from && to) return cardDate >= from && cardDate <= to;
-        if (from) return cardDate >= from;
-        if (to) return cardDate <= to;
-
-        return true;
-    });
-
-    return { soldCards: sold, availableCards: available, filteredSoldCards: dateFilteredSold };
-  }, [cards, dateRange]);
-
   const isLoading = areCardsLoading || areCustomersLoading;
 
-  const handleCopyToClipboard = () => {
-    const headers = "رقم الكرت	الشبكة	الفئة	السعر	تاريخ البيع	اسم المشتري	رقم المشتري";
-    const rows = filteredSoldCards.map(card => {
-      const customer = card.usedBy ? customerMap.get(card.usedBy) : undefined;
-      const networkName = networkLookup[card.networkId]?.name || 'غير معروف';
-      const categoryInfo = networkLookup[card.networkId]?.categories[card.categoryId];
-      const categoryName = categoryInfo?.name || 'غير معروف';
-      const categoryPrice = categoryInfo?.price || 0;
-      const usedDate = card.usedAt ? format(new Date(card.usedAt), "yyyy-MM-dd HH:mm:ss") : 'N/A';
-      
-      return [
-        card.id,
-        networkName,
-        categoryName,
-        categoryPrice,
-        usedDate,
-        customer?.name || 'N/A',
-        customer?.phoneNumber || 'N/A'
-      ].join('	');
-    }).join('\n');
-
-    const tsv = `${headers}\n${rows}`;
-    navigator.clipboard.writeText(tsv).then(() => {
-      toast({
-        title: "تم النسخ!",
-        description: `تم نسخ ${filteredSoldCards.length} سجل إلى الحافظة. يمكنك لصقها في Excel.`
-      });
-    }).catch(err => {
-        console.error("Failed to copy to clipboard:", err);
-        toast({
-            variant: "destructive",
-            title: "فشل النسخ",
-            description: "لم نتمكن من نسخ البيانات إلى الحافظة. قد تكون النافذة غير نشطة."
-        });
-    });
-  };
 
   return (
-    <Tabs defaultValue="sold" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="sold" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:border-destructive/20 border-2 border-transparent">
-            مباعة ({isLoading ? '...' : soldCards.length})
-        </TabsTrigger>
-        <TabsTrigger value="available" className="data-[state=active]:bg-green-500/10 data-[state=active]:text-green-600 data-[state=active]:border-green-500/20 border-2 border-transparent">
-            متوفرة ({isLoading ? '...' : availableCards.length})
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="sold" className="mt-4 space-y-4">
-         <Card>
-            <CardContent className="p-4 flex flex-col sm:flex-row gap-4 items-center">
-                <Popover>
-                    <PopoverTrigger asChild>
-                    <Button
-                        variant={"outline"}
-                        className={cn(
-                        "w-full sm:w-[300px] justify-start text-left font-normal",
-                        !dateRange && "text-muted-foreground"
-                        )}
-                    >
-                        <CalendarIcon className="ml-2 h-4 w-4" />
-                        {dateRange?.from ? (
-                        dateRange.to ? (
-                            <>
-                            {format(dateRange.from, "LLL dd, y", { locale: ar })} -{" "}
-                            {format(dateRange.to, "LLL dd, y", { locale: ar })}
-                            </>
-                        ) : (
-                            format(dateRange.from, "LLL dd, y", { locale: ar })
-                        )
-                        ) : (
-                        <span>اختر نطاق التاريخ</span>
-                        )}
-                    </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={dateRange?.from}
-                        selected={dateRange}
-                        onSelect={setDateRange}
-                        numberOfMonths={2}
-                        locale={ar}
-                    />
-                    </PopoverContent>
-                </Popover>
-                <Button onClick={handleCopyToClipboard} className="w-full sm:w-auto" disabled={filteredSoldCards.length === 0}>
-                    <Copy className="ml-2 h-4 w-4" />
-                    نسخ البيانات ({filteredSoldCards.length})
-                </Button>
-            </CardContent>
-        </Card>
-
-        {isLoading ? (
-            [...Array(3)].map((_, i) => <CardSkeleton key={i} />)
-        ) : filteredSoldCards.length > 0 ? (
-            filteredSoldCards.map((card) => (
-                <SoldCardItem key={card.id} card={card} customer={card.usedBy ? customerMap.get(card.usedBy) : undefined} />
-            ))
-        ) : (
-            <p className="text-center text-muted-foreground pt-10">{soldCards.length > 0 ? "لا توجد مبيعات في هذا النطاق الزمني." : "لا توجد كروت مباعة."}</p>
-        )}
-      </TabsContent>
-      <TabsContent value="available" className="mt-4 space-y-4">
-         {isLoading ? (
-            [...Array(3)].map((_, i) => <CardSkeleton key={i} />)
-        ) : availableCards.length > 0 ? (
-            availableCards.map((card) => (
-                <AvailableCardItem key={card.id} card={card} />
-            ))
-        ) : (
-            <p className="text-center text-muted-foreground pt-10">لا توجد كروت متوفرة حالياً.</p>
-        )}
-      </TabsContent>
-    </Tabs>
+    <Accordion type="single" collapsible className="w-full space-y-4">
+      {networks.map(network => (
+        <NetworkAccordionItem 
+            key={network.id} 
+            network={network} 
+            allCards={cards} 
+            customerMap={customerMap}
+            isLoading={isLoading}
+        />
+      ))}
+    </Accordion>
   );
+}
+
+function NetworkAccordionItem({ network, allCards, customerMap, isLoading } : { network: typeof networks[0], allCards: CardData[] | null, customerMap: Map<string, Customer>, isLoading: boolean }) {
+    
+    const { soldCards, availableCards } = useMemo(() => {
+        if (!allCards) return { soldCards: [], availableCards: [] };
+        
+        const networkCards = allCards.filter(card => card.networkId === network.id);
+        const sold = networkCards.filter(card => card.status === 'used' || card.status === 'transferred');
+        const available = networkCards.filter(card => card.status === 'available');
+
+        return { soldCards: sold, availableCards: available };
+    }, [allCards, network.id]);
+
+    const firestore = useFirestore();
+
+    const getOwner = (phone: string | undefined): Customer | undefined => {
+        if (!phone) return undefined;
+        // This is inefficient but necessary with the current data structure.
+        // For better performance, we'd store owner UID on the network object.
+        const owner = Array.from(customerMap.values()).find(c => c.phoneNumber === phone && c.accountType === 'network-owner');
+        return owner;
+    }
+
+    const networkOwner = getOwner(network.ownerPhone);
+    
+
+    return (
+        <AccordionItem value={network.id}>
+            <AccordionTrigger>
+                <div className="flex items-center gap-3 flex-grow text-right">
+                    {network.logo ? (
+                        <Image src={network.logo} alt={network.name} width={40} height={40} className="rounded-full object-contain bg-white" />
+                    ) : (
+                        <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center shrink-0">
+                            <Wifi className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                    )}
+                    <span>{network.name}</span>
+                </div>
+            </AccordionTrigger>
+            <AccordionContent>
+                 <Tabs defaultValue="sold" className="w-full pt-2">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="sold" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:border-destructive/20 border-2 border-transparent">
+                            مباعة ({isLoading ? '...' : soldCards.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="available" className="data-[state=active]:bg-green-500/10 data-[state=active]:text-green-600 data-[state=active]:border-green-500/20 border-2 border-transparent">
+                            متوفرة ({isLoading ? '...' : availableCards.length})
+                        </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="sold" className="mt-4 space-y-4">
+                        {isLoading ? (
+                            [...Array(1)].map((_, i) => <CardSkeleton key={i} />)
+                        ) : soldCards.length > 0 ? (
+                            soldCards.map((card) => (
+                                <SoldCardItem key={card.id} card={card} customer={card.usedBy ? customerMap.get(card.usedBy) : undefined} networkOwner={networkOwner} firestore={firestore}/>
+                            ))
+                        ) : (
+                            <p className="text-center text-muted-foreground pt-10">لا توجد كروت مباعة لهذه الشبكة.</p>
+                        )}
+                    </TabsContent>
+                    <TabsContent value="available" className="mt-4 space-y-4">
+                        {isLoading ? (
+                            [...Array(1)].map((_, i) => <CardSkeleton key={i} />)
+                        ) : availableCards.length > 0 ? (
+                            availableCards.map((card) => (
+                                <AvailableCardItem key={card.id} card={card} />
+                            ))
+                        ) : (
+                            <p className="text-center text-muted-foreground pt-10">لا توجد كروت متوفرة حالياً.</p>
+                        )}
+                    </TabsContent>
+                </Tabs>
+            </AccordionContent>
+        </AccordionItem>
+    );
 }
 
 function LoadingSkeleton() {
     return (
         <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-20 w-full" />
-            {[...Array(4)].map((_, i) => <CardSkeleton key={i} />)}
+            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
         </div>
     );
 }
 
-function SoldCardItem({ card, customer }: { card: CardData; customer?: Customer }) {
-    const firestore = useFirestore();
+function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardData; customer?: Customer, networkOwner?: Customer, firestore: any }) {
     const networkName = networkLookup[card.networkId]?.name || 'شبكة غير معروفة';
     const categoryInfo = networkLookup[card.networkId]?.categories[card.categoryId];
     const categoryName = categoryInfo?.name || 'فئة غير معروفة';
     const categoryPrice = categoryInfo?.price || 0;
     
     const { toast } = useToast();
+    const [isTransferring, setIsTransferring] = useState(false);
+
+    const handleTransfer = async () => {
+        if (!networkOwner || !firestore || card.status === 'transferred') {
+            toast({ variant: "destructive", title: "لا يمكن التحويل", description: "مالك الشبكة غير معروف أو تم تحويل قيمة الكرت مسبقًا." });
+            return;
+        }
+
+        setIsTransferring(true);
+        const cardPrice = categoryPrice;
+        const profitAmount = cardPrice * 0.90; // 90% for the owner
+        const cardRef = doc(firestore, 'cards', card.id);
+        const ownerRef = doc(firestore, 'customers', networkOwner.id);
+
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const ownerDoc = await transaction.get(ownerRef);
+                const cardDoc = await transaction.get(cardRef);
+
+                if (!ownerDoc.exists()) throw new Error("لم يتم العثور على حساب مالك الشبكة.");
+                if (!cardDoc.exists() || cardDoc.data().status === 'transferred') throw new Error("تم تحويل قيمة هذا الكرت مسبقًا.");
+
+                const ownerBalance = ownerDoc.data().balance;
+                const newOwnerBalance = ownerBalance + profitAmount;
+                
+                transaction.update(ownerRef, { balance: newOwnerBalance });
+                transaction.update(cardRef, { status: "transferred" });
+
+                const now = new Date().toISOString();
+                const opData = { type: 'topup_admin', amount: profitAmount, date: now, description: `إيداع ربح كرت: ${card.id}`, status: 'completed', operationNumber: generateOperationNumber() };
+                const notifData = { type: 'topup_admin', title: 'تم استلام أرباح', body: `تم إيداع مبلغ ${profitAmount.toLocaleString('en-US')} ريال كأرباح مبيعات.`, amount: profitAmount, date: now, read: false };
+
+                transaction.set(doc(collection(firestore, `customers/${networkOwner.id}/operations`)), opData);
+                transaction.set(doc(collection(firestore, `customers/${networkOwner.id}/notifications`)), notifData);
+            });
+
+            toast({
+                title: "تم التحويل بنجاح",
+                description: `تم تحويل ${profitAmount.toLocaleString('en-US')} ريال إلى ${networkOwner.name}.`,
+            });
+        } catch (e: any) {
+            console.error("Transfer failed:", e);
+            toast({
+                variant: "destructive",
+                title: "فشل التحويل",
+                description: e.message || "حدث خطأ أثناء محاولة تحويل المبلغ.",
+            });
+             const contextualError = new FirestorePermissionError({
+                operation: 'write',
+                path: 'Transaction for profit transfer',
+                requestResourceData: { 
+                    note: "Failed to transfer profit to network owner.",
+                    ownerId: networkOwner.id,
+                    cardId: card.id,
+                    amount: profitAmount,
+                }
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        } finally {
+            setIsTransferring(false);
+        }
+    };
+
 
     const copyToClipboard = (text: string) => {
         if (!text) return;
@@ -378,10 +397,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
     return (
         <Card className="w-full shadow-md rounded-2xl bg-card/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                 <CardTitle className="text-base tracking-wider flex items-center gap-2">{card.id}
-                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(card.id)}>
-                        <Copy className="h-4 w-4 text-muted-foreground"/>
-                    </Button>
+                 <CardTitle className="text-sm tracking-wider flex items-center gap-2 font-mono">{card.id}
                  </CardTitle>
                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
@@ -392,17 +408,40 @@ ${customer.balance.toLocaleString('en-US')} ريال
                 <div className="flex justify-between items-center text-sm border-t pt-3">
                     <div className="space-y-2">
                          <p className="flex items-center gap-2"><Wifi className="h-4 w-4 text-primary"/> <span>{networkName}</span></p>
-                         <p className="flex items-center gap-2"><Tag className="h-4 w-4 text-primary"/> <span>{categoryName}</span></p>
+                         <p className="flex items-center gap-2"><Tag className="h-4 w-4 text-primary"/> <span>{categoryName} ({categoryPrice} ريال)</span></p>
                     </div>
                      <div className="text-left space-y-2">
                          <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{customer?.name || 'مستخدم غير معروف'}</span></p>
                          <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer?.phoneNumber || 'لا يوجد رقم'}</span> <Phone className="h-4 w-4 text-primary"/> </p>
                     </div>
                 </div>
-                <div className="mt-4 pt-3 border-t flex gap-2">
-                    <Button onClick={handleWhatsAppRedirect} variant="outline" className="w-full bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
-                        <WhatsAppIcon className="h-8 w-8 ml-2"/>
-                        إرسال عبر واتساب
+                <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2">
+                     {card.status === 'used' && networkOwner && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="secondary" size="icon" disabled={isTransferring}>
+                                     {isTransferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 text-primary"/>}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>تأكيد تحويل الربح</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    هل أنت متأكد من تحويل مبلغ <span className="font-bold text-primary">{(categoryPrice * 0.90).toLocaleString('en-US')}</span> ريال (بعد خصم 10% عمولة) إلى حساب مالك الشبكة <span className="font-bold">{networkOwner.name}</span>؟
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleTransfer}>تأكيد التحويل</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
+                     <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => copyToClipboard(card.id)}>
+                        <Copy className="h-4 w-4 text-muted-foreground"/>
+                    </Button>
+                    <Button onClick={handleWhatsAppRedirect} variant="outline" size="icon" className="h-9 w-9 bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
+                        <WhatsAppIcon className="h-5 w-5"/>
                     </Button>
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -432,6 +471,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
 function AvailableCardItem({ card }: { card: CardData }) {
     const networkName = networkLookup[card.networkId]?.name || 'Unknown Network';
     const categoryName = networkLookup[card.networkId]?.categories[card.categoryId]?.name || 'Unknown Category';
+    const categoryPrice = networkLookup[card.networkId]?.categories[card.categoryId]?.price || 0;
      const { toast } = useToast();
 
     const copyToClipboard = (text: string) => {
@@ -446,20 +486,22 @@ function AvailableCardItem({ card }: { card: CardData }) {
     return (
          <Card className="w-full shadow-md rounded-2xl bg-card/50">
              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                 <CardTitle className="text-base tracking-wider flex items-center gap-2">{card.id}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(card.id)}>
-                        <Copy className="h-4 w-4 text-muted-foreground"/>
-                    </Button>
+                 <CardTitle className="text-sm tracking-wider flex items-center gap-2 font-mono">{card.id}
                  </CardTitle>
                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <CalendarIcon className="h-3 w-3" />
                     <span>{format(new Date(card.createdAt), "d MMM yyyy", { locale: ar })}</span>
                  </div>
             </CardHeader>
-            <CardContent>
-                <div className="flex justify-start items-center gap-6 text-sm border-t pt-3">
-                     <p className="flex items-center gap-2"><Wifi className="h-4 w-4 text-primary"/> <span>{networkName}</span></p>
-                     <p className="flex items-center gap-2"><Tag className="h-4 w-4 text-primary"/> <span>{categoryName}</span></p>
+            <CardContent className="border-t pt-3">
+                <div className="flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-6">
+                         <p className="flex items-center gap-2"><Wifi className="h-4 w-4 text-primary"/> <span>{networkName}</span></p>
+                         <p className="flex items-center gap-2"><Tag className="h-4 w-4 text-primary"/> <span>{categoryName} ({categoryPrice} ريال)</span></p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(card.id)}>
+                        <Copy className="h-4 w-4 text-muted-foreground"/>
+                    </Button>
                 </div>
             </CardContent>
         </Card>
@@ -488,7 +530,3 @@ function CardSkeleton() {
         </Card>
     );
 }
-
-    
-
-    
