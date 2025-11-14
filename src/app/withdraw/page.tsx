@@ -138,7 +138,8 @@ function WithdrawContent() {
             method: selectedMethod.name,
             recipientName,
             recipientAccount,
-        }
+        },
+        balanceAfter: newBalance,
     };
     
     const notificationData = {

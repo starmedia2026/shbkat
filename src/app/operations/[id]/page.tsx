@@ -17,6 +17,9 @@ import {
   XCircle,
   Clock,
   Banknote,
+  User,
+  Landmark,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +31,12 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
+interface OperationDetails {
+    method: string;
+    recipientName: string;
+    recipientAccount: string;
+}
+
 interface Operation {
   id: string;
   type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase" | "withdraw";
@@ -36,6 +45,8 @@ interface Operation {
   description: string;
   status: "completed" | "pending" | "failed";
   cardNumber?: string;
+  details?: OperationDetails;
+  balanceAfter?: number;
 }
 
 const operationConfig: {
@@ -135,6 +146,15 @@ export default function OperationDetailsPage() {
                <DetailRow icon={Calendar} label="التاريخ والوقت" value={format(new Date(operation.date), "eeee, d MMMM yyyy - h:mm a", { locale: ar })} />
                <DetailRow icon={FileText} label="الوصف" value={operation.description} />
                <DetailRow icon={statusInfo.icon} label="الحالة" value={statusInfo.label} valueColor={statusInfo.color} />
+               {operation.type === "withdraw" && operation.details && (
+                <>
+                    <DetailRow icon={User} label="اسم المستلم" value={operation.details.recipientName} />
+                    <DetailRow icon={Landmark} label="رقم الحساب" value={operation.details.recipientAccount} onCopy={() => copyToClipboard(operation.details?.recipientAccount, "رقم الحساب")} />
+                </>
+               )}
+                {operation.type === "withdraw" && operation.balanceAfter !== undefined && (
+                    <DetailRow icon={Wallet} label="الرصيد المتبقي" value={`${operation.balanceAfter.toLocaleString('en-US')} ريال`} />
+                )}
                <DetailRow icon={Hash} label="رقم المعرف" value={operation.id} onCopy={() => copyToClipboard(operation.id, "رقم المعرف")} />
                {operation.cardNumber && (
                   <DetailRow icon={Tag} label="رقم الكرت" value={operation.cardNumber} onCopy={() => copyToClipboard(operation.cardNumber, "رقم الكرت")} />
