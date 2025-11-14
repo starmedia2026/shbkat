@@ -30,7 +30,7 @@ export const networks: Network[] = [
         "name": "500 ميقا",
         "price": 100,
         "validity": "يوم واحد",
-        "capacity": "0.5"
+        "capacity": "0.5 GB"
       },
       {
         "id": "new-cat-1763070687524",
