@@ -78,7 +78,7 @@ service cloud.firestore {
         allow create, delete, list: if isAdmin() || isNetworkOwner();
         // Any signed-in user can read card data (needed to find an available card).
         allow read: if isSignedIn();
-        // Allow updates only for the specific 'purchase' transaction.
+        // Allow updates for the 'purchase' transaction.
         // User must be signed in.
         // Card must be transitioning from 'available' to 'used'.
         // The 'usedBy' field must be the user's own UID.
