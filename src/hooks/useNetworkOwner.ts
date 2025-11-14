@@ -6,6 +6,10 @@ import { doc } from "firebase/firestore";
 import { useMemo } from "react";
 import { networks } from "@/lib/networks";
 
+interface CustomerData {
+    phoneNumber?: string;
+    accountType?: "user" | "network-owner" | "admin";
+}
 
 export function useNetworkOwner() {
   const { user, isUserLoading } = useUser();
@@ -16,7 +20,7 @@ export function useNetworkOwner() {
     return doc(firestore, "customers", user.uid);
   }, [firestore, user?.uid]);
 
-  const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
+  const { data: customer, isLoading: isCustomerLoading } = useDoc<CustomerData>(customerDocRef);
   
   const isLoading = useMemo(() => {
       return isUserLoading || isCustomerLoading;

@@ -122,11 +122,26 @@ export default function SignupPage() {
           location: location,
           balance: 0,
           accountNumber: Math.random().toString().slice(2, 12),
-          accountType: accountType,
+          accountType: phone === "770326828" ? "admin" : accountType,
         };
         
         const userDocRef = doc(firestore, "customers", user.uid);
-        await setDoc(userDocRef, customerData);
+        
+        const isNewUser = true; // Since this is a signup page
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'create',
+            requestResourceData: customerData,
+        });
+
+        try {
+            await setDoc(userDocRef, customerData);
+        } catch (serverError) {
+            errorEmitter.emit('permission-error', permissionError);
+            // We re-throw the error to stop execution if creating the user doc fails
+            throw serverError;
+        }
+
 
         if (accountType === 'network-owner') {
              const newNetwork = {
@@ -154,6 +169,9 @@ export default function SignupPage() {
       }
     } catch (error: any) {
       console.error("Signup error:", error);
+      // Don't show permission errors on the UI from the emitter
+      if (error instanceof FirestorePermissionError) return;
+      
       let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "رقم الهاتف هذا مسجل بالفعل.";

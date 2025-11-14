@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
@@ -5,6 +6,11 @@ import { doc } from "firebase/firestore";
 import { useMemo } from "react";
 
 const ADMIN_PHONE_NUMBER = "770326828";
+
+interface CustomerData {
+    phoneNumber?: string;
+    accountType?: "user" | "network-owner" | "admin";
+}
 
 /**
  * Custom hook to determine if the current user is an admin.
@@ -21,30 +27,25 @@ export function useAdmin() {
     return doc(firestore, "customers", user.uid);
   }, [firestore, user?.uid]);
 
-  const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
+  const { data: customer, isLoading: isCustomerLoading } = useDoc<CustomerData>(customerDocRef);
   
   const isLoading = useMemo(() => {
-      // If we already know the phone number matches, we are not loading.
-      if (customer?.phoneNumber === ADMIN_PHONE_NUMBER) {
-          return false;
-      }
-      // Otherwise, we are loading if either user or customer data is loading.
+      // If we are still loading user or customer data, we are loading.
       return isUserLoading || isCustomerLoading;
-  }, [customer, isUserLoading, isCustomerLoading]);
+  }, [isUserLoading, isCustomerLoading]);
 
   const isAdmin = useMemo(() => {
-    // Priority check for the admin phone number to avoid flicker.
-    if (customer?.phoneNumber === ADMIN_PHONE_NUMBER) {
-        return true;
+    // While loading, we can't determine admin status.
+    if (isLoading) {
+        return null;
     }
-    // If not loading and we have customer data, determine admin status.
-    if (!isLoading && customer) {
-        return customer.phoneNumber === ADMIN_PHONE_NUMBER;
+    // If not loading and we have a customer object, check their account type.
+    if (customer) {
+        return customer.accountType === 'admin' || customer.phoneNumber === ADMIN_PHONE_NUMBER;
     }
-    // Return null while loading.
-    return null;
+    // If not loading and there's no customer data, they are not an admin.
+    return false;
   }, [customer, isLoading]);
-
 
   return {
     isAdmin: isAdmin,
