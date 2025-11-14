@@ -69,13 +69,13 @@ interface Network {
 export default function MyNetworkPage() {
   const router = useRouter();
   const { isOwner, isLoading } = useAdmin();
+  const { user } = useUser();
 
   const ownedNetwork = useMemo(() => {
-    const { user } = useUser();
     if (!isOwner || !user || !user.email) return null;
     const phone = user.email.split('@')[0];
     return initialNetworks.find(n => n.ownerPhone === phone) || null;
-  }, [isOwner]);
+  }, [isOwner, user]);
 
   useEffect(() => {
     if (!isLoading && isOwner === false) {
@@ -524,5 +524,7 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
+
+    
 
     
