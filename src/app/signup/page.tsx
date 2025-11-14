@@ -23,7 +23,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from "@/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -112,6 +112,17 @@ export default function SignupPage() {
     const email = `${phone}@shabakat.app`;
 
     try {
+        // Check if phone number (email) is already in use
+        const q = query(collection(firestore, "customers"), where("phoneNumber", "==", phone));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            const msg = "رقم الهاتف هذا مسجل بالفعل.";
+            setError(msg);
+            toast({ variant: "destructive", title: "خطأ في إنشاء الحساب", description: msg });
+            setIsLoading(false);
+            return;
+        }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
@@ -219,7 +230,7 @@ export default function SignupPage() {
           <form onSubmit={handleSignup}>
             <CardContent className="grid gap-4">
               <div className="grid gap-2 text-right">
-                <Label htmlFor="name">الاسم</Label>
+                <Label htmlFor="name">الاسم الرباعي الكامل</Label>
                 <Input id="name" placeholder="الاسم الرباعي الكامل" required value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="grid gap-2 text-right">
