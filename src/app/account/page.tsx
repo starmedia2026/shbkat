@@ -54,17 +54,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/useAdmin";
-
-
-const locationMap: { [key: string]: string } = {
-  shibam: "شبام",
-  sayun: "سيئون",
-  alqatn: "القطن",
-  alhawta: "الحوطة",
-  tarim: "تريم",
-  alghurfa: "الغرفة",
-  alaqad: "العقاد",
-};
+import { locations } from "@/lib/locations";
 
 const colorOptions = [
   { name: 'blue', hsl: '210 100% 56%' },
@@ -188,7 +178,8 @@ export default function AccountPage() {
 
   const getArabicLocation = (locationKey?: string): string => {
     if (!locationKey) return "";
-    return locationMap[locationKey] || locationKey;
+    const location = locations.find(loc => loc.value === locationKey);
+    return location ? location.name : locationKey;
   };
   
   const handleShare = () => {

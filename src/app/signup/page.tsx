@@ -30,6 +30,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { networks as initialNetworks } from "@/lib/networks";
+import { locations } from "@/lib/locations";
 
 
 interface AppSettings {
@@ -280,13 +281,9 @@ export default function SignupPage() {
                       <SelectValue placeholder="اختر موقعك" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="shibam">شبام</SelectItem>
-                      <SelectItem value="sayun">سيئون</SelectItem>
-                      <SelectItem value="alqatn">القطن</SelectItem>
-                      <SelectItem value="alhawta">الحوطة</SelectItem>
-                      <SelectItem value="tarim">تريم</SelectItem>
-                      <SelectItem value="alghurfa">الغرفة</SelectItem>
-                      <SelectItem value="alaqad">العقاد</SelectItem>
+                      {locations.map((loc) => (
+                        <SelectItem key={loc.id} value={loc.value}>{loc.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

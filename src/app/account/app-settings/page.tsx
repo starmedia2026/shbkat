@@ -5,7 +5,8 @@ import React, {
   useState,
   useEffect,
   useMemo,
-  useRef
+  useRef,
+  useCallback,
 } from "react";
 import {
   ArrowRight,
@@ -19,6 +20,7 @@ import {
   Trash2,
   PlusCircle,
   HelpCircle,
+  Map,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,6 +58,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { locations as initialLocations, type Location } from "@/lib/locations";
 
 
 interface AppSettings {
@@ -327,6 +330,8 @@ function AppSettingsContent() {
           </CardContent>
         </Card>
 
+        <LocationManagementCard />
+
         <Card className="w-full shadow-lg rounded-2xl">
             <CardHeader>
                 <CardTitle>تخصيص خدمات الصفحة الرئيسية</CardTitle>
@@ -403,6 +408,150 @@ function AppSettingsContent() {
   );
 }
 
+function LocationManagementCard() {
+    const { toast } = useToast();
+    const [locations, setLocations] = useState<Location[]>(initialLocations);
+    const [isSaving, setIsSaving] = useState(false);
+    const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+
+    const handleSaveLocations = useCallback(async (updatedLocations: Location[]) => {
+        setIsSaving(true);
+        try {
+            const response = await fetch('/api/save-locations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ locations: updatedLocations }),
+            });
+            if (!response.ok) throw new Error('فشل حفظ المواقع على الخادم');
+            
+            setLocations(updatedLocations); // Update local state on success
+            toast({ title: "تم الحفظ", description: "تم حفظ قائمة المواقع بنجاح." });
+        } catch (error) {
+            console.error(error);
+            toast({ variant: "destructive", title: "فشل الحفظ", description: "حدث خطأ أثناء حفظ المواقع." });
+        } finally {
+            setIsSaving(false);
+        }
+    }, [toast]);
+
+    const handleAddLocation = () => {
+        setEditingLocation({ id: `loc_${Date.now()}`, name: '', value: '' });
+    };
+
+    const handleDeleteLocation = (locationId: string) => {
+        const updatedLocations = locations.filter(loc => loc.id !== locationId);
+        handleSaveLocations(updatedLocations);
+    };
+    
+    const handleSaveEdit = (editedLocation: Location) => {
+        if (!editedLocation.name || !editedLocation.value) {
+            toast({ variant: 'destructive', title: 'بيانات ناقصة', description: 'يجب إدخال اسم وقيمة للموقع.'});
+            return;
+        }
+        
+        const isNew = !locations.some(l => l.id === editedLocation.id);
+        let updatedLocations;
+        if (isNew) {
+            updatedLocations = [...locations, editedLocation];
+        } else {
+            updatedLocations = locations.map(l => l.id === editedLocation.id ? editedLocation : l);
+        }
+        
+        handleSaveLocations(updatedLocations);
+        setEditingLocation(null);
+    }
+
+    return (
+        <Card className="w-full shadow-lg rounded-2xl">
+            <CardHeader>
+                <CardTitle>إدارة مواقع المستخدمين</CardTitle>
+                <CardDescription>
+                    إضافة أو تعديل أو حذف المواقع التي تظهر للمستخدمين عند التسجيل.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {locations.map(location => (
+                    <div key={location.id} className="flex items-center gap-2 p-2 border rounded-lg bg-card">
+                        <Map className="h-5 w-5 text-muted-foreground" />
+                        <div className="flex-grow">
+                            <p className="font-semibold">{location.name}</p>
+                            <p className="text-xs text-muted-foreground">القيمة: {location.value}</p>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => setEditingLocation(location)}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        هل أنت متأكد من رغبتك في حذف موقع "{location.name}"؟
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteLocation(location.id)}>تأكيد</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                ))}
+                <Button variant="outline" className="w-full mt-4" onClick={handleAddLocation}>
+                    <PlusCircle className="ml-2 h-4 w-4" />
+                    إضافة موقع جديد
+                </Button>
+            </CardContent>
+            {editingLocation && (
+                <EditLocationDialog
+                    key={editingLocation.id}
+                    location={editingLocation}
+                    isOpen={!!editingLocation}
+                    onClose={() => setEditingLocation(null)}
+                    onSave={handleSaveEdit}
+                />
+            )}
+        </Card>
+    );
+}
+
+function EditLocationDialog({ location, isOpen, onClose, onSave }: { location: Location, isOpen: boolean, onClose: () => void, onSave: (location: Location) => void }) {
+    const [name, setName] = useState(location.name);
+    const [value, setValue] = useState(location.value);
+    
+    const handleSave = () => {
+        onSave({ ...location, name, value });
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{location.name ? `تعديل موقع: ${location.name}` : "إضافة موقع جديد"}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="loc-name">اسم الموقع (ما يظهر للمستخدم)</Label>
+                        <Input id="loc-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="مثال: سيئون"/>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="loc-value">قيمة الموقع (للاستخدام الداخلي)</Label>
+                        <Input id="loc-value" value={value} onChange={(e) => setValue(e.target.value)} placeholder="مثال: sayun"/>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>إلغاء</Button>
+                    <Button onClick={handleSave}>حفظ</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 
 function EditServiceDialog({ service, isOpen, isNew, onClose, onSave }: { service: Service, isOpen: boolean, isNew: boolean, onClose: () => void, onSave: (service: Service) => void }) {
     const [label, setLabel] = useState(service.label);
@@ -460,6 +609,16 @@ function LoadingSkeleton() {
                     <Skeleton className="h-10 w-full mt-2" />
                 </CardContent>
             </Card>
+             <Card className="w-full shadow-lg rounded-2xl">
+                <CardHeader>
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-4 w-64 mt-2" />
+                </CardHeader>
+                <CardContent className="space-y-2">
+                     <Skeleton className="h-16 w-full" />
+                     <Skeleton className="h-10 w-full" />
+                </CardContent>
+            </Card>
             <Card className="w-full shadow-lg rounded-2xl">
                 <CardHeader>
                     <Skeleton className="h-6 w-40" />
@@ -472,5 +631,3 @@ function LoadingSkeleton() {
         </>
     );
 }
-
-    
