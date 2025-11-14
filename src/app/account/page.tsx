@@ -102,7 +102,6 @@ const adminAccountItems = [
   { id: "payment-management", href: "/account/payment-management", icon: Wallet, label: "إدارة الدفع" },
   { id: "ad-management", href: "/account/ad-management", icon: ImageIcon, label: "إدارة الإعلانات" },
   { id: "app-settings", href: "/account/app-settings", icon: Settings, label: "إعدادات التطبيق" },
-  { id: "transfer", href: "/transfer", icon: Send, label: "تحويل لمشترك" },
   { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
   { id: "share", icon: Share2, label: "شارك التطبيق" },
   { id: "help", icon: Headset, label: "مركز المساعدة" },
