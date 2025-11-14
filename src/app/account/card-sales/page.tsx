@@ -543,8 +543,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                              <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="outline" size="sm" className="bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20" disabled={isTransferring}>
-                                        {isTransferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <WhatsAppIcon className="h-4 w-4"/>}
-                                        تحويل وإبلاغ
+                                        {isTransferring ? <Loader2 className="h-4 w-4 animate-spin" /> : 'تحويل وإبلاغ'}
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
@@ -662,3 +661,6 @@ function CardSkeleton() {
 
     
 
+
+
+    
