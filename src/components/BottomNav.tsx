@@ -9,6 +9,7 @@ import { useMemo } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useUser } from "@/firebase";
 import { useNetworkOwner } from "@/hooks/useNetworkOwner";
+import { Skeleton } from "./ui/skeleton";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -21,10 +22,12 @@ export function BottomNav() {
   if (hiddenPaths.includes(pathname)) {
     return null;
   }
+  
+  const isLoading = isAdminLoading || isUserLoading || isOwnerLoading;
 
   const navItems = useMemo(() => {
     // Return an empty array if we are still loading, to prevent flicker
-    if (isAdminLoading || isUserLoading || isOwnerLoading) {
+    if (isLoading) {
       return [];
     }
 
@@ -34,22 +37,22 @@ export function BottomNav() {
     if (isAdmin) {
       items.push({ href: "/account/user-management", icon: Users, label: "المستخدمين" });
       items.push({ href: "/account/card-sales", icon: BarChart3, label: "التقارير" });
-
     }
     items.push({ href: "/account", icon: User, label: "حسابي" });
     return items;
-  }, [isAdmin, isAdminLoading, isUserLoading, isOwner, isOwnerLoading]);
+  }, [isAdmin, isLoading]);
 
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 bg-background/80 backdrop-blur-lg border-t">
       <div className="flex justify-around items-center h-full max-w-md mx-auto">
-        {(isAdminLoading || isUserLoading || isOwnerLoading) ? (
-            <>
-                <div className="h-6 w-6 bg-muted rounded-md animate-pulse"></div>
-                <div className="h-6 w-6 bg-muted rounded-md animate-pulse"></div>
-                <div className="h-6 w-6 bg-muted rounded-md animate-pulse"></div>
-            </>
+        {isLoading ? (
+            [...Array(4)].map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-1">
+                    <Skeleton className="h-6 w-6 rounded-md" />
+                    <Skeleton className="h-2 w-10 rounded-md" />
+                </div>
+            ))
         ) : navItems.map((item) => {
           const isActive = pathname.startsWith(item.href) && (item.href !== '/account' || pathname === '/account');
 
