@@ -122,8 +122,8 @@ function PackageCard({ category, network }: { category: Category, network: typeo
     const { data: customer } = useDoc<Customer>(customerDocRef);
 
     const handlePurchase = async () => {
-        if (!customer || !user || !customerDocRef || !firestore) {
-            toast({ variant: "destructive", title: "خطأ", description: "يجب تسجيل الدخول أولاً." });
+        if (!customer || !user || !customerDocRef || !firestore || !network.ownerPhone) {
+            toast({ variant: "destructive", title: "خطأ", description: "بيانات الشراء غير مكتملة. لا يمكن العثور على مالك الشبكة." });
             return;
         }
 
@@ -158,16 +158,28 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             const cardRef = cardToPurchaseDoc.ref;
             
             const purchasedCardNumber = await runTransaction(firestore, async (transaction) => {
+                // Get network owner's account
+                const ownerQuery = query(collection(firestore, "customers"), where("phoneNumber", "==", network.ownerPhone), limit(1));
+                const ownerSnapshot = await getDocs(ownerQuery);
+                 if (ownerSnapshot.empty) {
+                    throw new Error(`مالك الشبكة بالرقم ${network.ownerPhone} غير موجود.`);
+                }
+                const ownerDoc = ownerSnapshot.docs[0];
+                const ownerRef = ownerDoc.ref;
+
                 const senderDoc = await transaction.get(customerDocRef);
                 const cardDoc = await transaction.get(cardRef);
+                const networkOwnerDoc = await transaction.get(ownerRef);
                 
                 if (!senderDoc.exists()) throw new Error("لم يتم العثور على حساب العميل.");
+                if (!networkOwnerDoc.exists()) throw new Error("لم يتم العثور على حساب مالك الشبكة.");
                 if (!cardDoc.exists() || cardDoc.data().status !== 'available') throw new Error("هذا الكرت لم يعد متاحًا. الرجاء المحاولة مرة أخرى.");
                 
                 const senderBalance = senderDoc.data().balance;
                 if (senderBalance < category.price) throw new Error("رصيد غير كافٍ.");
 
                 const now = new Date().toISOString();
+                const netAmount = category.price * 0.90;
 
                 // 1. Update card status
                 transaction.update(cardRef, { status: "used", usedAt: now, usedBy: user.uid });
@@ -176,10 +188,20 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 const newSenderBalance = senderBalance - category.price;
                 transaction.update(customerDocRef, { balance: newSenderBalance });
                 
-                // 3. Log operation and notification for buyer
-                const baseOpData = { amount: -category.price, date: now, status: 'completed', cardNumber: cardDoc.id };
-                transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name} - ${network.name}` });
-                transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseOpData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح. رقم الكرت: ${cardDoc.id}`, read: false });
+                // 3. Add net amount to network owner
+                const ownerBalance = networkOwnerDoc.data().balance;
+                const newOwnerBalance = ownerBalance + netAmount;
+                transaction.update(ownerRef, { balance: newOwnerBalance });
+
+                // 4. Log operations and notifications
+                const baseOpData = { date: now, status: 'completed', cardNumber: cardDoc.id };
+                // Buyer logs
+                transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name}`, amount: -category.price });
+                transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseOpData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح.`, amount: -category.price, read: false });
+                
+                // Network Owner logs
+                transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/operations`)), { ...baseOpData, type: "purchase", description: `مقابل كرت: ${category.name}`, amount: netAmount });
+                transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/notifications`)), { ...baseOpData, type: 'purchase', title: 'ربح من بيع كرت', body: `تم إيداع ${netAmount.toLocaleString('en-US')} ريال مقابل بيع كرت ${category.name}.`, amount: netAmount, read: false });
 
                 return cardDoc.id;
             });
@@ -193,16 +215,16 @@ function PackageCard({ category, network }: { category: Category, network: typeo
         } catch (e: any) {
              const contextualError = new FirestorePermissionError({
                 operation: 'write',
-                path: 'Transaction for card purchase',
+                path: 'Transaction for card purchase with profit distribution',
                 requestResourceData: { 
-                    note: "A transaction involving multiple document writes failed during a card purchase.",
+                    note: "A transaction failed during profit distribution.",
                     userId: user.uid,
                     categoryId: category.id,
-                    price: category.price
+                    price: category.price,
+                    ownerPhone: network.ownerPhone
                 }
             });
             errorEmitter.emit('permission-error', contextualError);
-             // Also show a user-friendly error from the transaction itself if available
             toast({
                 variant: "destructive",
                 title: "فشل الشراء",
@@ -215,7 +237,6 @@ function PackageCard({ category, network }: { category: Category, network: typeo
     
     const handleSmsFallback = (recipient: string) => {
         const messageBody = encodeURIComponent(`تم شراء ${purchasedCard?.categoryName} من ${purchasedCard?.networkName}.\nرقم الكرت: ${purchasedCard?.cardNumber}`);
-        // Fallback for browsers that don't support sms: or for desktop
         const separator = navigator.userAgent.match(/Android|iPhone|iPad|iPod/i) ? "?" : "&";
         const smsUrl = `sms:${recipient}${separator}body=${messageBody}`;
         window.open(smsUrl, '_blank');
@@ -297,18 +318,15 @@ function PurchasedCardDialog({ card, isOpen, onClose, onSendSms }: { card: Purch
     const [smsDialogOpen, setSmsDialogOpen] = useState(false);
     const [smsRecipient, setSmsRecipient] = useState("");
 
-    const copyToClipboard = () => {
-        if (!card.cardNumber) return;
-        navigator.clipboard.writeText(card.cardNumber).then(() => {
+    const copyToClipboard = (text: string, label: string) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
             toast({
               title: "تم النسخ!",
-              description: "تم نسخ رقم الكرت إلى الحافظة.",
+              description: `${label} تم نسخه إلى الحافظة.`,
             });
         }).catch(err => {
             console.error("Failed to copy to clipboard:", err);
-            if (err instanceof DOMException && err.name === 'NotAllowedError') {
-                // Silently ignore this error as the user has been notified by the browser.
-            }
         });
     };
     
@@ -347,7 +365,7 @@ function PurchasedCardDialog({ card, isOpen, onClose, onSendSms }: { card: Purch
                                         className="text-base font-mono tracking-wider text-center bg-muted"
                                         dir="ltr"
                                     />
-                                    <Button type="button" size="icon" variant="outline" onClick={copyToClipboard}>
+                                    <Button type="button" size="icon" variant="outline" onClick={() => copyToClipboard(card.cardNumber, "رقم الكرت")}>
                                         <Copy className="h-4 w-4" />
                                     </Button>
                                 </div>
