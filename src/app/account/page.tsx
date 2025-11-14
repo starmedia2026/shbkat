@@ -26,6 +26,7 @@ import {
   Settings,
   Headset,
   Send,
+  Briefcase,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -51,6 +52,8 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useNetworkOwner } from "@/hooks/useNetworkOwner";
+
 
 const locationMap: { [key: string]: string } = {
   shibam: "شبام",
@@ -80,7 +83,15 @@ const userAccountItems = [
   { id: "transfer", href: "/transfer", icon: Send, label: "تحويل لمشترك" },
   { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
   { id: "share", icon: Share2, label: "شارك التطبيق" },
-  { id: "help", href: "#", icon: Headset, label: "مركز المساعدة" },
+  { id: "help", icon: Headset, label: "مركز المساعدة" },
+];
+
+const networkOwnerAccountItems = [
+  { id: "my-network", href: "/account/my-network", icon: Briefcase, label: "إدارة شبكتي" },
+  { id: "transfer", href: "/transfer", icon: Send, label: "تحويل لمشترك" },
+  { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
+  { id: "share", icon: Share2, label: "شارك التطبيق" },
+  { id: "help", icon: Headset, label: "مركز المساعدة" },
 ];
 
 const adminAccountItems = [
@@ -116,6 +127,8 @@ export default function AccountPage() {
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+  const { isOwner, isLoading: isOwnerLoading } = useNetworkOwner();
+
 
   useEffect(() => {
     setIsClient(true);
@@ -134,8 +147,13 @@ export default function AccountPage() {
   const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
   const { data: appSettings } = useDoc<AppSettings>(appSettingsDocRef);
 
-  const isLoading = isUserLoading || isCustomerLoading;
-  const accountItems = isAdmin ? adminAccountItems : userAccountItems;
+  const isLoading = isUserLoading || isCustomerLoading || isAdminLoading || isOwnerLoading;
+  
+  const accountItems = isAdmin 
+      ? adminAccountItems 
+      : isOwner 
+      ? networkOwnerAccountItems 
+      : userAccountItems;
   
   useEffect(() => {
     if (!isLoading && user && customer?.requiresPasswordChange) {
@@ -192,10 +210,7 @@ export default function AccountPage() {
       navigator.share(shareData).catch((error) => {
         // If sharing fails (e.g., permission denied, user cancellation), fall back to copying.
         // We don't need to show an error for user cancellation (AbortError).
-        if (error.name !== 'AbortError') {
-          console.warn("Web Share API failed, falling back to clipboard:", error);
-          fallbackCopy();
-        }
+        fallbackCopy();
       });
     } else {
       // Fallback for browsers that don't support the Web Share API
@@ -326,7 +341,7 @@ export default function AccountPage() {
         <Card className="w-full shadow-lg rounded-xl">
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
-              {isAdminLoading ? (
+              {isLoading ? (
                   [...Array(4)].map((_, i) => (
                       <li key={i} className="flex items-center justify-between py-4 px-4">
                           <div className="flex items-center space-x-4 space-x-reverse">
@@ -425,5 +440,7 @@ function AccountItem({
 
   return <li>{content}</li>;
 }
+
+    
 
     
