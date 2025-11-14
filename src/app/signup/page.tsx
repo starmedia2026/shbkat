@@ -131,10 +131,6 @@ export default function SignupPage() {
             return;
         }
 
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      if (user) {
         if (accountType === 'network-owner') {
              const newNetwork = {
                 id: `network-${Date.now()}`,
@@ -159,6 +155,11 @@ export default function SignupPage() {
             }
         }
         
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+      if (user) {
+        
         const customerData = {
           id: user.uid,
           name: name,
@@ -167,6 +168,7 @@ export default function SignupPage() {
           balance: 0,
           accountNumber: Math.random().toString().slice(2, 12),
           accountType: phone === "770326828" ? "admin" : accountType,
+          requiresPasswordChange: accountType === 'network-owner' ? true : false,
         };
         
         const userDocRef = doc(firestore, "customers", user.uid);
@@ -352,5 +354,3 @@ export default function SignupPage() {
     </main>
   );
 }
-
-    
