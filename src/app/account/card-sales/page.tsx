@@ -175,30 +175,39 @@ function CardSalesContent() {
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
 
     useEffect(() => {
-        if (!firestore) {
-            setIsLoadingCustomers(false);
-            return;
-        };
-        // Only admins need to fetch all customers
-        if (!isAdmin) {
-            setIsLoadingCustomers(false);
-            return;
-        }
-
+        if (!firestore || !allCards) return;
+        
         const fetchCustomers = async () => {
             setIsLoadingCustomers(true);
-            const customersRef = collection(firestore, "customers");
-            const snapshot = await getDocs(customersRef);
-            const map = new Map<string, Customer>();
-            snapshot.forEach(doc => {
-                map.set(doc.id, { id: doc.id, ...doc.data() } as Customer);
-            });
-            setCustomerMap(map);
-            setIsLoadingCustomers(false);
+            const userIds = [...new Set(allCards.map(card => card.usedBy).filter(Boolean) as string[])];
+            if (userIds.length === 0) {
+                setIsLoadingCustomers(false);
+                return;
+            }
+            
+            const customersRef = collection(firestore, 'customers');
+            const q = query(customersRef, where('id', 'in', userIds));
+
+            try {
+                const snapshot = await getDocs(q);
+                const map = new Map<string, Customer>();
+                snapshot.forEach(doc => {
+                    map.set(doc.id, { id: doc.id, ...doc.data() } as Customer);
+                });
+                setCustomerMap(map);
+            } catch (serverError) {
+                const permissionError = new FirestorePermissionError({
+                    path: customersRef.path,
+                    operation: 'list',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            } finally {
+                 setIsLoadingCustomers(false);
+            }
         };
 
         fetchCustomers();
-    }, [firestore, isAdmin]);
+    }, [firestore, allCards]);
     
     const networksToDisplay = useMemo(() => {
         if (isAdmin) return networks;
@@ -238,27 +247,24 @@ function NetworkAccordionItem({ network, allCards, customerMap, isLoading } : { 
 
     const firestore = useFirestore();
 
-    const getOwner = (phone: string | undefined): Customer | undefined => {
-        if (!phone) return undefined;
-        // Search the customerMap for a user with matching phone and network-owner type
-        for (const customer of customerMap.values()) {
-            if (customer.phoneNumber === phone && customer.accountType === 'network-owner') {
-                return customer;
-            }
-        }
-        return undefined;
-    }
-
     const [networkOwner, setNetworkOwner] = useState<Customer | null>(null);
 
     useEffect(() => {
         const findOwner = async () => {
             if (!firestore || !network.ownerPhone) return;
             const q = query(collection(firestore, "customers"), where("phoneNumber", "==", network.ownerPhone), where("accountType", "==", "network-owner"), limit(1));
-            const snapshot = await getDocs(q);
-            if (!snapshot.empty) {
-                const ownerData = snapshot.docs[0];
-                setNetworkOwner({ id: ownerData.id, ...ownerData.data() } as Customer);
+            try {
+                const snapshot = await getDocs(q);
+                if (!snapshot.empty) {
+                    const ownerData = snapshot.docs[0];
+                    setNetworkOwner({ id: ownerData.id, ...ownerData.data() } as Customer);
+                }
+            } catch (serverError) {
+                const permissionError = new FirestorePermissionError({
+                    path: 'customers',
+                    operation: 'list',
+                });
+                errorEmitter.emit('permission-error', permissionError);
             }
         };
         findOwner();
@@ -655,3 +661,4 @@ function CardSkeleton() {
     
 
     
+
