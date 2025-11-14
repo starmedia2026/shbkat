@@ -157,12 +157,23 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             const cardToPurchaseDoc = availableCardsSnapshot.docs[0];
             const cardRef = cardToPurchaseDoc.ref;
             
-            const ADMIN_PHONE_NUMBER = "770326828";
+            // Find network owner and admin
+            const customersCollection = collection(firestore, "customers");
+            const adminQuery = query(customersCollection, where("accountType", "==", "admin"), limit(1));
+            const ownerQuery = query(customersCollection, where("phoneNumber", "==", network.ownerPhone), limit(1));
+
+            const [adminSnapshot, ownerSnapshot] = await Promise.all([getDocs(adminQuery), getDocs(ownerQuery)]);
+
             let adminRef: any = null;
-            const adminQuery = query(collection(firestore, "customers"), where("phoneNumber", "==", ADMIN_PHONE_NUMBER), limit(1));
-            const adminSnapshot = await getDocs(adminQuery);
             if (!adminSnapshot.empty) {
                 adminRef = adminSnapshot.docs[0].ref;
+            }
+
+            let ownerRef: any = null;
+            if (!ownerSnapshot.empty) {
+                ownerRef = ownerSnapshot.docs[0].ref;
+            } else {
+                 throw new Error("لم يتم العثور على حساب مالك الشبكة.");
             }
 
             const purchasedCardNumber = await runTransaction(firestore, async (transaction) => {
@@ -176,25 +187,41 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 if (senderBalance < category.price) throw new Error("رصيد غير كافٍ.");
 
                 const now = new Date().toISOString();
-                const profitAmount = category.price * 0.90;
+                const netAmount = category.price * 0.90;
+                const commission = category.price * 0.10;
 
+                // 1. Update card status
                 transaction.update(cardRef, { status: "used", usedAt: now, usedBy: user.uid });
 
+                // 2. Deduct full price from buyer
                 const newSenderBalance = senderBalance - category.price;
                 transaction.update(customerDocRef, { balance: newSenderBalance });
-                
-                if (adminRef) {
-                    const adminDoc = await transaction.get(adminRef);
-                    if (adminDoc.exists()) {
-                        const newAdminBalance = adminDoc.data().balance + profitAmount;
-                        transaction.update(adminRef, { balance: newAdminBalance });
 
-                        const adminId = adminDoc.id;
-                        transaction.set(doc(collection(firestore, `customers/${adminId}/operations`)), { type: 'transfer_received', amount: profitAmount, date: now, description: `أرباح بيع كرت: ${category.name}`, status: 'completed' });
-                        transaction.set(doc(collection(firestore, `customers/${adminId}/notifications`)), { type: 'transfer_received', title: 'إيداع أرباح', body: `تم إيداع ${profitAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: profitAmount, date: now, read: false });
+                // 3. Add netAmount to network owner
+                if(ownerRef) {
+                    const ownerDoc = await transaction.get(ownerRef);
+                    if (ownerDoc.exists()) {
+                        const newOwnerBalance = ownerDoc.data().balance + netAmount;
+                        transaction.update(ownerRef, { balance: newOwnerBalance });
+                        // Log operation for network owner
+                        transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/operations`)), { type: 'transfer_received', amount: netAmount, date: now, description: `أرباح بيع كرت: ${category.name}`, status: 'completed' });
+                        transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/notifications`)), { type: 'transfer_received', title: `أرباح بيع كرت`, body: `تم إيداع ${netAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: netAmount, date: now, read: false });
                     }
                 }
                 
+                // 4. Add commission to admin
+                if (adminRef) {
+                    const adminDoc = await transaction.get(adminRef);
+                    if (adminDoc.exists()) {
+                        const newAdminBalance = adminDoc.data().balance + commission;
+                        transaction.update(adminRef, { balance: newAdminBalance });
+                        // Log operation for admin
+                        transaction.set(doc(collection(firestore, `customers/${adminDoc.id}/operations`)), { type: 'transfer_received', amount: commission, date: now, description: `عمولة بيع كرت: ${category.name}`, status: 'completed' });
+                        transaction.set(doc(collection(firestore, `customers/${adminDoc.id}/notifications`)), { type: 'transfer_received', title: 'إيداع عمولة', body: `تم إيداع ${commission.toLocaleString('en-US')} ريال كعمولة بيع كرت.`, amount: commission, date: now, read: false });
+                    }
+                }
+                
+                // 5. Log operation and notification for buyer
                 const baseOpData = { amount: -category.price, date: now, status: 'completed', cardNumber: cardDoc.id };
                 transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name} - ${network.name}` });
                 transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseOpData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح. رقم الكرت: ${cardDoc.id}`, read: false });
@@ -418,3 +445,6 @@ function BackButton() {
 
 
 
+
+
+    
