@@ -31,9 +31,10 @@ export default function TopUpPage() {
   const { data: appSettings } = useDoc<AppSettings>(appSettingsDocRef);
 
   const handleWhatsAppRedirect = () => {
-    const phoneNumber = appSettings?.supportPhoneNumber || DEFAULT_SUPPORT_PHONE;
+    // Read directly from appSettings state which is updated by useDoc
+    const supportPhoneNumber = appSettings?.supportPhoneNumber || DEFAULT_SUPPORT_PHONE;
     const message = encodeURIComponent("مرحباً، أود إرسال إشعار الدفع.");
-    window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+    window.open(`https://wa.me/${supportPhoneNumber}?text=${message}`, "_blank");
   };
 
   const { toast } = useToast();
