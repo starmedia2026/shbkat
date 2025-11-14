@@ -16,7 +16,7 @@ interface CustomerData {
  * Custom hook to determine if the current user is an admin.
  * @returns An object containing:
  * - `isAdmin`: `true` if the user is the admin, `false` if not, `null` while loading.
- * - `isLoading`: `true` if authentication or Firestore data is loading.
+ * - `isLoading`: `true` if authentication or Firestore data is loading or admin status is undetermined.
  */
 export function useAdmin() {
   const { user, isUserLoading } = useUser();
@@ -29,14 +29,9 @@ export function useAdmin() {
 
   const { data: customer, isLoading: isCustomerLoading } = useDoc<CustomerData>(customerDocRef);
   
-  const isLoading = useMemo(() => {
-      // If we are still loading user or customer data, we are loading.
-      return isUserLoading || isCustomerLoading;
-  }, [isUserLoading, isCustomerLoading]);
-
   const isAdmin = useMemo(() => {
-    // While loading, we can't determine admin status.
-    if (isLoading) {
+    // If user/customer data is still loading, we can't determine admin status yet.
+    if (isUserLoading || isCustomerLoading) {
         return null;
     }
     // If not loading and we have a customer object, check their account type.
@@ -45,7 +40,12 @@ export function useAdmin() {
     }
     // If not loading and there's no customer data, they are not an admin.
     return false;
-  }, [customer, isLoading]);
+  }, [customer, isUserLoading, isCustomerLoading]);
+
+  // The final loading state is true if the initial loads are happening OR if isAdmin is still null.
+  const isLoading = useMemo(() => {
+      return isUserLoading || isCustomerLoading || isAdmin === null;
+  }, [isUserLoading, isCustomerLoading, isAdmin]);
 
   return {
     isAdmin: isAdmin,

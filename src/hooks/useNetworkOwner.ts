@@ -22,22 +22,24 @@ export function useNetworkOwner() {
 
   const { data: customer, isLoading: isCustomerLoading } = useDoc<CustomerData>(customerDocRef);
   
-  const isLoading = useMemo(() => {
-      return isUserLoading || isCustomerLoading;
-  }, [isUserLoading, isCustomerLoading]);
-
   const isOwner = useMemo(() => {
-    if (isLoading || !customer) {
+    if (isUserLoading || isCustomerLoading || !customer) {
       return null;
     }
     return customer.accountType === 'network-owner';
-  }, [customer, isLoading]);
+  }, [customer, isUserLoading, isCustomerLoading]);
 
   const ownedNetwork = useMemo(() => {
     if (!isOwner || !customer?.phoneNumber) return null;
     // Find the network where the ownerPhone matches the current user's phone number
     return networks.find(n => n.ownerPhone === customer.phoneNumber) || null;
   }, [isOwner, customer]);
+
+  // The final loading state is true if the initial loads are happening OR if isOwner is still null.
+  const isLoading = useMemo(() => {
+      return isUserLoading || isCustomerLoading || isOwner === null;
+  }, [isUserLoading, isCustomerLoading, isOwner]);
+
 
   return {
     isOwner: isOwner,
