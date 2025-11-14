@@ -99,7 +99,7 @@ function WithdrawalRequestsContent() {
 
   const withdrawalRequestsQuery = useMemoFirebase(() => {
     // Only construct the query if firestore is available AND the user is confirmed to be an admin.
-    if (!firestore || !isAdmin) return null;
+    if (!firestore || isAdmin !== true) return null;
     return query(
       collectionGroup(firestore, "operations"), 
       where("type", "==", "withdraw")
@@ -110,7 +110,7 @@ function WithdrawalRequestsContent() {
       transform: (doc) => ({
         id: doc.id,
         path: doc.ref.path,
-        ...doc.data(),
+        ...(doc.data() as Operation),
       })
   });
   
@@ -263,6 +263,5 @@ function RequestCardSkeleton() {
         </Card>
     );
 }
-
 
     
