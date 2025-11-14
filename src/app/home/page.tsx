@@ -21,6 +21,7 @@ import {
   MessageCircle,
   Headset,
   Ticket,
+  Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,7 +64,7 @@ interface HomeSettings {
 
 interface Operation {
   id: string;
-  type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase";
+  type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase" | "withdraw";
   amount: number;
   date: string; // ISO string
   description: string;
@@ -74,6 +75,7 @@ const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; 
   transfer_received: { icon: ArrowUp, color: "text-green-500" }, // Icon might need adjustment
   topup_admin: { icon: Coins, color: "text-green-500" },
   purchase: { icon: CreditCard, color: "text-blue-500" },
+  withdraw: { icon: Banknote, color: "text-orange-500" },
 };
 
 const defaultServices: HomeService[] = [
@@ -285,6 +287,7 @@ export default function HomePage() {
                 </div>
                  <div className="grid grid-cols-3 gap-3 text-center">
                     <ServiceGridItem href="/account/my-network" label="إدارة شبكتي" id="my-network" IconProp={Briefcase} />
+                    <ServiceGridItem href="/withdraw" label="سحب الأرباح" id="withdraw" IconProp={Banknote} />
                 </div>
             </div>
         )}

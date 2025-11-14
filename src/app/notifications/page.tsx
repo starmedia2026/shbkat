@@ -3,7 +3,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, ArrowUp, ArrowDown, CreditCard, BellRing, Coins, Copy } from "lucide-react";
+import { ArrowRight, ArrowUp, ArrowDown, CreditCard, BellRing, Coins, Copy, Banknote } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
@@ -15,7 +15,7 @@ import { Button as UIButton } from "@/components/ui/button";
 
 interface Notification {
   id: string;
-  type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase" | "system_message";
+  type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase" | "system_message" | "withdraw";
   title: string;
   body: string;
   amount?: number;
@@ -30,6 +30,7 @@ const notificationConfig = {
   topup_admin: { icon: Coins, color: "text-green-500" },
   purchase: { icon: CreditCard, color: "text-red-500" },
   system_message: { icon: BellRing, color: "text-primary" },
+  withdraw: { icon: Banknote, color: "text-orange-500" },
 };
 
 export default function NotificationsPage() {

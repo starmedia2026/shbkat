@@ -106,7 +106,11 @@
         "accountType": {
           "type": "string",
           "description": "The type of user account.",
-          "enum": ["user", "network-owner", "admin"]
+          "enum": [
+            "user",
+            "network-owner",
+            "admin"
+          ]
         }
       },
       "required": [
@@ -151,7 +155,8 @@
             "transfer_sent",
             "transfer_received",
             "topup_admin",
-            "purchase"
+            "purchase",
+            "withdraw"
           ]
         },
         "amount": {
@@ -202,7 +207,8 @@
             "transfer_received",
             "topup_admin",
             "purchase",
-            "system_message"
+            "system_message",
+            "withdraw"
           ]
         },
         "title": {
