@@ -19,6 +19,7 @@ import {
   BarChart3,
   HelpCircle,
   MessageCircle,
+  Headset,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -283,7 +284,6 @@ export default function HomePage() {
                 </div>
                  <div className="grid grid-cols-3 gap-3 text-center">
                     <ServiceGridItem href="/account/my-network" label="إدارة شبكتي" id="my-network" IconProp={Briefcase} />
-                    <ServiceGridItem href="/account/card-sales" label="تقرير المبيعات" id="card-sales" IconProp={BarChart3} />
                 </div>
             </div>
         )}
@@ -390,7 +390,7 @@ function ServiceIcon({ id, className }: { id: string; className?: string }) {
     case "top-up": return <Wallet {...commonProps} />;
     case "operations": return <History {...commonProps} />;
     case "favorites": return <Heart {...commonProps} />;
-    case "contact": return <MessageCircle {...commonProps} />;
+    case "contact": return <Headset {...commonProps} />;
     default: return <HelpCircle {...commonProps} />;
   }
 }
@@ -445,3 +445,5 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
+
+    
