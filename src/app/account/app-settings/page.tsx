@@ -188,7 +188,7 @@ function AppSettingsContent() {
         title: "تم الحفظ",
         description: "تم حفظ إعدادات التطبيق العامة بنجاح.",
       });
-    } catch (serverError) {
+    } catch (e) {
         const permissionError = new FirestorePermissionError({
             path: appSettingsDocRef.path,
             operation: 'write',
@@ -207,7 +207,7 @@ function AppSettingsContent() {
       try {
         await setDoc(homeSettingsDocRef, dataToSave, { merge: true });
         toast({ title: "تم الحفظ", description: "تم حفظ إعدادات الصفحة الرئيسية." });
-      } catch (serverError) {
+      } catch (e) {
         const permissionError = new FirestorePermissionError({
             path: homeSettingsDocRef.path,
             operation: 'write',

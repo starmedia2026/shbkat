@@ -230,10 +230,10 @@ function CustomerCard({ customer }: { customer: Customer }) {
             });
             setAmount(""); // Clear input
             andThen?.(newBalance);
-        }).catch((serverError) => {
+        }).catch((e) => {
             const contextualError = new FirestorePermissionError({
                 operation: 'write',
-                path: 'batch-write', // Generic path for batch
+                path: 'batch-write (top-up)',
                 requestResourceData: {
                   update: { path: customerDocRef.path, data: { balance: newBalance } },
                   setOp: { path: customerOperationDocRef.path, data: operationData },
@@ -296,7 +296,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
                 title: "تم الحذف بنجاح",
                 description: `تم حذف بيانات العميل ${customer.name} من قاعدة البيانات.`,
             });
-        }).catch((serverError) => {
+        }).catch((e) => {
             const permissionError = new FirestorePermissionError({
                 path: customerDocRef.path,
                 operation: 'delete',
@@ -473,7 +473,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
         updateDoc(customerDocRef, updateData).then(() => {
             toast({ title: "نجاح", description: "تم تحديث بيانات العميل بنجاح." });
             setIsOpen(false);
-        }).catch((serverError) => {
+        }).catch((e) => {
             const contextualError = new FirestorePermissionError({
                 operation: 'update',
                 path: customerDocRef.path,
@@ -522,13 +522,3 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
         </Dialog>
     );
 }
-    
-
-    
-
-
-    
-
-    
-
-    

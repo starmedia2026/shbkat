@@ -199,7 +199,7 @@ function CardManagementContent() {
         });
         // Clear inputs after successful save
         setCardsInput("");
-    }).catch((serverError) => {
+    }).catch((e) => {
         const permissionError = new FirestorePermissionError({
             path: 'cards collection (batch write)',
             operation: 'write',

@@ -233,8 +233,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 networkName: network.name
             });
 
-        } catch (serverError: any) {
-            console.error("Purchase Transaction Error:", serverError);
+        } catch (e: any) {
              const contextualError = new FirestorePermissionError({
                 operation: 'write',
                 path: 'Transaction for card purchase',
@@ -250,7 +249,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             toast({
                 variant: "destructive",
                 title: "فشل الشراء",
-                description: serverError.message || "حدث خطأ غير متوقع أثناء إتمام العملية.",
+                description: e.message || "حدث خطأ غير متوقع أثناء إتمام العملية.",
             });
         } finally {
              setIsPurchasing(false);
@@ -453,17 +452,3 @@ function BackButton() {
         </button>
     );
 }
-
-
-
-    
-
-    
-
-
-
-
-
-    
-
-    

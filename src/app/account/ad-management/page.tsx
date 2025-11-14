@@ -127,7 +127,7 @@ function AdManagementContent() {
       });
       setImageUrl("");
       setLinkUrl("");
-    } catch (serverError) {
+    } catch (e) {
        const permissionError = new FirestorePermissionError({
             path: 'adverts',
             operation: 'create',
@@ -150,7 +150,7 @@ function AdManagementContent() {
           description: "تم حذف الإعلان بنجاح.",
         });
       })
-      .catch((serverError) => {
+      .catch((e) => {
         const permissionError = new FirestorePermissionError({
             path: advertDocRef.path,
             operation: 'delete'

@@ -127,19 +127,17 @@ export default function SignupPage() {
         
         const userDocRef = doc(firestore, "customers", user.uid);
         
-        const isNewUser = true; // Since this is a signup page
-        const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'create',
-            requestResourceData: customerData,
-        });
-
         try {
             await setDoc(userDocRef, customerData);
-        } catch (serverError) {
+        } catch (e) {
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'create',
+                requestResourceData: customerData,
+            });
             errorEmitter.emit('permission-error', permissionError);
             // We re-throw the error to stop execution if creating the user doc fails
-            throw serverError;
+            throw e;
         }
 
 
