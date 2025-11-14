@@ -73,63 +73,35 @@ interface Customer {
 export default function UserManagementPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
-
-  useEffect(() => {
-    // Only redirect when loading is finished and the user is explicitly not an admin.
-    if (!isAdminLoading && isAdmin === false) {
-      router.replace("/account");
-    }
-  }, [isAdmin, isAdminLoading, router]);
-
-  // Render a stable loading state until admin status is confirmed.
-  if (isAdminLoading || isAdmin === null || isAdmin === false) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <header className="p-4 flex items-center justify-between relative border-b">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-          >
-            <ArrowRight className="h-6 w-6" />
-          </Button>
-          <h1 className="text-lg font-normal text-right flex-grow mr-2">
-            إدارة المستخدمين
-          </h1>
-        </header>
-        <main className="flex-grow flex items-center justify-center">
-            <p>جاري التحميل والتحقق...</p>
-        </main>
-      </div>
-    );
-  }
-
-  // Render the content only if the user is an admin.
-  return <UserManagementContent />;
-}
-
-function UserManagementContent() {
-  const router = useRouter();
-  const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
-  const { isAdmin } = useAdmin();
   
+  const firestore = useFirestore();
   const customersCollectionRef = useMemoFirebase(() => {
-      // Only fetch if the user is confirmed to be an admin
+      // Fetch data only if the user is an admin, otherwise it's a wasted read
       if (!firestore || !isAdmin) return null;
       return collection(firestore, "customers");
   }, [firestore, isAdmin]);
   
   const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(customersCollectionRef);
-  
+
+  useEffect(() => {
+    // Redirect non-admins after loading is complete
+    if (!isAdminLoading && isAdmin === false) {
+      router.replace("/account");
+    }
+  }, [isAdmin, isAdminLoading, router]);
+
   const filteredCustomers = useMemo(() => {
       if (!customers) return [];
       return customers.filter(
-      (customer) =>
+        (customer) =>
           customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           customer.phoneNumber.includes(searchTerm)
       );
   }, [customers, searchTerm]);
+  
+  const isLoading = isAdminLoading || areCustomersLoading;
+
 
   return (
       <div className="bg-background text-foreground min-h-screen">
@@ -154,19 +126,31 @@ function UserManagementContent() {
                         className="w-full pr-10"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        disabled={isLoading}
                     />
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 </div>
 
-                {areCustomersLoading ? (
+                {isLoading ? (
                     <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+                        {[...Array(5)].map((_, i) => <CustomerCardSkeleton key={i} />)}
                     </div>
-                ) : (
+                ) : isAdmin === false ? (
+                     <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
+                        <User className="h-12 w-12" />
+                        <h2 className="text-xl font-bold mt-4">وصول غير مصرح به</h2>
+                        <p className="mt-2">أنت لا تملك الصلاحيات اللازمة لعرض هذه الصفحة.</p>
+                        <Button onClick={() => router.replace('/account')} className="mt-6">العودة للحساب</Button>
+                    </div>
+                ) : filteredCustomers.length > 0 ? (
                     <div className="space-y-4">
                         {filteredCustomers.map((customer) => (
                             <CustomerCard key={customer.id} customer={customer} />
                         ))}
+                    </div>
+                ) : (
+                     <div className="text-center text-muted-foreground pt-16">
+                        <p>لا يوجد مستخدمون يطابقون بحثك.</p>
                     </div>
                 )}
             </div>
@@ -434,6 +418,35 @@ function CustomerCard({ customer }: { customer: Customer }) {
     )
 }
 
+function CustomerCardSkeleton() {
+    return (
+        <Card className="w-full shadow-md rounded-2xl bg-card/50">
+            <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center space-x-4 space-x-reverse">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className="space-y-2">
+                           <Skeleton className="h-5 w-32" />
+                           <Skeleton className="h-4 w-24" />
+                        </div>
+                    </div>
+                    <div className="text-left space-y-2">
+                        <Skeleton className="h-5 w-20" />
+                    </div>
+                </div>
+                 <div className="mt-4 pt-4 border-t">
+                    <div className="flex gap-2">
+                        <Skeleton className="h-10 flex-grow" />
+                        <Skeleton className="h-10 flex-grow" />
+                        <Skeleton className="h-10 w-10" />
+                        <Skeleton className="h-10 w-10" />
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 function EditCustomerDialog({ customer }: { customer: Customer }) {
     const firestore = useFirestore();
@@ -522,3 +535,5 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
         </Dialog>
     );
 }
+
+    

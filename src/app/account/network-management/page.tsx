@@ -24,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { networks as initialNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -40,6 +40,7 @@ import {
   } from "@/components/ui/alert-dialog";
 import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Category {
   id: string;
@@ -64,25 +65,6 @@ const initialGlobalCategoryState: Omit<Category, 'id'> = {
     capacity: "",
 };
 
-function LoadingScreen() {
-    const router = useRouter();
-    return (
-        <div className="flex flex-col min-h-screen">
-            <header className="p-4 flex items-center justify-between relative border-b">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowRight className="h-6 w-6" />
-                </Button>
-                <h1 className="text-lg font-normal text-right flex-grow mr-4">
-                    إدارة الشبكات
-                </h1>
-            </header>
-            <main className="flex-grow flex items-center justify-center">
-                <p>جاري التحميل والتحقق...</p>
-            </main>
-        </div>
-    );
-}
-
 export default function NetworkManagementPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
@@ -93,15 +75,37 @@ export default function NetworkManagementPage() {
     }
   }, [isAdmin, isAdminLoading, router]);
 
-  if (isAdminLoading || isAdmin === null) {
-    return <LoadingScreen />;
-  }
-
-  return <NetworkManagementContent />;
+  return (
+    <div className="bg-background text-foreground min-h-screen pb-20">
+      <header className="p-4 flex items-center justify-between relative border-b sticky top-0 bg-background z-10">
+        <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+        >
+            <ArrowRight className="h-6 w-6" />
+        </Button>
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">
+          إدارة الشبكات
+        </h1>
+      </header>
+      <main className="p-4">
+        {isAdminLoading ? (
+            <LoadingSkeleton />
+        ) : isAdmin ? (
+            <NetworkManagementContent />
+        ) : (
+            <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
+                <h2 className="text-xl font-bold mt-4">وصول غير مصرح به</h2>
+                <p className="mt-2">أنت لا تملك الصلاحيات اللازمة لعرض هذه الصفحة.</p>
+            </div>
+        )}
+      </main>
+    </div>
+  );
 }
 
 function NetworkManagementContent() {
-  const router = useRouter();
   const { toast } = useToast();
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
   const [isSaving, setIsSaving] = useState(false);
@@ -230,27 +234,13 @@ function NetworkManagementContent() {
 
 
   return (
-    <div className="bg-background text-foreground min-h-screen pb-20">
-      <header className="p-4 flex items-center justify-between relative border-b sticky top-0 bg-background z-10">
-        <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-        >
-            <ArrowRight className="h-6 w-6" />
-        </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">
-          إدارة الشبكات
-        </h1>
-        {isSaving && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin"/>
-                <span>جاري الحفظ...</span>
-            </div>
-        )}
-      </header>
-      <main className="p-4">
         <div className="space-y-6">
+            {isSaving && (
+                <div className="fixed top-4 right-4 z-50 flex items-center gap-2 text-sm bg-background p-2 rounded-lg border shadow-lg">
+                    <Loader2 className="h-4 w-4 animate-spin"/>
+                    <span>جاري الحفظ...</span>
+                </div>
+            )}
             <Card className="w-full shadow-md rounded-2xl bg-card/50">
                 <CardHeader>
                     <div className="flex items-center gap-2">
@@ -365,9 +355,45 @@ function NetworkManagementContent() {
                 إضافة شبكة جديدة
             </Button>
         </div>
-      </main>
-    </div>
   );
+}
+
+function LoadingSkeleton() {
+    return (
+        <div className="space-y-6">
+            <Card className="w-full shadow-md rounded-2xl bg-card/50">
+                <CardHeader>
+                    <Skeleton className="h-6 w-64" />
+                    <Skeleton className="h-4 w-full mt-2" />
+                </CardHeader>
+                <CardContent>
+                    <div className="p-4 border rounded-lg bg-background space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Skeleton className="h-10 w-24" />
+                            <Skeleton className="h-10 w-24" />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+            {[...Array(2)].map((_, i) => (
+                 <Card key={i} className="w-full shadow-md rounded-2xl bg-card/50">
+                    <CardHeader>
+                        <Skeleton className="h-12 w-full" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </CardContent>
+                 </Card>
+            ))}
+        </div>
+    );
 }
 
 const CategoryCard = ({ category, onEdit, onDelete }: { category: Category, onEdit: () => void, onDelete: () => void }) => (
@@ -434,3 +460,5 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel, isGlobalFor
         </div>
     )
 };
+
+    

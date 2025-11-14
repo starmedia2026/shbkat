@@ -43,12 +43,7 @@ import {
   } from "@/components/ui/alert-dialog";
 import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
-
-const iconMap: { [key: string]: React.ElementType } = {
-  Wallet,
-  Building,
-  CircleDollarSign,
-};
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PaymentManagementPage() {
   const router = useRouter();
@@ -60,33 +55,37 @@ export default function PaymentManagementPage() {
     }
   }, [isAdmin, isAdminLoading, router]);
 
-  if (isAdminLoading || isAdmin === null) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <header className="p-4 flex items-center justify-between relative border-b">
-           <Button
+  return (
+    <div className="bg-background text-foreground min-h-screen pb-20">
+      <header className="p-4 flex items-center justify-between relative border-b sticky top-0 bg-background z-10">
+        <Button
             variant="ghost"
             size="icon"
             onClick={() => router.back()}
-          >
+        >
             <ArrowRight className="h-6 w-6" />
-          </Button>
-          <h1 className="text-lg font-normal text-right flex-grow mr-4">
-            إدارة طرق الدفع
-          </h1>
-        </header>
-        <main className="flex-grow flex items-center justify-center">
-            <p>جاري التحميل والتحقق...</p>
-        </main>
-      </div>
-    );
-  }
-
-  return <PaymentManagementContent />;
+        </Button>
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">
+          إدارة طرق الدفع
+        </h1>
+      </header>
+      <main className="p-4">
+        {isAdminLoading ? (
+            <LoadingSkeleton />
+        ) : isAdmin ? (
+            <PaymentManagementContent />
+        ) : (
+             <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
+                <h2 className="text-xl font-bold mt-4">وصول غير مصرح به</h2>
+                <p className="mt-2">أنت لا تملك الصلاحيات اللازمة لعرض هذه الصفحة.</p>
+            </div>
+        )}
+      </main>
+    </div>
+  );
 }
 
 function PaymentManagementContent() {
-  const router = useRouter();
   const { toast } = useToast();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(initialPaymentMethods);
   const [isSaving, setIsSaving] = useState(false);
@@ -138,7 +137,6 @@ function PaymentManagementContent() {
 
   const handleAddMethod = () => {
     const newId = `new-method-${Date.now()}`;
-    // A default new method structure. The theme will be a default one.
     const newMethod: PaymentMethod = { 
         id: newId, 
         name: "", 
@@ -146,7 +144,7 @@ function PaymentManagementContent() {
         accountName: "",
         accountNumber: "",
         logoUrl: "",
-        theme: { // Default theme
+        theme: {
             iconBg: "bg-gray-100 dark:bg-gray-900/50",
             iconColor: "text-gray-600 dark:text-gray-400",
             borderColor: "border-gray-500",
@@ -182,7 +180,6 @@ function PaymentManagementContent() {
 
   const cancelEditing = (methodId: string) => {
       const originalMethod = initialPaymentMethods.find(m => m.id === methodId);
-      // If it was a new method that was cancelled, remove it.
       if (!originalMethod) {
           setPaymentMethods(paymentMethods.filter(m => m.id !== methodId));
       }
@@ -190,27 +187,13 @@ function PaymentManagementContent() {
   }
 
   return (
-    <div className="bg-background text-foreground min-h-screen pb-20">
-      <header className="p-4 flex items-center justify-between relative border-b sticky top-0 bg-background z-10">
-        <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-        >
-            <ArrowRight className="h-6 w-6" />
-        </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">
-          إدارة طرق الدفع
-        </h1>
-        {isSaving && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin"/>
-                <span>جاري الحفظ...</span>
-            </div>
-        )}
-      </header>
-      <main className="p-4">
         <div className="space-y-6">
+          {isSaving && (
+                <div className="fixed top-4 right-4 z-50 flex items-center gap-2 text-sm bg-background p-2 rounded-lg border shadow-lg">
+                    <Loader2 className="h-4 w-4 animate-spin"/>
+                    <span>جاري الحفظ...</span>
+                </div>
+            )}
           {paymentMethods.map((method) => (
             <Card key={method.id} className="w-full shadow-md rounded-2xl bg-card/50">
                 {editingMethodId === method.id ? (
@@ -272,10 +255,36 @@ function PaymentManagementContent() {
             إضافة طريقة دفع جديدة
           </Button>
         </div>
-      </main>
-    </div>
   );
 }
+
+const LoadingSkeleton = () => (
+    <div className="space-y-6">
+        {[...Array(3)].map((_, i) => (
+            <Card key={i} className="w-full shadow-md rounded-2xl bg-card/50">
+                <CardHeader className="flex-row items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="w-10 h-10 rounded-full" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-5 w-32" />
+                            <Skeleton className="h-4 w-40" />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <Skeleton className="h-8 w-8" />
+                        <Skeleton className="h-8 w-8" />
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-2 pt-2">
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                </CardContent>
+            </Card>
+        ))}
+         <Skeleton className="h-10 w-full" />
+    </div>
+);
+
 
 const InfoRow = ({label, value, mono=false}: {label: string, value: string, mono?: boolean}) => (
     <div className="flex justify-between items-center text-sm p-2 rounded-md bg-muted/50">
@@ -321,3 +330,5 @@ const EditForm = ({ formData, setFormData, onSave, onCancel }: { formData: any, 
         </div>
     )
 };
+
+    

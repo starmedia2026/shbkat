@@ -96,33 +96,37 @@ export default function AppSettingsPage() {
     }
   }, [isAdmin, isAdminLoading, router]);
 
-  if (isAdminLoading || isAdmin === null) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <header className="p-4 flex items-center justify-between relative border-b">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-          >
-            <ArrowRight className="h-6 w-6" />
-          </Button>
-          <h1 className="text-lg font-normal text-right flex-grow mr-4">
-            إعدادات التطبيق
-          </h1>
-        </header>
-        <main className="flex-grow flex items-center justify-center">
-          <p>جاري التحميل والتحقق...</p>
-        </main>
-      </div>
-    );
-  }
-  
-  return <AppSettingsContent />;
+  return (
+     <div className="bg-background text-foreground min-h-screen pb-20">
+      <header className="p-4 flex items-center justify-between relative border-b sticky top-0 bg-background z-10">
+         <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.back()}
+        >
+          <ArrowRight className="h-6 w-6" />
+        </Button>
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">
+          إعدادات التطبيق
+        </h1>
+      </header>
+      <main className="p-4 space-y-6">
+        {isAdminLoading ? (
+            <LoadingSkeleton />
+        ) : isAdmin ? (
+            <AppSettingsContent />
+        ) : (
+             <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
+                <h2 className="text-xl font-bold mt-4">وصول غير مصرح به</h2>
+                <p className="mt-2">أنت لا تملك الصلاحيات اللازمة لعرض هذه الصفحة.</p>
+            </div>
+        )}
+      </main>
+    </div>
+  );
 }
 
 function AppSettingsContent() {
-  const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -266,26 +270,7 @@ function AppSettingsContent() {
   const isLoading = isAppLoading || isHomeLoading;
 
   return (
-    <div className="bg-background text-foreground min-h-screen pb-20">
-      <header className="p-4 flex items-center justify-between relative border-b sticky top-0 bg-background z-10">
-         <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-        >
-          <ArrowRight className="h-6 w-6" />
-        </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">
-          إعدادات التطبيق
-        </h1>
-         {isSaving && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin"/>
-                <span>جاري الحفظ...</span>
-            </div>
-        )}
-      </header>
-      <main className="p-4 space-y-6">
+    <>
         <Card className="w-full shadow-lg rounded-2xl">
           <CardHeader>
             <CardTitle>الإعدادات العامة</CardTitle>
@@ -414,9 +399,7 @@ function AppSettingsContent() {
                 onSave={isNewService ? handleAddNewService : handleServiceUpdate}
             />
         )}
-
-      </main>
-    </div>
+    </>
   );
 }
 
@@ -461,3 +444,33 @@ function EditServiceDialog({ service, isOpen, isNew, onClose, onSave }: { servic
         </Dialog>
     );
 }
+
+function LoadingSkeleton() {
+    return (
+        <>
+            <Card className="w-full shadow-lg rounded-2xl">
+                <CardHeader>
+                    <Skeleton className="h-6 w-32" />
+                    <Skeleton className="h-4 w-48 mt-2" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full mt-2" />
+                </CardContent>
+            </Card>
+            <Card className="w-full shadow-lg rounded-2xl">
+                <CardHeader>
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-4 w-64 mt-2" />
+                </CardHeader>
+                <CardContent className="space-y-2">
+                    {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+                </CardContent>
+            </Card>
+        </>
+    );
+}
+
+    

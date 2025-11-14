@@ -44,30 +44,6 @@ interface CardInput {
   cardNumber: string;
 }
 
-function LoadingScreen() {
-    const router = useRouter();
-    return (
-        <div className="flex flex-col min-h-screen">
-            <header className="p-4 flex items-center justify-between relative border-b">
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.back()}
-            >
-                <ArrowRight className="h-6 w-6" />
-            </Button>
-            <h1 className="text-lg font-normal text-right flex-grow mr-4">
-                إدارة الكروت
-            </h1>
-            </header>
-            <main className="flex-grow flex items-center justify-center">
-            <p>جاري التحميل والتحقق...</p>
-            </main>
-        </div>
-    );
-}
-
-
 export default function CardManagementPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
@@ -78,16 +54,39 @@ export default function CardManagementPage() {
     }
   }, [isAdmin, isAdminLoading, router]);
 
-  if (isAdminLoading || isAdmin === null) {
-    return <LoadingScreen />;
-  }
 
-  return <CardManagementContent />;
+  return (
+    <div className="bg-background text-foreground min-h-screen">
+      <header className="p-4 flex items-center justify-between relative border-b">
+         <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.back()}
+        >
+          <ArrowRight className="h-6 w-6" />
+        </Button>
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">
+          إدارة الكروت
+        </h1>
+      </header>
+      <main className="p-4">
+        {isAdminLoading ? (
+            <LoadingSkeleton />
+        ) : isAdmin ? (
+            <CardManagementContent />
+        ) : (
+             <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
+                <h2 className="text-xl font-bold mt-4">وصول غير مصرح به</h2>
+                <p className="mt-2">أنت لا تملك الصلاحيات اللازمة لعرض هذه الصفحة.</p>
+            </div>
+        )}
+      </main>
+    </div>
+  );
 }
 
 
 function CardManagementContent() {
-  const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -217,20 +216,6 @@ function CardManagementContent() {
   };
 
   return (
-    <div className="bg-background text-foreground min-h-screen">
-      <header className="p-4 flex items-center justify-between relative border-b">
-         <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-        >
-          <ArrowRight className="h-6 w-6" />
-        </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">
-          إدارة الكروت
-        </h1>
-      </header>
-      <main className="p-4">
         <Card className="w-full shadow-lg rounded-2xl">
           <CardHeader>
             <CardTitle>إضافة كروت شحن جديدة</CardTitle>
@@ -332,7 +317,29 @@ function CardManagementContent() {
             )}
           </CardContent>
         </Card>
-      </main>
-    </div>
   );
 }
+
+function LoadingSkeleton() {
+    return (
+        <Card className="w-full shadow-lg rounded-2xl">
+            <CardHeader>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-48 w-full" />
+                </div>
+                <Skeleton className="h-10 w-full" />
+            </CardContent>
+        </Card>
+    );
+}
+
+    

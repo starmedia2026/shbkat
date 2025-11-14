@@ -93,25 +93,6 @@ const networkLookup = networks.reduce((acc, net) => {
 }, {} as Record<string, { name: string; categories: Record<string, { name: string; price: number }> }>);
 
 
-function LoadingScreen() {
-    const router = useRouter();
-    return (
-        <div className="flex flex-col min-h-screen">
-            <header className="p-4 flex items-center justify-between relative border-b">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowRight className="h-6 w-6" />
-                </Button>
-                <h1 className="text-lg font-normal text-right flex-grow mr-2">
-                    تقرير مبيعات الكروت
-                </h1>
-            </header>
-            <main className="flex-grow flex items-center justify-center">
-                <p>جاري التحميل والتحقق...</p>
-            </main>
-        </div>
-    );
-}
-
 export default function CardSalesPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
@@ -122,35 +103,56 @@ export default function CardSalesPage() {
     }
   }, [isAdmin, isAdminLoading, router]);
 
-  if (isAdminLoading || isAdmin === null) {
-    return <LoadingScreen />;
-  }
-
-  return <CardSalesContent />;
+  return (
+    <div className="bg-background text-foreground min-h-screen">
+      <header className="p-4 flex items-center justify-between relative border-b">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.back()}
+        >
+          <ArrowRight className="h-6 w-6" />
+        </Button>
+        <h1 className="text-lg font-normal text-right flex-grow mr-2">
+          تقرير مبيعات الكروت
+        </h1>
+      </header>
+      <main className="p-4">
+        {isAdminLoading ? (
+            <LoadingSkeleton />
+        ) : isAdmin ? (
+            <CardSalesContent />
+        ) : (
+            <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
+                <h2 className="text-xl font-bold mt-4">وصول غير مصرح به</h2>
+                <p className="mt-2">أنت لا تملك الصلاحيات اللازمة لعرض هذه الصفحة.</p>
+            </div>
+        )}
+      </main>
+    </div>
+  );
 }
 
 function CardSalesContent() {
-  const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { isAdmin } = useAdmin();
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
-  // Fetch all cards
   const cardsCollectionRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAdmin) return null;
     return query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
-  }, [firestore]);
-  const { data: cards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
+  }, [firestore, isAdmin]);
 
-  // Fetch all customers, including their balance now
   const customersCollectionRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAdmin) return null;
     return collection(firestore, "customers");
-  }, [firestore]);
+  }, [firestore, isAdmin]);
+
+  const { data: cards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
   const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(customersCollectionRef);
 
-  // Create a map of customer UID to customer data for easy lookup
   const customerMap = useMemo(() => {
     if (!customers) return new Map<string, Customer>();
     return new Map(customers.map(c => [c.id, c]));
@@ -221,100 +223,94 @@ function CardSalesContent() {
   };
 
   return (
-    <div className="bg-background text-foreground min-h-screen">
-      <header className="p-4 flex items-center justify-between relative border-b">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-        >
-          <ArrowRight className="h-6 w-6" />
-        </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-2">
-          تقرير مبيعات الكروت
-        </h1>
-      </header>
-      <main className="p-4">
-        <Tabs defaultValue="sold" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="sold" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:border-destructive/20 border-2 border-transparent">
-                مباعة ({isLoading ? '...' : soldCards.length})
-            </TabsTrigger>
-            <TabsTrigger value="available" className="data-[state=active]:bg-green-500/10 data-[state=active]:text-green-600 data-[state=active]:border-green-500/20 border-2 border-transparent">
-                متوفرة ({isLoading ? '...' : availableCards.length})
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="sold" className="mt-4 space-y-4">
-             <Card>
-                <CardContent className="p-4 flex flex-col sm:flex-row gap-4 items-center">
-                    <Popover>
-                        <PopoverTrigger asChild>
-                        <Button
-                            variant={"outline"}
-                            className={cn(
-                            "w-full sm:w-[300px] justify-start text-left font-normal",
-                            !dateRange && "text-muted-foreground"
-                            )}
-                        >
-                            <CalendarIcon className="ml-2 h-4 w-4" />
-                            {dateRange?.from ? (
-                            dateRange.to ? (
-                                <>
-                                {format(dateRange.from, "LLL dd, y", { locale: ar })} -{" "}
-                                {format(dateRange.to, "LLL dd, y", { locale: ar })}
-                                </>
-                            ) : (
-                                format(dateRange.from, "LLL dd, y", { locale: ar })
-                            )
-                            ) : (
-                            <span>اختر نطاق التاريخ</span>
-                            )}
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                            initialFocus
-                            mode="range"
-                            defaultMonth={dateRange?.from}
-                            selected={dateRange}
-                            onSelect={setDateRange}
-                            numberOfMonths={2}
-                            locale={ar}
-                        />
-                        </PopoverContent>
-                    </Popover>
-                    <Button onClick={handleCopyToClipboard} className="w-full sm:w-auto" disabled={filteredSoldCards.length === 0}>
-                        <Copy className="ml-2 h-4 w-4" />
-                        نسخ البيانات ({filteredSoldCards.length})
+    <Tabs defaultValue="sold" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="sold" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:border-destructive/20 border-2 border-transparent">
+            مباعة ({isLoading ? '...' : soldCards.length})
+        </TabsTrigger>
+        <TabsTrigger value="available" className="data-[state=active]:bg-green-500/10 data-[state=active]:text-green-600 data-[state=active]:border-green-500/20 border-2 border-transparent">
+            متوفرة ({isLoading ? '...' : availableCards.length})
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="sold" className="mt-4 space-y-4">
+         <Card>
+            <CardContent className="p-4 flex flex-col sm:flex-row gap-4 items-center">
+                <Popover>
+                    <PopoverTrigger asChild>
+                    <Button
+                        variant={"outline"}
+                        className={cn(
+                        "w-full sm:w-[300px] justify-start text-left font-normal",
+                        !dateRange && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {dateRange?.from ? (
+                        dateRange.to ? (
+                            <>
+                            {format(dateRange.from, "LLL dd, y", { locale: ar })} -{" "}
+                            {format(dateRange.to, "LLL dd, y", { locale: ar })}
+                            </>
+                        ) : (
+                            format(dateRange.from, "LLL dd, y", { locale: ar })
+                        )
+                        ) : (
+                        <span>اختر نطاق التاريخ</span>
+                        )}
                     </Button>
-                </CardContent>
-            </Card>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={dateRange?.from}
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        numberOfMonths={2}
+                        locale={ar}
+                    />
+                    </PopoverContent>
+                </Popover>
+                <Button onClick={handleCopyToClipboard} className="w-full sm:w-auto" disabled={filteredSoldCards.length === 0}>
+                    <Copy className="ml-2 h-4 w-4" />
+                    نسخ البيانات ({filteredSoldCards.length})
+                </Button>
+            </CardContent>
+        </Card>
 
-            {isLoading ? (
-                [...Array(3)].map((_, i) => <CardSkeleton key={i} />)
-            ) : filteredSoldCards.length > 0 ? (
-                filteredSoldCards.map((card) => (
-                    <SoldCardItem key={card.id} card={card} customer={card.usedBy ? customerMap.get(card.usedBy) : undefined} />
-                ))
-            ) : (
-                <p className="text-center text-muted-foreground pt-10">{soldCards.length > 0 ? "لا توجد مبيعات في هذا النطاق الزمني." : "لا توجد كروت مباعة."}</p>
-            )}
-          </TabsContent>
-          <TabsContent value="available" className="mt-4 space-y-4">
-             {isLoading ? (
-                [...Array(3)].map((_, i) => <CardSkeleton key={i} />)
-            ) : availableCards.length > 0 ? (
-                availableCards.map((card) => (
-                    <AvailableCardItem key={card.id} card={card} />
-                ))
-            ) : (
-                <p className="text-center text-muted-foreground pt-10">لا توجد كروت متوفرة حالياً.</p>
-            )}
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+        {isLoading ? (
+            [...Array(3)].map((_, i) => <CardSkeleton key={i} />)
+        ) : filteredSoldCards.length > 0 ? (
+            filteredSoldCards.map((card) => (
+                <SoldCardItem key={card.id} card={card} customer={card.usedBy ? customerMap.get(card.usedBy) : undefined} />
+            ))
+        ) : (
+            <p className="text-center text-muted-foreground pt-10">{soldCards.length > 0 ? "لا توجد مبيعات في هذا النطاق الزمني." : "لا توجد كروت مباعة."}</p>
+        )}
+      </TabsContent>
+      <TabsContent value="available" className="mt-4 space-y-4">
+         {isLoading ? (
+            [...Array(3)].map((_, i) => <CardSkeleton key={i} />)
+        ) : availableCards.length > 0 ? (
+            availableCards.map((card) => (
+                <AvailableCardItem key={card.id} card={card} />
+            ))
+        ) : (
+            <p className="text-center text-muted-foreground pt-10">لا توجد كروت متوفرة حالياً.</p>
+        )}
+      </TabsContent>
+    </Tabs>
   );
+}
+
+function LoadingSkeleton() {
+    return (
+        <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-20 w-full" />
+            {[...Array(4)].map((_, i) => <CardSkeleton key={i} />)}
+        </div>
+    );
 }
 
 function SoldCardItem({ card, customer }: { card: CardData; customer?: Customer }) {
@@ -327,6 +323,7 @@ function SoldCardItem({ card, customer }: { card: CardData; customer?: Customer 
     const { toast } = useToast();
 
     const copyToClipboard = (text: string) => {
+        if (!text) return;
         navigator.clipboard.writeText(text).then(() => {
             toast({ title: "تم النسخ!", description: "تم نسخ رقم الكرت إلى الحافظة." });
         }).catch(err => {
@@ -438,6 +435,7 @@ function AvailableCardItem({ card }: { card: CardData }) {
      const { toast } = useToast();
 
     const copyToClipboard = (text: string) => {
+        if (!text) return;
         navigator.clipboard.writeText(text).then(() => {
             toast({ title: "تم النسخ!", description: "تم نسخ رقم الكرت إلى الحافظة." });
         }).catch(err => {
@@ -490,5 +488,7 @@ function CardSkeleton() {
         </Card>
     );
 }
+
+    
 
     

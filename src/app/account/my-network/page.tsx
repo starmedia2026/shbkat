@@ -25,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { networks as initialNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -45,7 +45,7 @@ import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { writeBatch, collection, doc } from "firebase/firestore";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 interface Category {
@@ -65,24 +65,6 @@ interface Network {
   categories: Category[];
 }
 
-function LoadingScreen() {
-    const router = useRouter();
-    return (
-        <div className="flex flex-col min-h-screen">
-            <header className="p-4 flex items-center justify-between relative border-b">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowRight className="h-6 w-6" />
-                </Button>
-                <h1 className="text-lg font-normal text-right flex-grow mr-4">
-                    إدارة شبكتي
-                </h1>
-            </header>
-            <main className="flex-grow flex items-center justify-center">
-                <p>جاري التحميل والتحقق...</p>
-            </main>
-        </div>
-    );
-}
 
 export default function MyNetworkPage() {
   const router = useRouter();
@@ -94,15 +76,37 @@ export default function MyNetworkPage() {
     }
   }, [isOwner, isLoading, router]);
 
-  if (isLoading || isOwner === null) {
-    return <LoadingScreen />;
-  }
-
-  return <MyNetworkContent initialNetwork={ownedNetwork} />;
+  return (
+    <div className="bg-background text-foreground min-h-screen pb-20">
+      <header className="p-4 flex items-center justify-between relative border-b sticky top-0 bg-background z-10">
+        <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+        >
+            <ArrowRight className="h-6 w-6" />
+        </Button>
+        <h1 className="text-lg font-normal text-right flex-grow mr-4">
+          إدارة شبكتي
+        </h1>
+      </header>
+      <main className="p-4">
+        {isLoading ? (
+            <LoadingSkeleton />
+        ) : isOwner ? (
+            <MyNetworkContent initialNetwork={ownedNetwork} />
+        ) : (
+             <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
+                <h2 className="text-xl font-bold mt-4">وصول غير مصرح به</h2>
+                <p className="mt-2">أنت لا تملك الصلاحيات اللازمة لعرض هذه الصفحة.</p>
+            </div>
+        )}
+      </main>
+    </div>
+  );
 }
 
 function MyNetworkContent({ initialNetwork }: { initialNetwork: Network | null }) {
-  const router = useRouter();
   const { toast } = useToast();
   const [network, setNetwork] = useState<Network | null>(initialNetwork);
   const [isSaving, setIsSaving] = useState(false);
@@ -210,27 +214,13 @@ function MyNetworkContent({ initialNetwork }: { initialNetwork: Network | null }
   };
   
   return (
-    <div className="bg-background text-foreground min-h-screen pb-20">
-      <header className="p-4 flex items-center justify-between relative border-b sticky top-0 bg-background z-10">
-        <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-        >
-            <ArrowRight className="h-6 w-6" />
-        </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">
-          إدارة شبكتي
-        </h1>
-        {isSaving && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin"/>
-                <span>جاري الحفظ...</span>
-            </div>
-        )}
-      </header>
-      <main className="p-4">
         <div className="space-y-6">
+             {isSaving && (
+                <div className="fixed top-4 right-4 z-50 flex items-center gap-2 text-sm bg-background p-2 rounded-lg border shadow-lg">
+                    <Loader2 className="h-4 w-4 animate-spin"/>
+                    <span>جاري الحفظ...</span>
+                </div>
+            )}
             {network ? (
                 <Card key={network.id} className="w-full shadow-md rounded-2xl bg-card/50">
                 <CardHeader className="flex-row items-center justify-between">
@@ -312,9 +302,29 @@ function MyNetworkContent({ initialNetwork }: { initialNetwork: Network | null }
                 </Button>
             )}
         </div>
-      </main>
-    </div>
   );
+}
+
+function LoadingSkeleton() {
+    return (
+        <Card className="w-full shadow-md rounded-2xl bg-card/50">
+            <CardHeader className="flex-row items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-4 w-24" />
+                    </div>
+                </div>
+                <Skeleton className="h-8 w-8" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </CardContent>
+        </Card>
+    );
 }
 
 const CategoryCard = ({ category, networkId, onEdit, onDelete }: { category: Category, networkId: string, onEdit: () => void, onDelete: () => void }) => {
