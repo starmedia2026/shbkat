@@ -24,7 +24,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, errorEmitter, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, deleteDoc, writeBatch, runTransaction, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, doc, deleteDoc, writeBatch, runTransaction, getDocs, where } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -106,13 +106,15 @@ const networkLookup = networks.reduce((acc, net) => {
 
 export default function CardSalesPage() {
   const router = useRouter();
-  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+  const { isAdmin, isOwner, isLoading: areRolesLoading } = useAdmin();
+
+  const canViewPage = isAdmin || isOwner;
 
   useEffect(() => {
-    if (!isAdminLoading && isAdmin === false) {
+    if (!areRolesLoading && !canViewPage) {
       router.replace("/account");
     }
-  }, [isAdmin, isAdminLoading, router]);
+  }, [areRolesLoading, canViewPage, router]);
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -129,9 +131,9 @@ export default function CardSalesPage() {
         </h1>
       </header>
       <main className="p-4">
-        {isAdminLoading ? (
+        {areRolesLoading ? (
             <LoadingSkeleton />
-        ) : isAdmin ? (
+        ) : canViewPage ? (
             <CardSalesContent />
         ) : (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
@@ -146,12 +148,26 @@ export default function CardSalesPage() {
 
 function CardSalesContent() {
     const firestore = useFirestore();
-    const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+    const { user } = useUser();
+    const { isAdmin, isOwner, isLoading: areRolesLoading } = useAdmin();
 
+    const ownedNetwork = useMemo(() => {
+        if (!isOwner || !user || !user.email) return null;
+        const phone = user.email.split('@')[0];
+        return networks.find(n => n.ownerPhone === phone) || null;
+    }, [isOwner, user]);
+    
+    // Admin sees all cards. Owner sees only their network's cards.
     const cardsCollectionRef = useMemoFirebase(() => {
-        if (!firestore || !isAdmin) return null;
-        return query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
-    }, [firestore, isAdmin]);
+        if (!firestore) return null;
+        if (isAdmin) {
+             return query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
+        }
+        if (isOwner && ownedNetwork) {
+             return query(collection(firestore, "cards"), where("networkId", "==", ownedNetwork.id), orderBy("usedAt", "desc"));
+        }
+        return null;
+    }, [firestore, isAdmin, isOwner, ownedNetwork]);
 
     const { data: allCards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
 
@@ -159,10 +175,15 @@ function CardSalesContent() {
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
 
     useEffect(() => {
-        if (!firestore || !isAdmin) {
+        if (!firestore) {
             setIsLoadingCustomers(false);
             return;
         };
+        // Only admins need to fetch all customers
+        if (!isAdmin) {
+            setIsLoadingCustomers(false);
+            return;
+        }
 
         const fetchCustomers = async () => {
             setIsLoadingCustomers(true);
@@ -178,12 +199,19 @@ function CardSalesContent() {
 
         fetchCustomers();
     }, [firestore, isAdmin]);
+    
+    const networksToDisplay = useMemo(() => {
+        if (isAdmin) return networks;
+        if (isOwner && ownedNetwork) return [ownedNetwork];
+        return [];
+    }, [isAdmin, isOwner, ownedNetwork]);
 
-    const isLoading = areCardsLoading || isLoadingCustomers || isAdminLoading;
+
+    const isLoading = areCardsLoading || isLoadingCustomers || areRolesLoading;
 
     return (
-        <Accordion type="single" collapsible className="w-full space-y-4">
-            {networks.map(network => (
+        <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={isOwner && ownedNetwork ? ownedNetwork.id : undefined}>
+            {networksToDisplay.map(network => (
                 <NetworkAccordionItem 
                     key={network.id} 
                     network={network} 
@@ -212,11 +240,29 @@ function NetworkAccordionItem({ network, allCards, customerMap, isLoading } : { 
 
     const getOwner = (phone: string | undefined): Customer | undefined => {
         if (!phone) return undefined;
-        const owner = Array.from(customerMap.values()).find(c => c.phoneNumber === phone && c.accountType === 'network-owner');
-        return owner;
+        // Search the customerMap for a user with matching phone and network-owner type
+        for (const customer of customerMap.values()) {
+            if (customer.phoneNumber === phone && customer.accountType === 'network-owner') {
+                return customer;
+            }
+        }
+        return undefined;
     }
 
-    const networkOwner = getOwner(network.ownerPhone);
+    const [networkOwner, setNetworkOwner] = useState<Customer | null>(null);
+
+    useEffect(() => {
+        const findOwner = async () => {
+            if (!firestore || !network.ownerPhone) return;
+            const q = query(collection(firestore, "customers"), where("phoneNumber", "==", network.ownerPhone), where("accountType", "==", "network-owner"), limit(1));
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) {
+                const ownerData = snapshot.docs[0];
+                setNetworkOwner({ id: ownerData.id, ...ownerData.data() } as Customer);
+            }
+        };
+        findOwner();
+    }, [firestore, network.ownerPhone]);
     
 
     return (
@@ -279,7 +325,7 @@ function LoadingSkeleton() {
     );
 }
 
-function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardData; customer?: Customer, networkOwner?: Customer, firestore: any }) {
+function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardData; customer?: Customer, networkOwner?: Customer | null, firestore: any }) {
     const networkName = networkLookup[card.networkId]?.name || 'شبكة غير معروفة';
     const categoryInfo = networkLookup[card.networkId]?.categories[card.categoryId];
     const categoryName = categoryInfo?.name || 'فئة غير معروفة';

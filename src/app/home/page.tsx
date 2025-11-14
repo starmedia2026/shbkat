@@ -23,6 +23,8 @@ import {
   Ticket,
   Banknote,
   ArrowDown,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,12 +40,20 @@ import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { useAdmin } from "@/hooks/useAdmin";
+import { networks } from "@/lib/networks";
 
 
 interface Notification {
     id: string;
     read: boolean;
 }
+
+interface CardData {
+    id: string;
+    networkId: string;
+    status: "available" | "used" | "transferred";
+}
+
 
 interface Advert {
     id: string;
@@ -286,10 +296,11 @@ export default function HomePage() {
                 <div className="flex justify-between items-center px-2">
                     <h3 className="text-base font-bold">لوحة تحكم مالك الشبكة</h3>
                 </div>
-                 <div className="grid grid-cols-3 gap-3 text-center">
+                 <div className="grid grid-cols-2 gap-3 text-center">
                     <ServiceGridItem href="/account/my-network" label="إدارة شبكتي" id="my-network" IconProp={Briefcase} />
                     <ServiceGridItem href="/withdraw" label="سحب" id="withdraw" IconProp={Banknote} />
                 </div>
+                <NetworkOwnerStats />
             </div>
         )}
 
@@ -448,5 +459,56 @@ function LastOperationItem({ operation }: { operation: Operation }) {
                  </p>
             </CardContent>
         </Card>
+    );
+}
+
+function NetworkOwnerStats() {
+    const firestore = useFirestore();
+    const { user } = useUser();
+    const [stats, setStats] = useState<{ sold: number, available: number }>({ sold: 0, available: 0 });
+
+    const ownedNetwork = useMemo(() => {
+        if (!user || !user.email) return null;
+        const phone = user.email.split('@')[0];
+        return networks.find(n => n.ownerPhone === phone) || null;
+    }, [user]);
+
+    const cardsQuery = useMemoFirebase(() => {
+        if (!firestore || !ownedNetwork) return null;
+        return query(collection(firestore, "cards"), where("networkId", "==", ownedNetwork.id));
+    }, [firestore, ownedNetwork]);
+
+    const { data: cards, isLoading } = useCollection<CardData>(cardsQuery);
+    
+    useEffect(() => {
+        if (cards) {
+            const soldCount = cards.filter(c => c.status === 'used' || c.status === 'transferred').length;
+            const availableCount = cards.filter(c => c.status === 'available').length;
+            setStats({ sold: soldCount, available: availableCount });
+        }
+    }, [cards]);
+
+    return (
+        <Link href="/account/card-sales">
+            <Card className="w-full shadow-lg rounded-2xl bg-card">
+                <CardContent className="p-4 flex justify-between items-center">
+                    <div className="flex-1 space-y-1 text-right">
+                        <div className="flex items-center justify-end gap-2 text-red-500">
+                             <h4 className="font-bold">{isLoading ? <Skeleton className="h-5 w-8 inline-block"/> : stats.sold}</h4>
+                             <p className="text-sm">كرت مباع</p>
+                             <XCircle className="h-5 w-5" />
+                        </div>
+                         <div className="flex items-center justify-end gap-2 text-green-500">
+                             <h4 className="font-bold">{isLoading ? <Skeleton className="h-5 w-8 inline-block"/> : stats.available}</h4>
+                             <p className="text-sm">كرت متوفر</p>
+                             <CheckCircle className="h-5 w-5" />
+                        </div>
+                    </div>
+                     <div className="p-3 bg-muted rounded-full ml-4">
+                        <BarChart3 className="h-6 w-6 text-primary" />
+                    </div>
+                </CardContent>
+            </Card>
+        </Link>
     );
 }
