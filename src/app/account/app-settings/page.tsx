@@ -495,7 +495,7 @@ function LocationManagementCard() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteLocation(location.id)}>تأكيد</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => handleDeleteLocation(location.id)}>تأكيد الحذف</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
@@ -631,3 +631,5 @@ function LoadingSkeleton() {
         </>
     );
 }
+
+    
