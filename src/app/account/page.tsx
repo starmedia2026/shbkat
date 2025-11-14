@@ -213,7 +213,9 @@ export default function AccountPage() {
       navigator.share(shareData).catch((error) => {
         // If sharing fails (e.g., permission denied, user cancellation), fall back to copying.
         // We don't need to show an error for user cancellation (AbortError).
-        fallbackCopy();
+        if (error.name !== 'AbortError') {
+          fallbackCopy();
+        }
       });
     } else {
       // Fallback for browsers that don't support the Web Share API
@@ -447,3 +449,4 @@ function AccountItem({
     
 
     
+
