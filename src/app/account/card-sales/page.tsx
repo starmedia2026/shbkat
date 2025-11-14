@@ -156,13 +156,13 @@ function CardSalesContent() {
     return query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
   }, [firestore, isAdmin]);
 
-  const customersCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
-    return collection(firestore, "customers");
-  }, [firestore, isAdmin]);
-
   const { data: cards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
-  const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(customersCollectionRef);
+  const { data: customers, isLoading: areCustomersLoading } = useCollection<Customer>(
+    useMemoFirebase(() => {
+      if (!firestore || !isAdmin) return null;
+      return collection(firestore, "customers");
+    }, [firestore, isAdmin])
+  );
 
   const customerMap = useMemo(() => {
     if (!customers) return new Map<string, Customer>();
@@ -533,6 +533,8 @@ function CardSkeleton() {
     );
 }
 
+
+    
 
     
 
