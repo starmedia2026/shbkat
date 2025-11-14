@@ -95,16 +95,14 @@ export default function WithdrawalRequestsPage() {
 
 function WithdrawalRequestsContent() {
   const firestore = useFirestore();
-  const { isAdmin } = useAdmin(); // We get isAdmin here to use in the query dependency array
-
+  
   const withdrawalRequestsQuery = useMemoFirebase(() => {
-    // Only construct the query if firestore is available AND the user is confirmed to be an admin.
-    if (!firestore || isAdmin !== true) return null;
+    if (!firestore) return null;
     return query(
       collectionGroup(firestore, "operations"), 
       where("type", "==", "withdraw")
     );
-  }, [firestore, isAdmin]); // Add isAdmin to the dependency array
+  }, [firestore]);
   
   const { data: operations, isLoading } = useCollection<Operation>(withdrawalRequestsQuery, {
       transform: (doc) => ({
@@ -263,5 +261,3 @@ function RequestCardSkeleton() {
         </Card>
     );
 }
-
-    
