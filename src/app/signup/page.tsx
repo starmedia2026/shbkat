@@ -68,8 +68,8 @@ export default function SignupPage() {
     setError("");
     setIsLoading(true);
 
-    if (name.trim().split(/\s+/).length < 3) {
-      const msg = "الرجاء إدخال اسمك الثلاثي على الأقل.";
+    if (name.trim().split(/\s+/).length < 4) {
+      const msg = "الرجاء إدخال اسمك الرباعي على الأقل.";
       setError(msg);
       toast({ variant: "destructive", title: "خطأ في الإدخال", description: msg });
       setIsLoading(false);
@@ -219,7 +219,7 @@ export default function SignupPage() {
             <CardContent className="grid gap-4">
               <div className="grid gap-2 text-right">
                 <Label htmlFor="name">الاسم</Label>
-                <Input id="name" placeholder="الاسم الثلاثي الكامل" required value={name} onChange={(e) => setName(e.target.value)} />
+                <Input id="name" placeholder="الاسم الرباعي الكامل" required value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="grid gap-2 text-right">
                 <Label htmlFor="phone">رقم الهاتف (9 أرقام)</Label>
@@ -337,5 +337,3 @@ export default function SignupPage() {
     </main>
   );
 }
-
-    
