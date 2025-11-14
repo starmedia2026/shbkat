@@ -15,7 +15,7 @@ import {
   ChevronDown,
   CheckCircle,
   XCircle,
-  BarChart3,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -402,8 +402,8 @@ const CategoryStats = ({ networkId, categoryId }: { networkId: string, categoryI
             </div>
              <Link href={`/account/card-sales?network=${networkId}&category=${categoryId}`}>
                 <Button variant="outline" size="sm">
-                    <BarChart3 className="h-4 w-4 ml-2" />
-                    عرض التقرير
+                    <CreditCard className="h-4 w-4 ml-2" />
+                    عرض الكروت
                 </Button>
             </Link>
         </div>
@@ -595,6 +595,8 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
+
+    
 
     
 
