@@ -3,24 +3,25 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, ArrowUp, ArrowDown, CreditCard, History, Coins, Send, Copy, ChevronLeft, Banknote } from "lucide-react";
+import { ArrowRight, ArrowUp, ArrowDown, CreditCard, History, Coins, Send, Copy, ChevronLeft, Banknote, Archive } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
+import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { collection, query, orderBy, writeBatch, getDocs } from "firebase/firestore";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 
@@ -47,6 +48,7 @@ export default function OperationsPage() {
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const operationsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -58,11 +60,59 @@ export default function OperationsPage() {
 
   const { data: operations, isLoading } = useCollection<Operation>(operationsQuery);
 
+  const handleArchiveAll = async () => {
+    if (!firestore || !user?.uid || !operations || operations.length === 0) {
+      toast({ variant: 'destructive', title: 'خطأ', description: 'لا توجد عمليات لأرشفتها.' });
+      return;
+    }
+    
+    const batch = writeBatch(firestore);
+    const operationsCollectionRef = collection(firestore, `customers/${user.uid}/operations`);
+
+    try {
+        const querySnapshot = await getDocs(operationsCollectionRef);
+        querySnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+        toast({ title: 'نجاح', description: 'تمت أرشفة جميع العمليات بنجاح.' });
+    } catch(e) {
+         const permissionError = new FirestorePermissionError({
+            path: `customers/${user.uid}/operations`,
+            operation: 'delete',
+            requestResourceData: {note: `Attempted to batch delete all operations for user ${user.uid}`}
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    }
+  };
+
+
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
         <BackButton />
         <h1 className="text-lg font-normal text-right flex-grow mr-4">العمليات</h1>
+        {operations && operations.length > 0 && (
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="ml-auto">
+                        <Archive className="h-5 w-5" />
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>تأكيد الأرشفة</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            هل أنت متأكد من رغبتك في أرشفة جميع عملياتك؟ هذا الإجراء سيقوم بحذفها نهائياً ولا يمكن التراجع عنه.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleArchiveAll}>تأكيد الأرشفة</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        )}
       </header>
       <main className="p-4 space-y-4">
         {isLoading ? (

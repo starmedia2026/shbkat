@@ -3,14 +3,25 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, ArrowUp, ArrowDown, CreditCard, BellRing, Coins, Copy, Banknote } from "lucide-react";
+import { ArrowRight, ArrowUp, ArrowDown, CreditCard, BellRing, Coins, Copy, Banknote, Archive } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
+import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { collection, query, orderBy, writeBatch, getDocs } from "firebase/firestore";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { Button as UIButton } from "@/components/ui/button";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 interface Notification {
@@ -37,6 +48,7 @@ export default function NotificationsPage() {
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -47,6 +59,32 @@ export default function NotificationsPage() {
   }, [firestore, user?.uid]);
 
   const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
+
+  const handleArchiveAll = async () => {
+    if (!firestore || !user?.uid || !notifications || notifications.length === 0) {
+      toast({ variant: 'destructive', title: 'خطأ', description: 'لا توجد إشعارات لأرشفتها.' });
+      return;
+    }
+    
+    const batch = writeBatch(firestore);
+    const notificationsCollectionRef = collection(firestore, `customers/${user.uid}/notifications`);
+
+    try {
+        const querySnapshot = await getDocs(notificationsCollectionRef);
+        querySnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+        toast({ title: 'نجاح', description: 'تمت أرشفة جميع الإشعارات بنجاح.' });
+    } catch(e) {
+         const permissionError = new FirestorePermissionError({
+            path: `customers/${user.uid}/notifications`,
+            operation: 'delete',
+            requestResourceData: {note: `Attempted to batch delete all notifications for user ${user.uid}`}
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    }
+  };
   
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -59,6 +97,27 @@ export default function NotificationsPage() {
           <ArrowRight className="h-6 w-6" />
         </Button>
         <h1 className="text-lg font-normal text-right flex-grow mr-4">الإشعارات</h1>
+         {notifications && notifications.length > 0 && (
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <UIButton variant="ghost" size="icon" className="ml-auto">
+                        <Archive className="h-5 w-5" />
+                    </UIButton>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>تأكيد الأرشفة</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            هل أنت متأكد من رغبتك في أرشفة جميع إشعاراتك؟ هذا الإجراء سيقوم بحذفها نهائياً ولا يمكن التراجع عنه.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleArchiveAll}>تأكيد الأرشفة</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        )}
       </header>
       <main className="p-4 space-y-4">
         {isLoading ? (
