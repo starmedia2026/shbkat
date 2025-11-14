@@ -89,7 +89,7 @@ export default function TransferPage() {
               setRecipient({ ...recipientData, id: querySnapshot.docs[0].id });
             }
           } else {
-            setRecipientError("المستلم غير موجود");
+            setRecipientError("رقم المستلم غير موجود.");
           }
         } catch (error) {
           console.error("Error fetching recipient:", error);

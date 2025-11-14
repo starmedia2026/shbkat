@@ -27,6 +27,7 @@ import {
   Headset,
   Send,
   Briefcase,
+  MessageCircle,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -80,7 +81,6 @@ const colorOptions = [
 ];
 
 const userAccountItems = [
-  { id: "transfer", href: "/transfer", icon: Send, label: "تحويل لمشترك" },
   { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
   { id: "share", icon: Share2, label: "شارك التطبيق" },
   { id: "help", icon: Headset, label: "مركز المساعدة" },
