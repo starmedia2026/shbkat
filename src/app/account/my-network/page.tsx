@@ -292,31 +292,37 @@ function MyNetworkContent({ initialNetwork }: { initialNetwork: Network | null }
                     )}
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {network.categories.map((category) => 
-                        editingCategoryId === category.id ? (
-                            <CategoryEditForm 
-                                key={category.id}
-                                category={editingCategory}
-                                setCategory={setEditingCategory}
-                                onSave={() => handleUpdateCategory()}
-                                onCancel={() => {
-                                    // if it was a new category being added and cancelled, remove it from the state
-                                    if (category.name === "") {
-                                        setNetwork(prev => prev ? {...prev, categories: prev.categories.filter(c => c.id !== category.id) } : null);
-                                    }
-                                    setEditingCategoryId(null);
-                                    setEditingCategory(null);
-                                }}
-                            />
-                        ) : (
-                            <CategoryCard 
-                                key={category.id} 
-                                category={category} 
-                                networkId={network.id}
-                                onEdit={() => { setEditingCategoryId(category.id); setEditingCategory(category); }}
-                                onDelete={() => handleDeleteCategory(category.id)}
-                            />
+                    {network.categories.length > 0 ? (
+                        network.categories.map((category) => 
+                            editingCategoryId === category.id ? (
+                                <CategoryEditForm 
+                                    key={category.id}
+                                    category={editingCategory}
+                                    setCategory={setEditingCategory}
+                                    onSave={() => handleUpdateCategory()}
+                                    onCancel={() => {
+                                        if (category.name === "") {
+                                            setNetwork(prev => prev ? {...prev, categories: prev.categories.filter(c => c.id !== category.id) } : null);
+                                        }
+                                        setEditingCategoryId(null);
+                                        setEditingCategory(null);
+                                    }}
+                                />
+                            ) : (
+                                <CategoryCard 
+                                    key={category.id} 
+                                    category={category} 
+                                    networkId={network.id}
+                                    onEdit={() => { setEditingCategoryId(category.id); setEditingCategory(category); }}
+                                    onDelete={() => handleDeleteCategory(category.id)}
+                                />
+                            )
                         )
+                    ) : (
+                         <div className="p-4 border-2 border-dashed rounded-lg text-center text-muted-foreground">
+                            <p className="font-semibold">لم تقم بإضافة أي باقات بعد</p>
+                            <p className="text-sm">ابدأ بإضافة باقتك الأولى أدناه.</p>
+                        </div>
                     )}
                     <Button variant="outline" className="w-full" onClick={handleAddCategory}>
                     <PlusCircle className="mr-2 h-4 w-4" />
