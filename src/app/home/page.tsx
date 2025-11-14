@@ -69,12 +69,6 @@ interface Operation {
   description: string;
 }
 
-interface CardData {
-    id: string;
-    status: 'available' | 'used';
-    networkId: string;
-}
-
 const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; color: string; } } = {
   transfer_sent: { icon: ArrowUp, color: "text-red-500" },
   transfer_received: { icon: ArrowUp, color: "text-green-500" }, // Icon might need adjustment
@@ -98,7 +92,7 @@ export default function HomePage() {
   const firestore = useFirestore();
   const router = useRouter();
   const autoplay = useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
-  const { isOwner: isNetworkOwner, isLoading: isOwnerLoading, ownedNetwork } = useNetworkOwner();
+  const { isOwner: isNetworkOwner, isLoading: isOwnerLoading } = useNetworkOwner();
 
 
   useEffect(() => {
@@ -165,22 +159,7 @@ export default function HomePage() {
 
   const { data: adverts, isLoading: areAdvertsLoading } = useCollection<Advert>(advertsQuery);
 
-  const networkCardsQuery = useMemoFirebase(() => {
-      if (!firestore || !ownedNetwork?.id) return null;
-      return query(collection(firestore, "cards"), where("networkId", "==", ownedNetwork.id));
-  }, [firestore, ownedNetwork]);
-
-  const { data: networkCards, isLoading: areCardsLoading } = useCollection<CardData>(networkCardsQuery);
-
-  const cardStats = useMemo(() => {
-      if (!networkCards) return { sold: 0, available: 0 };
-      return {
-          sold: networkCards.filter(c => c.status === 'used').length,
-          available: networkCards.filter(c => c.status === 'available').length
-      };
-  }, [networkCards]);
-
-  const isLoading = isUserLoading || isCustomerLoading || isHomeLoading || isOwnerLoading || areCardsLoading;
+  const isLoading = isUserLoading || isCustomerLoading || isHomeLoading || isOwnerLoading;
   const hasNotifications = !areNotificationsLoading && notifications && notifications.length > 0;
   
   const services = useMemo(() => {
@@ -306,8 +285,6 @@ export default function HomePage() {
                 </div>
                  <div className="grid grid-cols-3 gap-3 text-center">
                     <ServiceGridItem href="/account/my-network" label="إدارة شبكتي" id="my-network" IconProp={Briefcase} />
-                    <InfoCardItem href="/account/card-sales" label="كروت مباعة" value={cardStats.sold} isLoading={areCardsLoading} />
-                    <InfoCardItem href="/account/card-sales" label="كروت متوفرة" value={cardStats.available} isLoading={areCardsLoading} />
                 </div>
             </div>
         )}
@@ -435,26 +412,6 @@ function ServiceGridItem({ href, iconUrl, label, id, IconProp }: HomeService & {
                         )}
                     </div>
                     <p className="text-xs font-semibold mt-1 text-center">{label}</p>
-                </CardContent>
-            </Card>
-        </Link>
-    );
-}
-
-function InfoCardItem({ href, label, value, isLoading }: { href: string; label: string; value: number; isLoading: boolean; }) {
-    return (
-        <Link href={href} className="block">
-            <Card className="shadow-md rounded-xl hover:shadow-lg transition-shadow cursor-pointer h-full bg-card">
-                <CardContent className="p-2 flex flex-col items-center justify-center gap-2 aspect-square">
-                    <div className="p-3 rounded-lg bg-muted flex items-center justify-center h-12 w-12">
-                        <Ticket className="h-7 w-7 text-primary" />
-                    </div>
-                    <p className="text-xs font-semibold mt-1 text-center">{label}</p>
-                    {isLoading ? (
-                        <Skeleton className="h-5 w-8" />
-                    ) : (
-                        <p className="text-lg font-bold">{value}</p>
-                    )}
                 </CardContent>
             </Card>
         </Link>
