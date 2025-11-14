@@ -39,6 +39,7 @@ interface OperationDetails {
 
 interface Operation {
   id: string;
+  operationNumber?: number;
   type: "transfer_sent" | "transfer_received" | "topup_admin" | "purchase" | "withdraw";
   amount: number;
   date: string; // ISO string
@@ -85,9 +86,9 @@ export default function OperationDetailsPage() {
 
   const { data: operation, isLoading } = useDoc<Operation>(operationDocRef);
 
-  const copyToClipboard = (text: string | undefined, label: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
+  const copyToClipboard = (text: string | number | undefined, label: string) => {
+    if (text === undefined) return;
+    navigator.clipboard.writeText(String(text)).then(() => {
         toast({
           title: "تم النسخ!",
           description: `${label} تم نسخه إلى الحافظة.`,
@@ -155,7 +156,7 @@ export default function OperationDetailsPage() {
                 {operation.type === "withdraw" && operation.balanceAfter !== undefined && (
                     <DetailRow icon={Wallet} label="الرصيد المتبقي" value={`${operation.balanceAfter.toLocaleString('en-US')} ريال`} />
                 )}
-               <DetailRow icon={Hash} label="رقم المعرف" value={operation.id} onCopy={() => copyToClipboard(operation.id, "رقم المعرف")} />
+               <DetailRow icon={Hash} label="رقم العملية" value={String(operation.operationNumber || operation.id)} onCopy={() => copyToClipboard(operation.operationNumber || operation.id, "رقم العملية")} />
                {operation.cardNumber && (
                   <DetailRow icon={Tag} label="رقم الكرت" value={operation.cardNumber} onCopy={() => copyToClipboard(operation.cardNumber, "رقم الكرت")} />
                )}

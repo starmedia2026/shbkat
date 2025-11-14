@@ -148,6 +148,10 @@
       "description": "Represents a financial transaction or operation for a customer.",
       "type": "object",
       "properties": {
+        "operationNumber": {
+          "type": "number",
+          "description": "A user-friendly, unique 8-digit number for the operation."
+        },
         "type": {
           "type": "string",
           "description": "Type of the operation.",
@@ -187,6 +191,7 @@
         }
       },
       "required": [
+        "operationNumber",
         "type",
         "amount",
         "date",

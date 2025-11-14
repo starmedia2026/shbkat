@@ -40,6 +40,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { paymentMethods } from "@/lib/payment-methods";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { generateOperationNumber } from "@/lib/utils";
 
 interface Customer {
   id: string;
@@ -134,6 +135,7 @@ function WithdrawContent() {
         date: now,
         description: `طلب سحب إلى ${selectedMethod.name}`,
         status: "pending" as const,
+        operationNumber: generateOperationNumber(),
         details: {
             method: selectedMethod.name,
             recipientName,

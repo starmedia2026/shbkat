@@ -48,6 +48,7 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { useAdmin } from "@/hooks/useAdmin";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { generateOperationNumber } from "@/lib/utils";
 
 
 // WhatsApp icon component
@@ -180,7 +181,8 @@ function CustomerCard({ customer }: { customer: Customer }) {
             amount: topUpAmount,
             date: new Date().toISOString(),
             description: "تغذية الرصيد من قبل الإدارة",
-            status: "completed"
+            status: "completed",
+            operationNumber: generateOperationNumber(),
         };
         
         const notificationData = {
@@ -400,7 +402,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        هل أنت متأكد من رغبتك في حذف بيانات العميل "{customer.name}"؟ سيتم حذف سجله من قاعدة بيانات Firestore فقط.
+                                        هل أنت متأكد من رغبتك في حذف بيانات العميل "{customer.name}"؟ سيتم حذف سجله من قاعدة البيانات Firestore فقط.
                                         <br/><br/>
                                         <strong>ملاحظة هامة:</strong> هذا الإجراء لا يحذف حساب المصادقة (Authentication) الخاص به. يجب عليك حذفه يدويًا من لوحة تحكم Firebase لإكمال الحذف.
                                     </AlertDialogDescription>

@@ -34,6 +34,7 @@ import { networks } from "@/lib/networks";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
+import { generateOperationNumber } from "@/lib/utils";
 
 
 const networkData = networks.reduce((acc, network) => {
@@ -177,7 +178,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 transaction.update(customerDocRef, { balance: senderBalance - category.price });
                 
                 // 3. Log purchase for the buyer
-                const baseOpData = { date: now, status: 'completed' as const, cardNumber: cardDoc.id };
+                const baseOpData = { date: now, status: 'completed' as const, cardNumber: cardDoc.id, operationNumber: generateOperationNumber() };
                 const baseNotifData = { date: now, read: false, cardNumber: cardDoc.id };
                 
                 transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name}`, amount: -category.price });

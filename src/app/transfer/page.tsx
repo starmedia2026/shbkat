@@ -33,6 +33,7 @@ import { collection, doc, getDocs, query, where, runTransaction } from "firebase
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { generateOperationNumber } from "@/lib/utils";
 
 
 interface Customer {
@@ -154,8 +155,8 @@ export default function TransferPage() {
             transaction.update(recipientRef, { balance: newRecipientBalance });
 
             const now = new Date().toISOString();
-            const senderOpData = { type: 'transfer_sent', amount: -transferAmount, date: now, description: `تحويل إلى ${recipient.name} (${recipient.phoneNumber})`, status: 'completed' };
-            const recipientOpData = { type: 'transfer_received', amount: transferAmount, date: now, description: `استلام من ${sender.name} (${sender.phoneNumber})`, status: 'completed' };
+            const senderOpData = { type: 'transfer_sent', amount: -transferAmount, date: now, description: `تحويل إلى ${recipient.name} (${recipient.phoneNumber})`, status: 'completed', operationNumber: generateOperationNumber() };
+            const recipientOpData = { type: 'transfer_received', amount: transferAmount, date: now, description: `استلام من ${sender.name} (${sender.phoneNumber})`, status: 'completed', operationNumber: generateOperationNumber() };
             const senderNotifData = { type: 'transfer_sent', title: 'تم إرسال حوالة', body: `تم تحويل ${transferAmount.toLocaleString('en-US')} ريال إلى ${recipient.name}.`, amount: -transferAmount, date: now, read: false, };
             const recipientNotifData = { type: 'transfer_received', title: 'تم استلام حوالة', body: `تم استلام ${transferAmount.toLocaleString('en-US')} ريال من ${sender.name}.`, amount: transferAmount, date: now, read: false, };
             
