@@ -40,13 +40,15 @@ service cloud.firestore {
     }
 
     match /customers/{customerId} {
+      // Allow any user to list customers to check for duplicates during signup.
+      allow list: if true;
+      
       // Allow any signed-in user to read any other customer's document.
       // This is necessary for the card purchase transaction to read the balances of the buyer, network owner, and admin.
       allow get: if isSignedIn();
-      allow list: if isAdmin() || isNetworkOwner();
 
-      // Any signed in user can create their own customer document.
-      allow create: if isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId;
+      // A user can create their own customer document, but the ID in the data must match their auth UID.
+      allow create: if isOwner(customerId) && request.resource.data.id == customerId;
       
       // An owner can update their own document, an admin can, or a signed-in user can update another user's document (for transfers/purchases).
       // This is safe because the transaction logic in the client code is what enforces the balance transfer rules.
