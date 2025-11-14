@@ -78,7 +78,6 @@ export default function UserManagementPage() {
   
   const firestore = useFirestore();
   const customersCollectionRef = useMemoFirebase(() => {
-      // Fetch data only if the user is an admin, otherwise it's a wasted read
       if (!firestore || !isAdmin) return null;
       return collection(firestore, "customers");
   }, [firestore, isAdmin]);
