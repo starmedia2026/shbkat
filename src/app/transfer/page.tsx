@@ -68,41 +68,40 @@ export default function TransferPage() {
 
   useEffect(() => {
     const findRecipient = async () => {
-      // Clear previous state on new search
+      if (!firestore || !user?.uid) return;
+
       setRecipient(null);
       setRecipientError(null);
       
-      if (recipientPhone.length >= 9) { // Assuming a valid length for a phone number
-        setIsRecipientLoading(true);
-        try {
-          if (!firestore) {
-            throw new Error("Firestore service is not available.");
-          }
-          const customersRef = collection(firestore, "customers");
-          const q = query(customersRef, where("phoneNumber", "==", recipientPhone));
-          const querySnapshot = await getDocs(q);
-          if (!querySnapshot.empty) {
-            const recipientData = querySnapshot.docs[0].data() as Customer;
-            if (recipientData.id === user?.uid) {
-              setRecipientError("لا يمكنك التحويل إلى نفسك.");
-            } else {
-              setRecipient({ ...recipientData, id: querySnapshot.docs[0].id });
-            }
+      if (recipientPhone.length < 9) return;
+
+      setIsRecipientLoading(true);
+      try {
+        const customersRef = collection(firestore, "customers");
+        const q = query(customersRef, where("phoneNumber", "==", recipientPhone));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const recipientData = querySnapshot.docs[0].data() as Customer;
+          if (recipientData.id === user.uid) {
+            setRecipientError("لا يمكنك التحويل إلى نفسك.");
           } else {
-            setRecipientError("رقم المستلم غير موجود.");
+            setRecipient({ ...recipientData, id: querySnapshot.docs[0].id });
           }
-        } catch (error) {
-          console.error("Error fetching recipient:", error);
-          setRecipientError("خطأ في البحث عن المستلم.");
-        } finally {
-          setIsRecipientLoading(false);
+        } else {
+          setRecipientError("رقم المستلم غير موجود.");
         }
+      } catch (error) {
+        console.error("Error fetching recipient:", error);
+        setRecipientError("خطأ في البحث عن المستلم.");
+      } finally {
+        setIsRecipientLoading(false);
       }
     };
 
     const debounceTimer = setTimeout(() => {
       findRecipient();
-    }, 500); // Debounce to avoid querying on every keystroke
+    }, 500); 
 
     return () => clearTimeout(debounceTimer);
   }, [recipientPhone, firestore, user?.uid]);
@@ -301,9 +300,3 @@ export default function TransferPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
