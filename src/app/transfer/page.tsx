@@ -171,20 +171,31 @@ export default function TransferPage() {
         setRecipientError(null);
 
     } catch (serverError: any) {
-        const contextualError = new FirestorePermissionError({
-            operation: 'write',
-            path: `Transaction failed for customers: ${user.uid} -> ${recipient.id}`,
-            requestResourceData: { 
-                note: "A transaction involving multiple document writes failed during a funds transfer. The updates below were attempted.",
-                senderUpdate: { path: `customers/${user.uid}`, data: { balance: sender.balance - transferAmount } },
-                recipientUpdate: { path: `customers/${recipient.id}`, data: { balance: recipient.balance + transferAmount } },
-                senderOperation: { path: `customers/${user.uid}/operations/...` },
-                recipientOperation: { path: `customers/${recipient.id}/operations/...` },
-                senderNotification: { path: `customers/${user.uid}/notifications/...` },
-                recipientNotification: { path: `customers/${recipient.id}/notifications/...` }
-            }
-        });
-        errorEmitter.emit('permission-error', contextualError);
+        // This logic is designed to catch permission errors from the transaction
+        // and re-throw them as a detailed, contextual error for the LLM to debug.
+        if (serverError.code === 'permission-denied' || serverError.message.includes("permission")) {
+            const contextualError = new FirestorePermissionError({
+                operation: 'write', // 'write' is generic for transactions
+                path: `Transaction involving customers/${user.uid} and customers/${recipient.id}`,
+                requestResourceData: { 
+                    note: "A transaction involving multiple document writes failed during a funds transfer. This usually indicates a rule is preventing one of the updates.",
+                    senderUpdate: { path: `customers/${user.uid}`, data: { balance: `(new balance)` } },
+                    recipientUpdate: { path: `customers/${recipient.id}`, data: { balance: `(new balance)` } },
+                    senderOperation: { path: `customers/${user.uid}/operations/...` },
+                    recipientOperation: { path: `customers/${recipient.id}/operations/...` },
+                    senderNotification: { path: `customers/${user.uid}/notifications/...` },
+                    recipientNotification: { path: `customers/${recipient.id}/notifications/...` }
+                }
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        } else {
+             // For other errors (e.g., "رصيد غير كافٍ" from transaction logic), show a toast.
+            toast({
+                variant: "destructive",
+                title: "فشل التحويل",
+                description: serverError.message || "حدث خطأ أثناء محاولة إجراء التحويل. الرجاء المحاولة مرة أخرى.",
+            });
+        }
     }
   };
   
