@@ -13,6 +13,9 @@ import {
   MapPin,
   UploadCloud,
   ChevronDown,
+  CheckCircle,
+  XCircle,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,11 +44,13 @@ import {
   } from "@/components/ui/alert-dialog";
 import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
-import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
-import { writeBatch, collection, doc } from "firebase/firestore";
+import { writeBatch, collection, doc, query, where } from "firebase/firestore";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 
 interface Category {
@@ -63,6 +68,13 @@ interface Network {
   address?: string;
   ownerPhone?: string;
   categories: Category[];
+}
+
+interface CardData {
+    id: string;
+    networkId: string;
+    categoryId: string;
+    status: "available" | "used" | "transferred";
 }
 
 
@@ -343,6 +355,62 @@ function LoadingSkeleton() {
     );
 }
 
+const CategoryStats = ({ networkId, categoryId }: { networkId: string, categoryId: string }) => {
+    const firestore = useFirestore();
+    const [stats, setStats] = useState({ sold: 0, available: 0 });
+    const [isLoading, setIsLoading] = useState(true);
+
+    const cardsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, "cards"),
+            where("networkId", "==", networkId),
+            where("categoryId", "==", categoryId)
+        );
+    }, [firestore, networkId, categoryId]);
+
+    const { data: cards } = useCollection<CardData>(cardsQuery);
+    
+    useEffect(() => {
+        if (cards) {
+            const soldCount = cards.filter(c => c.status === 'used' || c.status === 'transferred').length;
+            const availableCount = cards.filter(c => c.status === 'available').length;
+            setStats({ sold: soldCount, available: availableCount });
+            setIsLoading(false);
+        } else {
+            setIsLoading(true);
+        }
+    }, [cards]);
+
+    if (isLoading) {
+        return <Skeleton className="h-10 w-full mt-2" />;
+    }
+
+    return (
+        <div className="mt-3 pt-3 border-t flex justify-between items-center text-sm">
+            <div className="flex gap-4">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-500">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>متوفر:</span>
+                    <span className="font-bold">{stats.available}</span>
+                </div>
+                 <div className="flex items-center gap-2 text-red-600 dark:text-red-500">
+                    <XCircle className="h-4 w-4" />
+                    <span>مباع:</span>
+                    <span className="font-bold">{stats.sold}</span>
+                </div>
+            </div>
+             <Link href={`/account/card-sales?network=${networkId}&category=${categoryId}`}>
+                <Button variant="outline" size="sm">
+                    <BarChart3 className="h-4 w-4 ml-2" />
+                    عرض التقرير
+                </Button>
+            </Link>
+        </div>
+    );
+};
+
+
 const CategoryCard = ({ category, networkId, onEdit, onDelete }: { category: Category, networkId: string, onEdit: () => void, onDelete: () => void }) => {
     
     return (
@@ -375,6 +443,9 @@ const CategoryCard = ({ category, networkId, onEdit, onDelete }: { category: Cat
                     </AlertDialog>
                 </div>
             </div>
+            
+            <CategoryStats networkId={networkId} categoryId={category.id} />
+            
             <CollapsibleTrigger asChild>
                  <Button variant="outline" size="sm" className="w-full mt-3 flex items-center justify-center gap-2">
                     <UploadCloud className="h-4 w-4" />
@@ -382,7 +453,7 @@ const CategoryCard = ({ category, networkId, onEdit, onDelete }: { category: Cat
                     <ChevronDown className="h-4 w-4 ml-auto transition-transform data-[state=open]:rotate-180" />
                 </Button>
             </CollapsibleTrigger>
-            <CollapsibleContent>
+            <CollapsibleContent className="CollapsibleContent">
                 <AddCardsForm networkId={networkId} categoryId={category.id} />
             </CollapsibleContent>
         </Collapsible>
@@ -485,7 +556,7 @@ const AddCardsForm = ({ networkId, categoryId }: { networkId: string, categoryId
               ) : (
                 <Save className="ml-2 h-4 w-4" />
               )}
-              {isSaving ? "جاري الحفظ..." : `حفظ ${cardsInput.trim().split("\n").filter(Boolean).length} كروت`}
+              {isSaving ? "جاري الحفظ..." : `حفظ ${cardsInput.trim().split("\n").filter(Boolean).length || 0} كروت`}
             </Button>
         </div>
     );

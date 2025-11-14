@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useMemoFirebase, errorEmitter, useUser } from "@/firebase";
 import { collection, query, orderBy, doc, deleteDoc, writeBatch, runTransaction, getDocs, where, limit } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { networks } from "@/lib/networks";
@@ -150,6 +150,10 @@ function CardSalesContent() {
     const firestore = useFirestore();
     const { user } = useUser();
     const { isAdmin, isOwner, isLoading: areRolesLoading } = useAdmin();
+    const searchParams = useSearchParams();
+    const filterNetwork = searchParams.get('network');
+    const filterCategory = searchParams.get('category');
+
 
     const ownedNetwork = useMemo(() => {
         if (!isOwner || !user || !user.email) return null;
@@ -160,14 +164,26 @@ function CardSalesContent() {
     // Admin sees all cards. Owner sees only their network's cards.
     const cardsCollectionRef = useMemoFirebase(() => {
         if (!firestore) return null;
+        let q = query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
+        
         if (isAdmin) {
-             return query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
+             if (filterNetwork) {
+                 q = query(q, where("networkId", "==", filterNetwork));
+             }
+             if (filterCategory) {
+                q = query(q, where("categoryId", "==", filterCategory));
+             }
         }
-        if (isOwner && ownedNetwork) {
-             return query(collection(firestore, "cards"), where("networkId", "==", ownedNetwork.id), orderBy("usedAt", "desc"));
+        else if (isOwner && ownedNetwork) {
+             q = query(collection(firestore, "cards"), where("networkId", "==", ownedNetwork.id), orderBy("usedAt", "desc"));
+             if (filterCategory) {
+                q = query(q, where("categoryId", "==", filterCategory));
+             }
+        } else {
+            return null; // Don't query if not admin or owner
         }
-        return null;
-    }, [firestore, isAdmin, isOwner, ownedNetwork]);
+        return q;
+    }, [firestore, isAdmin, isOwner, ownedNetwork, filterNetwork, filterCategory]);
 
     const { data: allCards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
 
@@ -186,14 +202,22 @@ function CardSalesContent() {
             }
             
             const customersRef = collection(firestore, 'customers');
-            const q = query(customersRef, where('id', 'in', userIds));
+            // Firestore 'in' queries are limited to 30 elements.
+            // If we have more than 30 user IDs, we need to split them into chunks.
+            const chunks = [];
+            for (let i = 0; i < userIds.length; i += 30) {
+                chunks.push(userIds.slice(i, i + 30));
+            }
 
+            const map = new Map<string, Customer>();
             try {
-                const snapshot = await getDocs(q);
-                const map = new Map<string, Customer>();
-                snapshot.forEach(doc => {
-                    map.set(doc.id, { id: doc.id, ...doc.data() } as Customer);
-                });
+                for (const chunk of chunks) {
+                    const q = query(customersRef, where('id', 'in', chunk));
+                    const snapshot = await getDocs(q);
+                    snapshot.forEach(doc => {
+                        map.set(doc.id, { id: doc.id, ...doc.data() } as Customer);
+                    });
+                }
                 setCustomerMap(map);
             } catch (serverError) {
                 const permissionError = new FirestorePermissionError({
@@ -210,16 +234,20 @@ function CardSalesContent() {
     }, [firestore, allCards]);
     
     const networksToDisplay = useMemo(() => {
+        if (filterNetwork) {
+            return networks.filter(n => n.id === filterNetwork);
+        }
         if (isAdmin) return networks;
         if (isOwner && ownedNetwork) return [ownedNetwork];
         return [];
-    }, [isAdmin, isOwner, ownedNetwork]);
+    }, [isAdmin, isOwner, ownedNetwork, filterNetwork]);
 
 
     const isLoading = areCardsLoading || isLoadingCustomers || areRolesLoading;
+    const defaultAccordionValue = (isOwner && ownedNetwork) ? ownedNetwork.id : (filterNetwork || undefined);
 
     return (
-        <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={isOwner && ownedNetwork ? ownedNetwork.id : undefined}>
+        <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={defaultAccordionValue}>
             {networksToDisplay.map(network => (
                 <NetworkAccordionItem 
                     key={network.id} 
@@ -227,23 +255,29 @@ function CardSalesContent() {
                     allCards={allCards} 
                     customerMap={customerMap}
                     isLoading={isLoading}
+                    filterCategory={filterCategory}
                 />
             ))}
         </Accordion>
     );
 }
 
-function NetworkAccordionItem({ network, allCards, customerMap, isLoading } : { network: typeof networks[0], allCards: CardData[] | null, customerMap: Map<string, Customer>, isLoading: boolean }) {
+function NetworkAccordionItem({ network, allCards, customerMap, isLoading, filterCategory } : { network: typeof networks[0], allCards: CardData[] | null, customerMap: Map<string, Customer>, isLoading: boolean, filterCategory: string | null }) {
     
     const { soldCards, availableCards } = useMemo(() => {
         if (!allCards) return { soldCards: [], availableCards: [] };
         
-        const networkCards = allCards.filter(card => card.networkId === network.id);
+        let networkCards = allCards.filter(card => card.networkId === network.id);
+
+        if (filterCategory) {
+            networkCards = networkCards.filter(card => card.categoryId === filterCategory);
+        }
+
         const sold = networkCards.filter(card => card.status === 'used' || card.status === 'transferred');
         const available = networkCards.filter(card => card.status === 'available');
 
         return { soldCards: sold, availableCards: available };
-    }, [allCards, network.id]);
+    }, [allCards, network.id, filterCategory]);
 
     const firestore = useFirestore();
 
