@@ -87,8 +87,10 @@ service cloud.firestore {
     }
 
     match /cards/{cardId} {
-        // Admin or Network owner can create, delete, and list cards.
-        allow create, delete, list: if isAdmin() || isNetworkOwner();
+        // Admin or Network owner can create and delete cards.
+        allow create, delete: if isAdmin() || isNetworkOwner();
+        // Admin or Network owner can list cards (for stats).
+        allow list: if isAdmin() || isNetworkOwner();
         // Any signed-in user can read card data (needed to find an available card).
         allow read: if isSignedIn();
         // Allow updates for the 'purchase' transaction.
