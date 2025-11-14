@@ -69,6 +69,12 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
         <path d="M3.6,37.8L2.4,44.4l6.9-1.8c2.1,1.3,4.5,2,7,2c8.3,0,15-6.7,15-15s-6.7-15-15-15c-8.3,0-15,6.7-15,15 c0,2.8,0.8,5.5,2.2,7.8L3.6,37.8z M11.1,32.4c-0.3-0.5-1.8-2.5-3.1-2.9c-1.3-0.4-2.7,0.4-3.1,0.8c-0.4,0.4-1.2,1-1.5,2.2 c-0.3,1.2,0,3,0.8,4.1c0.8,1.1,1.9,2.4,3.5,4c2,2,3.9,3.2,5.7,4.3c2.4,1.4,3.9,1.3,5.1,0.9c1.2-0.4,2.8-2.2,3.2-2.9 c0.4-0.7,0.4-1.4,0.3-1.6c-0.1-0.2-0.4-0.4-0.8-0.6c-0.5-0.2-2.8-1.4-3.3-1.6c-0.5-0.2-0.8-0.3-1.2,0.3c-0.3,0.6-1.2,1.5-1.5,1.8 c-0.3,0.3-0.6,0.3-1,0.1c-0.4-0.2-1.8-0.7-3.4-2.1c-1.3-1.1-2.2-2.5-2.5-2.9c-0.3-0.5-0.1-0.7,0.2-1c0.2-0.2,0.5-0.6,0.7-0.8 c0.2-0.2,0.3-0.5,0.5-0.8c0.2-0.3,0.1-0.6,0-0.8C14.2,22.1,12,17,11.5,16.1C11.1,15.2,10.8,15.3,10.5,15.3L11.1,32.4z"/>
     </svg>
 );
+// Simplified WhatsApp icon for transfer & notify button
+const WhatsAppNotifyIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16.75 13.96c.25.48-1.03.95-1.4.95-.38 0-1.08-.17-2.07-.58-.99-.4-1.87-1.1-2.6-1.88-.73-.78-1.38-1.65-1.78-2.63-.4-.98-.56-2.06-.56-2.06s.17-.29.4-.53c.23-.24.48-.3 1.08-.05.6.25 2.18 1.45 2.18 1.45s.23.49.02.96l-.42.94c-.2.48.02.97.43 1.38.4.4.88.63 1.36.43l.94-.42c.48-.2.97.02.97.02s1.2 1.58 1.45 2.18c.25.6-.05 1.08-.05 1.08zM12 2a10 10 0 100 20 10 10 0 000-20z"/>
+    </svg>
+);
 
 
 interface Customer {
@@ -147,7 +153,7 @@ export default function CardSalesPage() {
 function CardSalesContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
@@ -169,7 +175,7 @@ function CardSalesContent() {
     return new Map(customers.map(c => [c.id, c]));
   }, [customers]);
 
-  const isLoading = areCardsLoading || areCustomersLoading;
+  const isLoading = areCardsLoading || areCustomersLoading || isAdminLoading;
 
 
   return (
@@ -281,10 +287,10 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
     const { toast } = useToast();
     const [isTransferring, setIsTransferring] = useState(false);
 
-    const handleTransfer = async () => {
+    const performTransfer = async (): Promise<number | null> => {
         if (!networkOwner || !firestore || card.status === 'transferred') {
             toast({ variant: "destructive", title: "لا يمكن التحويل", description: "مالك الشبكة غير معروف أو تم تحويل قيمة الكرت مسبقًا." });
-            return;
+            return null;
         }
 
         setIsTransferring(true);
@@ -319,6 +325,7 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
                 title: "تم التحويل بنجاح",
                 description: `تم تحويل ${profitAmount.toLocaleString('en-US')} ريال إلى ${networkOwner.name}.`,
             });
+            return profitAmount;
         } catch (e: any) {
             console.error("Transfer failed:", e);
             toast({
@@ -337,8 +344,29 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
                 }
             });
             errorEmitter.emit('permission-error', contextualError);
+            return null;
         } finally {
             setIsTransferring(false);
+        }
+    };
+
+    const handleTransfer = async () => {
+        await performTransfer();
+    };
+    
+    const handleTransferAndNotify = async () => {
+        const transferredAmount = await performTransfer();
+        if (transferredAmount !== null && networkOwner?.phoneNumber) {
+            const date = format(new Date(), "yyyy-MM-dd", { locale: ar });
+            const message = `📣 *إشعار إيداع*
+تم إيداع قيمة كرت فئة ${categoryName} في حسابكم بنجاح
+نبلغكم بأنه تم تحويل مبلغ ${transferredAmount.toLocaleString('en-US')} ريال يمني إلى رصيدكم بتاريخ ${date}
+مع خصم نسبة الخدمة المعتمدة 10%
+
+*نشكر لكم ثقتكم الدائمة وتعاملاتكم المستمرة معنا*
+نظام شبكات — خدمة موثوقة، وأداء عالي`;
+            const whatsappUrl = `https://wa.me/${networkOwner.phoneNumber}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, "_blank");
         }
     };
 
@@ -419,25 +447,46 @@ ${customer.balance.toLocaleString('en-US')} ريال
                 </div>
                 <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2">
                      {card.status === 'used' && networkOwner && (
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="secondary" size="icon" disabled={isTransferring}>
-                                     {isTransferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 text-primary"/>}
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>تأكيد تحويل الربح</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    هل أنت متأكد من تحويل مبلغ <span className="font-bold text-primary">{(categoryPrice * 0.90).toLocaleString('en-US')}</span> ريال (بعد خصم 10% عمولة) إلى حساب مالك الشبكة <span className="font-bold">{networkOwner.name}</span>؟
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleTransfer}>تأكيد التحويل</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                        <>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="secondary" size="icon" disabled={isTransferring}>
+                                         {isTransferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 text-primary"/>}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>تأكيد تحويل الربح</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        هل أنت متأكد من تحويل مبلغ <span className="font-bold text-primary">{(categoryPrice * 0.90).toLocaleString('en-US')}</span> ريال (بعد خصم 10% عمولة) إلى حساب مالك الشبكة <span className="font-bold">{networkOwner.name}</span>؟
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleTransfer}>تأكيد التحويل</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                     <Button variant="outline" size="icon" className="h-9 w-9 bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20" disabled={isTransferring}>
+                                        {isTransferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <WhatsAppNotifyIcon className="h-4 w-4"/>}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>تأكيد التحويل والإبلاغ</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        سيتم تحويل الربح إلى مالك الشبكة وفتح واتساب لإرسال رسالة إبلاغ. هل تريد المتابعة؟
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleTransferAndNotify}>تأكيد ومتابعة</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </>
                     )}
                      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => copyToClipboard(card.id)}>
                         <Copy className="h-4 w-4 text-muted-foreground"/>
@@ -533,6 +582,8 @@ function CardSkeleton() {
     );
 }
 
+
+    
 
     
 
