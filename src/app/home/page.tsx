@@ -288,7 +288,7 @@ export default function HomePage() {
                 </div>
                  <div className="grid grid-cols-3 gap-3 text-center">
                     <ServiceGridItem href="/account/my-network" label="إدارة شبكتي" id="my-network" IconProp={Briefcase} />
-                    <ServiceGridItem href="/withdraw" label="سحب الأرباح" id="withdraw" IconProp={Banknote} />
+                    <ServiceGridItem href="/withdraw" label="سحب" id="withdraw" IconProp={Banknote} />
                 </div>
             </div>
         )}
