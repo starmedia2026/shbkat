@@ -32,7 +32,7 @@ service cloud.firestore {
 
     // The admin is a specific user identified by their phone number.
     function isAdmin() {
-       return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber == "770326828";
+       return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.accountType == "admin";
     }
     
     function isNetworkOwner() {
