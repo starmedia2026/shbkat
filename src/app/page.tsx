@@ -66,9 +66,6 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-       // Set session expiry time: now + 1 hour
-      const expiryTime = new Date().getTime() + 60 * 60 * 1000;
-      localStorage.setItem('sessionExpiry', expiryTime.toString());
        toast({
           title: "تم تسجيل الدخول بنجاح!",
           description: "أهلاً بك مجدداً في شبكات.",
