@@ -276,7 +276,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
 يُرجى التحقق من الرصيد عبر تطبيق شبكات للتأكد من تفاصيل العملية
 🔒 هذه الرسالة صادرة تلقائيًا من تطبيق شبكات — دقة. أمان. ثقة
 
-*رصيدك: ${newBalance.toLocaleString('en-US')}*`;
+*رصيدك: ${newBalance.toLocaleString('en-US')} ريال يمني*`;
 
             const whatsappUrl = `https://wa.me/967${customer.phoneNumber}?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, "_blank");
@@ -532,5 +532,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     
 
 
+
+    
 
     
