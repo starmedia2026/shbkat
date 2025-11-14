@@ -18,6 +18,7 @@ import {
   Briefcase,
   BarChart3,
   HelpCircle,
+  Headset,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,28 +66,6 @@ interface Operation {
   date: string; // ISO string
   description: string;
 }
-
-// Custom SVG component for the support icon
-const Headset = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M18 2a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4h-2a2 2 0 0 1-2-2v-1" />
-      <path d="M5 18a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h1" />
-      <path d="M12 18H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h7v11Z" />
-      <path d="M8 12h2" />
-      <path d="M19 14v-2a6 6 0 0 0-6-6v0" />
-    </svg>
-  );
 
 const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; color: string; } } = {
   transfer_sent: { icon: ArrowUp, color: "text-red-500" },
@@ -466,9 +445,3 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
-
-    
-
-    
-
-    
