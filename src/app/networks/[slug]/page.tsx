@@ -41,7 +41,6 @@ const networkData = networks.reduce((acc, network) => {
     return acc;
   }, {} as { [key: string]: typeof networks[0] });
   
-const ADMIN_PHONE_NUMBER = "770326828";
 
 interface Customer {
     id: string;
@@ -136,7 +135,6 @@ function PackageCard({ category, network }: { category: Category, network: typeo
         setIsPurchasing(true);
 
         try {
-            // Find an available card outside the transaction
             const cardsRef = collection(firestore, "cards");
             const q = query(
                 cardsRef,
@@ -159,7 +157,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             const cardToPurchaseDoc = availableCardsSnapshot.docs[0];
             const cardRef = cardToPurchaseDoc.ref;
             
-            // Find the admin user outside the transaction
+            const ADMIN_PHONE_NUMBER = "770326828";
             let adminRef: any = null;
             const adminQuery = query(collection(firestore, "customers"), where("phoneNumber", "==", ADMIN_PHONE_NUMBER), limit(1));
             const adminSnapshot = await getDocs(adminQuery);
@@ -178,35 +176,30 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 if (senderBalance < category.price) throw new Error("رصيد غير كافٍ.");
 
                 const now = new Date().toISOString();
-                const profitAmount = category.price * 0.90; // 90% for the profit receiver
+                const profitAmount = category.price * 0.90;
 
-                // 1. Update card status
                 transaction.update(cardRef, { status: "used", usedAt: now, usedBy: user.uid });
 
-                // 2. Update customer balance
                 const newSenderBalance = senderBalance - category.price;
                 transaction.update(customerDocRef, { balance: newSenderBalance });
                 
-                // 3. Update admin balance (if admin exists)
                 if (adminRef) {
                     const adminDoc = await transaction.get(adminRef);
                     if (adminDoc.exists()) {
                         const newAdminBalance = adminDoc.data().balance + profitAmount;
                         transaction.update(adminRef, { balance: newAdminBalance });
 
-                        // Admin's operation & notification
                         const adminId = adminDoc.id;
                         transaction.set(doc(collection(firestore, `customers/${adminId}/operations`)), { type: 'transfer_received', amount: profitAmount, date: now, description: `أرباح بيع كرت: ${category.name}`, status: 'completed' });
                         transaction.set(doc(collection(firestore, `customers/${adminId}/notifications`)), { type: 'transfer_received', title: 'إيداع أرباح', body: `تم إيداع ${profitAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: profitAmount, date: now, read: false });
                     }
                 }
                 
-                // --- Create Customer Logs and Notifications ---
                 const baseOpData = { amount: -category.price, date: now, status: 'completed', cardNumber: cardDoc.id };
                 transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name} - ${network.name}` });
                 transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseOpData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح. رقم الكرت: ${cardDoc.id}`, read: false });
 
-                return cardDoc.id; // Return the card number
+                return cardDoc.id;
             });
 
             setPurchasedCard({ 
@@ -237,14 +230,14 @@ function PackageCard({ category, network }: { category: Category, network: typeo
         <Card
             className="w-full shadow-md rounded-2xl bg-card/50 overflow-hidden"
         >
-            <CardContent className="p-0 flex">
+            <CardContent className="p-0 flex h-full">
                 <div className="bg-primary/10 p-4 flex flex-col justify-center items-center">
                     <Tag className="h-6 w-6 text-primary mb-1"/>
                     <span className="text-primary font-bold text-lg">
                         {category.name.replace('فئة', '').replace('باقة', '').trim()}
                     </span>
                 </div>
-                <div className="flex-grow p-3 pr-4">
+                <div className="flex-grow p-3 pr-4 flex flex-col justify-between">
                     <div className="flex justify-between items-start">
                         <div>
                             <p className="font-semibold text-base">{category.name}</p>
@@ -419,4 +412,5 @@ function BackButton() {
     
 
     
+
 
