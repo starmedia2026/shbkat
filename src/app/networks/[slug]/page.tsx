@@ -157,26 +157,8 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             const cardToPurchaseDoc = availableCardsSnapshot.docs[0];
             const cardRef = cardToPurchaseDoc.ref;
             
-            // Find network owner and admin
-            const customersCollection = collection(firestore, "customers");
-            const adminQuery = query(customersCollection, where("accountType", "==", "admin"), limit(1));
-            const ownerQuery = query(customersCollection, where("phoneNumber", "==", network.ownerPhone), limit(1));
-
-            const [adminSnapshot, ownerSnapshot] = await Promise.all([getDocs(adminQuery), getDocs(ownerQuery)]);
-
-            let adminRef: any = null;
-            if (!adminSnapshot.empty) {
-                adminRef = adminSnapshot.docs[0].ref;
-            }
-
-            let ownerRef: any = null;
-            if (!ownerSnapshot.empty) {
-                ownerRef = ownerSnapshot.docs[0].ref;
-            } else {
-                 throw new Error("لم يتم العثور على حساب مالك الشبكة.");
-            }
-
             const purchasedCardNumber = await runTransaction(firestore, async (transaction) => {
+                // Get all required documents within the transaction
                 const senderDoc = await transaction.get(customerDocRef);
                 const cardDoc = await transaction.get(cardRef);
                 
@@ -186,6 +168,34 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 const senderBalance = senderDoc.data().balance;
                 if (senderBalance < category.price) throw new Error("رصيد غير كافٍ.");
 
+                // Find network owner and admin within the transaction for consistency
+                const customersCollection = collection(firestore, "customers");
+                const adminQuery = query(customersCollection, where("accountType", "==", "admin"), limit(1));
+                const ownerQuery = query(customersCollection, where("phoneNumber", "==", network.ownerPhone), limit(1));
+
+                const [adminSnapshot, ownerSnapshot] = await Promise.all([
+                    getDocs(adminQuery),
+                    getDocs(ownerQuery)
+                ]);
+
+                if (ownerSnapshot.empty) {
+                    throw new Error("لم يتم العثور على حساب مالك الشبكة.");
+                }
+                 const ownerRef = ownerSnapshot.docs[0].ref;
+                 const ownerDoc = await transaction.get(ownerRef);
+                 if (!ownerDoc.exists()) throw new Error("لم يتم العثور على حساب مالك الشبكة.");
+
+                let adminRef: any = null;
+                let adminDoc: any = null;
+                if (!adminSnapshot.empty) {
+                    adminRef = adminSnapshot.docs[0].ref;
+                    adminDoc = await transaction.get(adminRef);
+                    if (!adminDoc.exists()) throw new Error("لم يتم العثور على حساب المشرف.");
+                } else {
+                     throw new Error("لم يتم العثور على حساب المشرف.");
+                }
+
+                // All checks passed, proceed with calculations and updates
                 const now = new Date().toISOString();
                 const netAmount = category.price * 0.90;
                 const commission = category.price * 0.10;
@@ -198,28 +208,16 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 transaction.update(customerDocRef, { balance: newSenderBalance });
 
                 // 3. Add netAmount to network owner
-                if(ownerRef) {
-                    const ownerDoc = await transaction.get(ownerRef);
-                    if (ownerDoc.exists()) {
-                        const newOwnerBalance = ownerDoc.data().balance + netAmount;
-                        transaction.update(ownerRef, { balance: newOwnerBalance });
-                        // Log operation for network owner
-                        transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/operations`)), { type: 'transfer_received', amount: netAmount, date: now, description: `أرباح بيع كرت: ${category.name}`, status: 'completed' });
-                        transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/notifications`)), { type: 'transfer_received', title: `أرباح بيع كرت`, body: `تم إيداع ${netAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: netAmount, date: now, read: false });
-                    }
-                }
+                const newOwnerBalance = ownerDoc.data().balance + netAmount;
+                transaction.update(ownerRef, { balance: newOwnerBalance });
+                transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/operations`)), { type: 'transfer_received', amount: netAmount, date: now, description: `أرباح بيع كرت: ${category.name}`, status: 'completed' });
+                transaction.set(doc(collection(firestore, `customers/${ownerDoc.id}/notifications`)), { type: 'transfer_received', title: `أرباح بيع كرت`, body: `تم إيداع ${netAmount.toLocaleString('en-US')} ريال من بيع كرت.`, amount: netAmount, date: now, read: false });
                 
                 // 4. Add commission to admin
-                if (adminRef) {
-                    const adminDoc = await transaction.get(adminRef);
-                    if (adminDoc.exists()) {
-                        const newAdminBalance = adminDoc.data().balance + commission;
-                        transaction.update(adminRef, { balance: newAdminBalance });
-                        // Log operation for admin
-                        transaction.set(doc(collection(firestore, `customers/${adminDoc.id}/operations`)), { type: 'transfer_received', amount: commission, date: now, description: `عمولة بيع كرت: ${category.name}`, status: 'completed' });
-                        transaction.set(doc(collection(firestore, `customers/${adminDoc.id}/notifications`)), { type: 'transfer_received', title: 'إيداع عمولة', body: `تم إيداع ${commission.toLocaleString('en-US')} ريال كعمولة بيع كرت.`, amount: commission, date: now, read: false });
-                    }
-                }
+                const newAdminBalance = adminDoc.data().balance + commission;
+                transaction.update(adminRef, { balance: newAdminBalance });
+                transaction.set(doc(collection(firestore, `customers/${adminDoc.id}/operations`)), { type: 'transfer_received', amount: commission, date: now, description: `عمولة بيع كرت: ${category.name}`, status: 'completed' });
+                transaction.set(doc(collection(firestore, `customers/${adminDoc.id}/notifications`)), { type: 'transfer_received', title: 'إيداع عمولة', body: `تم إيداع ${commission.toLocaleString('en-US')} ريال كعمولة بيع كرت.`, amount: commission, date: now, read: false });
                 
                 // 5. Log operation and notification for buyer
                 const baseOpData = { amount: -category.price, date: now, status: 'completed', cardNumber: cardDoc.id };
@@ -236,6 +234,7 @@ function PackageCard({ category, network }: { category: Category, network: typeo
             });
 
         } catch (serverError: any) {
+            console.error("Purchase Transaction Error:", serverError);
              const contextualError = new FirestorePermissionError({
                 operation: 'write',
                 path: 'Transaction for card purchase',
@@ -247,11 +246,25 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 }
             });
             errorEmitter.emit('permission-error', contextualError);
+             // Also show a user-friendly error from the transaction itself if available
+            toast({
+                variant: "destructive",
+                title: "فشل الشراء",
+                description: serverError.message || "حدث خطأ غير متوقع أثناء إتمام العملية.",
+            });
         } finally {
              setIsPurchasing(false);
         }
     };
     
+    const handleSmsFallback = (recipient: string) => {
+        const messageBody = encodeURIComponent(`تم شراء ${purchasedCard?.categoryName} من ${purchasedCard?.networkName}.\nرقم الكرت: ${purchasedCard?.cardNumber}`);
+        // Fallback for browsers that don't support sms: or for desktop
+        const separator = navigator.userAgent.match(/Android|iPhone|iPad|iPod/i) ? "?" : "&";
+        const smsUrl = `sms:${recipient}${separator}body=${messageBody}`;
+        window.open(smsUrl, '_blank');
+    };
+
     return (
         <>
         <Card
@@ -316,18 +329,20 @@ function PackageCard({ category, network }: { category: Category, network: typeo
                 card={purchasedCard}
                 isOpen={!!purchasedCard}
                 onClose={() => setPurchasedCard(null)}
+                onSendSms={handleSmsFallback}
             />
         )}
         </>
     );
 }
 
-function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInfo, isOpen: boolean, onClose: () => void }) {
+function PurchasedCardDialog({ card, isOpen, onClose, onSendSms }: { card: PurchasedCardInfo, isOpen: boolean, onClose: () => void, onSendSms: (recipient: string) => void }) {
     const { toast } = useToast();
     const [smsDialogOpen, setSmsDialogOpen] = useState(false);
     const [smsRecipient, setSmsRecipient] = useState("");
 
     const copyToClipboard = () => {
+        if (!card.cardNumber) return;
         navigator.clipboard.writeText(card.cardNumber).then(() => {
             toast({
               title: "تم النسخ!",
@@ -335,10 +350,13 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
             });
         }).catch(err => {
             console.error("Failed to copy to clipboard:", err);
+            if (err instanceof DOMException && err.name === 'NotAllowedError') {
+                // Silently ignore this error as the user has been notified by the browser.
+            }
         });
     };
     
-    const handleSendSms = () => {
+    const handleSendSmsClick = () => {
         if (!smsRecipient.trim()) {
             toast({
                 variant: "destructive",
@@ -347,8 +365,7 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
             });
             return;
         }
-        const messageBody = encodeURIComponent(`تم شراء ${card.categoryName} من ${card.networkName}.\nرقم الكرت: ${card.cardNumber}`);
-        window.location.href = `sms:${smsRecipient}?body=${messageBody}`;
+        onSendSms(smsRecipient);
         setSmsDialogOpen(false);
         onClose();
     };
@@ -415,7 +432,7 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
                         </div>
                     </div>
                     <DialogFooter className="grid grid-cols-2 gap-2 p-4 pt-0">
-                        <Button onClick={handleSendSms} >تأكيد</Button>
+                        <Button onClick={handleSendSmsClick} >تأكيد</Button>
                         <Button variant="outline" onClick={() => setSmsDialogOpen(false)}>إلغاء</Button>
                     </DialogFooter>
                 </DialogContent>
@@ -446,5 +463,7 @@ function BackButton() {
 
 
 
+
+    
 
     
