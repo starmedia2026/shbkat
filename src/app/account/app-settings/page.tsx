@@ -58,7 +58,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { locations as initialLocations, type Location } from "@/lib/locations";
+import { locations as initialLocations } from "@/lib/locations";
+import type { Location } from "@/lib/locations";
 
 
 interface AppSettings {
