@@ -301,10 +301,13 @@ function PurchasedCardDialog({ card, isOpen, onClose }: { card: PurchasedCardInf
     const [smsRecipient, setSmsRecipient] = useState("");
 
     const copyToClipboard = () => {
-        navigator.clipboard.writeText(card.cardNumber);
-        toast({
-          title: "تم النسخ!",
-          description: "تم نسخ رقم الكرت إلى الحافظة.",
+        navigator.clipboard.writeText(card.cardNumber).then(() => {
+            toast({
+              title: "تم النسخ!",
+              description: "تم نسخ رقم الكرت إلى الحافظة.",
+            });
+        }).catch(err => {
+            console.error("Failed to copy to clipboard:", err);
         });
     };
     
@@ -412,5 +415,6 @@ function BackButton() {
     
 
     
+
 
 

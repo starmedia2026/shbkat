@@ -74,10 +74,13 @@ export default function OperationDetailsPage() {
 
   const copyToClipboard = (text: string | undefined, label: string) => {
     if (!text) return;
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "تم النسخ!",
-      description: `${label} تم نسخه إلى الحافظة.`,
+    navigator.clipboard.writeText(text).then(() => {
+        toast({
+          title: "تم النسخ!",
+          description: `${label} تم نسخه إلى الحافظة.`,
+        });
+    }).catch(err => {
+        console.error("Failed to copy to clipboard:", err);
     });
   };
 

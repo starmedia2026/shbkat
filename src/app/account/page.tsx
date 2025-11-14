@@ -198,11 +198,15 @@ export default function AccountPage() {
     };
     
     const fallbackCopy = () => {
-      navigator.clipboard.writeText(shareUrl);
-      toast({
-        title: "تم نسخ الرابط",
-        description: "تم نسخ رابط التطبيق إلى الحافظة. يمكنك مشاركته الآن!",
-      });
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            toast({
+                title: "تم نسخ الرابط",
+                description: "تم نسخ رابط التطبيق إلى الحافظة. يمكنك مشاركته الآن!",
+            });
+        }).catch(err => {
+            // This error can happen if the document is not focused.
+            console.error("Failed to copy to clipboard:", err);
+        });
     };
 
     if (navigator.share) {

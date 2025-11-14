@@ -210,12 +210,13 @@ function CardSalesContent() {
         title: "تم النسخ!",
         description: `تم نسخ ${filteredSoldCards.length} سجل إلى الحافظة. يمكنك لصقها في Excel.`
       });
-    }, () => {
-      toast({
-        variant: "destructive",
-        title: "فشل النسخ",
-        description: "لم نتمكن من نسخ البيانات إلى الحافظة."
-      });
+    }).catch(err => {
+        console.error("Failed to copy to clipboard:", err);
+        toast({
+            variant: "destructive",
+            title: "فشل النسخ",
+            description: "لم نتمكن من نسخ البيانات إلى الحافظة. قد تكون النافذة غير نشطة."
+        });
     });
   };
 
@@ -326,8 +327,11 @@ function SoldCardItem({ card, customer }: { card: CardData; customer?: Customer 
     const { toast } = useToast();
 
     const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast({ title: "تم النسخ!", description: "تم نسخ رقم الكرت إلى الحافظة." });
+        navigator.clipboard.writeText(text).then(() => {
+            toast({ title: "تم النسخ!", description: "تم نسخ رقم الكرت إلى الحافظة." });
+        }).catch(err => {
+            console.error("Failed to copy to clipboard:", err);
+        });
     };
 
     const handleWhatsAppRedirect = () => {
@@ -434,8 +438,11 @@ function AvailableCardItem({ card }: { card: CardData }) {
      const { toast } = useToast();
 
     const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast({ title: "تم النسخ!", description: "تم نسخ رقم الكرت إلى الحافظة." });
+        navigator.clipboard.writeText(text).then(() => {
+            toast({ title: "تم النسخ!", description: "تم نسخ رقم الكرت إلى الحافظة." });
+        }).catch(err => {
+            console.error("Failed to copy to clipboard:", err);
+        });
     };
 
     return (

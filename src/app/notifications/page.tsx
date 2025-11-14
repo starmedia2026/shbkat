@@ -84,10 +84,13 @@ function NotificationCard({ notification }: { notification: Notification }) {
     const { toast } = useToast();
 
     const copyToClipboard = (text: string, label: string) => {
-        navigator.clipboard.writeText(text);
-        toast({
-          title: "تم النسخ!",
-          description: `${label} تم نسخه إلى الحافظة.`,
+        navigator.clipboard.writeText(text).then(() => {
+            toast({
+              title: "تم النسخ!",
+              description: `${label} تم نسخه إلى الحافظة.`,
+            });
+        }).catch(err => {
+            console.error("Failed to copy to clipboard:", err);
         });
     };
 
