@@ -20,6 +20,8 @@ import {
   User,
   Landmark,
   Wallet,
+  DollarSign,
+  Percent,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,9 +34,14 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
 interface OperationDetails {
-    method: string;
-    recipientName: string;
-    recipientAccount: string;
+    // For withdrawals
+    method?: string;
+    recipientName?: string;
+    recipientAccount?: string;
+    // For profit top-ups
+    cardPrice?: number;
+    cardCategoryName?: string;
+    commissionAmount?: number;
 }
 
 interface Operation {
@@ -147,6 +154,15 @@ export default function OperationDetailsPage() {
                <DetailRow icon={Calendar} label="التاريخ والوقت" value={format(new Date(operation.date), "eeee, d MMMM yyyy - h:mm a", { locale: ar })} />
                <DetailRow icon={FileText} label="الوصف" value={operation.description} />
                <DetailRow icon={statusInfo.icon} label="الحالة" value={statusInfo.label} valueColor={statusInfo.color} />
+               
+               {operation.type === "topup_admin" && operation.details && (
+                <>
+                    <DetailRow icon={DollarSign} label="سعر الكرت الأصلي" value={`${operation.details.cardPrice?.toLocaleString('en-US')} ريال`} />
+                    <DetailRow icon={Tag} label="فئة الكرت" value={operation.details.cardCategoryName || "غير محدد"} />
+                    <DetailRow icon={Percent} label="العمولة (10%)" value={`${operation.details.commissionAmount?.toLocaleString('en-US')} ريال`} valueColor="text-red-500" />
+                </>
+               )}
+
                {operation.type === "withdraw" && operation.details && (
                 <>
                     <DetailRow icon={User} label="اسم المستلم" value={operation.details.recipientName} />
@@ -177,7 +193,7 @@ export default function OperationDetailsPage() {
 interface DetailRowProps {
     icon: React.ElementType;
     label: string;
-    value: string;
+    value?: string;
     valueColor?: string;
     onCopy?: () => void;
 }
@@ -188,15 +204,19 @@ const DetailRow: React.FC<DetailRowProps> = ({ icon: Icon, label, value, valueCo
             <Icon className="h-5 w-5 text-muted-foreground"/>
             <span className="text-sm font-semibold">{label}</span>
         </div>
-        <div className="flex items-center gap-2 max-w-[60%]">
-            <p className={`text-sm text-left text-muted-foreground break-words ${valueColor || ''}`}>
-                {value}
-            </p>
-            {onCopy && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onCopy}>
-                    <Copy className="h-4 w-4"/>
-                </Button>
-            )}
-        </div>
+        { value && (
+            <div className="flex items-center gap-2 max-w-[60%]">
+                <p className={`text-sm text-left text-muted-foreground break-words ${valueColor || ''}`}>
+                    {value}
+                </p>
+                {onCopy && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onCopy}>
+                        <Copy className="h-4 w-4"/>
+                    </Button>
+                )}
+            </div>
+        )}
     </div>
 );
+
+    

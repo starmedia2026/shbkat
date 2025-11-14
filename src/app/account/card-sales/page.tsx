@@ -294,6 +294,7 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
     const { toast } = useToast();
     const [isTransferring, setIsTransferring] = useState(false);
     const profitAmount = categoryPrice * 0.90; // 90% for the owner
+    const commissionAmount = categoryPrice * 0.10; // 10% commission
 
     const performTransfer = async (): Promise<number | null> => {
         if (!networkOwner || !firestore || card.status === 'transferred') {
@@ -320,8 +321,27 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
                 transaction.update(cardRef, { status: "transferred" });
 
                 const now = new Date().toISOString();
-                const opData = { type: 'topup_admin', amount: profitAmount, date: now, description: `إيداع ربح كرت: ${card.id}`, status: 'completed', operationNumber: generateOperationNumber() };
-                const notifData = { type: 'topup_admin', title: 'تم استلام أرباح', body: `تم إيداع مبلغ ${profitAmount.toLocaleString('en-US')} ريال كأرباح مبيعات.`, amount: profitAmount, date: now, read: false };
+                const opData = { 
+                    type: 'topup_admin', 
+                    amount: profitAmount, 
+                    date: now, 
+                    description: `إيداع ربح: ${categoryName} - ${categoryPrice} ريال`, 
+                    status: 'completed', 
+                    operationNumber: generateOperationNumber(),
+                    details: {
+                        cardPrice: categoryPrice,
+                        cardCategoryName: categoryName,
+                        commissionAmount: commissionAmount,
+                    }
+                };
+                const notifData = { 
+                    type: 'topup_admin', 
+                    title: 'تم استلام أرباح', 
+                    body: `تم إيداع ${profitAmount.toLocaleString('en-US')} ريال كأرباح بيع كرت فئة ${categoryName}.`, 
+                    amount: profitAmount, 
+                    date: now, 
+                    read: false 
+                };
 
                 transaction.set(doc(collection(firestore, `customers/${networkOwner.id}/operations`)), opData);
                 transaction.set(doc(collection(firestore, `customers/${networkOwner.id}/notifications`)), notifData);
@@ -589,5 +609,7 @@ function CardSkeleton() {
         </Card>
     );
 }
+
+    
 
     
