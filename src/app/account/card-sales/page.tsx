@@ -455,7 +455,7 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
                 const newOwnerBalance = ownerBalance + profitAmount;
                 
                 transaction.update(ownerRef, { balance: newOwnerBalance });
-                transaction.update(cardRef, { status: "transferred" });
+                transaction.delete(cardRef); // Delete the card after transferring profit
 
                 const now = new Date().toISOString();
                 const opData = { 
@@ -486,7 +486,7 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
 
             toast({
                 title: "تم التحويل بنجاح",
-                description: `تم تحويل ${profitAmount.toLocaleString('en-US')} ريال إلى ${networkOwner.name}.`,
+                description: `تم تحويل ${profitAmount.toLocaleString('en-US')} ريال إلى ${networkOwner.name} وحذف الكرت.`,
             });
             return profitAmount;
         } catch (e: any) {
@@ -607,9 +607,9 @@ ${customer.balance.toLocaleString('en-US')} ريال
                          <p className="flex items-center gap-2"><Wifi className="h-4 w-4 text-primary"/> <span>{networkName}</span></p>
                          <p className="flex items-center gap-2"><Tag className="h-4 w-4 text-primary"/> <span>{categoryName} ({categoryPrice} ريال)</span></p>
                     </div>
-                     <div className="text-left space-y-1">
+                     <div className="text-left">
                         <div className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{customerName}</span></div>
-                        <div className="flex items-center justify-end gap-2" dir="ltr"><span>{customerPhone}</span><Phone className="h-4 w-4 text-primary"/></div>
+                        <div className="flex items-center justify-end gap-2 mt-1" dir="ltr"><Phone className="h-4 w-4 text-primary"/><span>{customerPhone}</span></div>
                     </div>
                 </div>
                 {(isAdmin || isOwner) && <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2 flex-wrap">
@@ -626,7 +626,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                                     <AlertDialogHeader>
                                     <AlertDialogTitle>تأكيد تحويل الربح</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        هل أنت متأكد من تحويل مبلغ <span className="font-bold text-primary">{profitAmount.toLocaleString('en-US')}</span> ريال (بعد خصم 10% عمولة) إلى حساب مالك الشبكة <span className="font-bold">{networkOwner.name}</span>؟
+                                        هل أنت متأكد من تحويل مبلغ <span className="font-bold text-primary">{profitAmount.toLocaleString('en-US')}</span> ريال (بعد خصم 10% عمولة) إلى حساب مالك الشبكة <span className="font-bold">{networkOwner.name}</span>؟ سيتم حذف الكرت بعد التحويل.
                                     </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -645,7 +645,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                                     <AlertDialogHeader>
                                     <AlertDialogTitle>تأكيد التحويل والإبلاغ</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        سيتم تحويل مبلغ <span className="font-bold text-primary">{profitAmount.toLocaleString('en-US')}</span> ريال إلى مالك الشبكة وفتح واتساب لإرسال رسالة إبلاغ. هل تريد المتابعة؟
+                                        سيتم تحويل مبلغ <span className="font-bold text-primary">{profitAmount.toLocaleString('en-US')}</span> ريال إلى مالك الشبكة وفتح واتساب لإرسال رسالة إبلاغ. سيتم حذف الكرت بعد التحويل. هل تريد المتابعة؟
                                     </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -751,5 +751,7 @@ function CardSkeleton() {
         </Card>
     );
 }
+
+    
 
     
