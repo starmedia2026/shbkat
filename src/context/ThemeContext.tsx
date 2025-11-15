@@ -18,7 +18,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const DEFAULT_PRIMARY_COLOR = "142 76% 36%";
+const DEFAULT_PRIMARY_COLOR = "210 100% 56%";
 const DEFAULT_FONT = "font-tajawal";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
