@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDoc, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
-import { doc, writeBatch, collection, getDoc } from "firebase/firestore";
+import { doc, writeBatch, collection, getDoc, runTransaction } from "firebase/firestore";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,8 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+
 
 interface OperationDetails {
     method?: string;
@@ -55,6 +57,7 @@ interface Customer {
     id: string;
     name: string;
     phoneNumber: string;
+    balance: number;
 }
 
 export default function HandleWithdrawalPage() {
@@ -115,50 +118,98 @@ export default function HandleWithdrawalPage() {
         fetchOwner();
     }, [firestore, ownerId]);
 
-    const handleStatusChange = async (newStatus: "completed" | "failed") => {
-        if (!firestore || !operationDocRef || !ownerId) {
+    const handleStatusChange = async (newStatus: "completed" | "failed", andThen?: () => void) => {
+        if (!firestore || !operationDocRef || !ownerId || !operation) {
             toast({ variant: "destructive", title: "خطأ", description: "لا يمكن تحديث الطلب." });
             return;
         }
         
         setIsUpdating(true);
-        const notificationRef = doc(collection(firestore, `customers/${ownerId}/notifications`));
-        const batch = writeBatch(firestore);
-
-        const statusText = newStatus === 'completed' ? 'اكتمل' : 'تم رفض';
-        const notificationBody = `طلب سحب مبلغ ${Math.abs(operation!.amount).toLocaleString('en-US')} ريال ${statusText}.${notes ? ` ملاحظة: ${notes}`:''}`;
-        
-        const notificationData = {
-            type: 'system_message' as const,
-            title: `تحديث حالة طلب السحب`,
-            body: notificationBody,
-            date: new Date().toISOString(),
-            read: false,
-        };
-        
-        batch.update(operationDocRef, { status: newStatus });
-        batch.set(notificationRef, notificationData);
+        const operationRef = doc(firestore, operationDocRef.path);
+        const ownerRef = doc(firestore, `customers/${ownerId}`);
 
         try {
-            await batch.commit();
+            await runTransaction(firestore, async (transaction) => {
+                const ownerDoc = await transaction.get(ownerRef);
+                const operationDoc = await transaction.get(operationRef);
+
+                if (!ownerDoc.exists()) throw new Error("لم يتم العثور على حساب المالك.");
+                if (!operationDoc.exists()) throw new Error("لم يتم العثور على العملية.");
+
+                // Refund logic for 'failed' status
+                if (newStatus === 'failed' && operationDoc.data().status === 'pending') {
+                    const currentBalance = ownerDoc.data().balance;
+                    const amountToRefund = Math.abs(operation.amount);
+                    transaction.update(ownerRef, { balance: currentBalance + amountToRefund });
+                }
+
+                // Update operation status
+                transaction.update(operationRef, { status: newStatus });
+
+                // Add notification for the owner
+                const statusText = newStatus === 'completed' ? 'اكتمل' : 'تم رفض';
+                let notificationBody = `طلب سحب مبلغ ${Math.abs(operation!.amount).toLocaleString('en-US')} ريال ${statusText}.`;
+                if(newStatus === 'failed') {
+                    notificationBody = `تم رفض طلب سحب مبلغ ${Math.abs(operation!.amount).toLocaleString('en-US')} ريال. وقد تم إعادة المبلغ إلى رصيدك. ${notes ? `ملاحظة: ${notes}` : ''}`;
+                } else if (notes) {
+                    notificationBody += ` ملاحظة: ${notes}`;
+                }
+                
+                const notificationData = {
+                    type: 'system_message' as const,
+                    title: `تحديث حالة طلب السحب`,
+                    body: notificationBody,
+                    date: new Date().toISOString(),
+                    read: false,
+                };
+                const notificationRef = doc(collection(firestore, `customers/${ownerId}/notifications`));
+                transaction.set(notificationRef, notificationData);
+            });
+
             toast({
                 title: "تم تحديث الحالة بنجاح",
                 description: `تم إرسال إشعار إلى مالك الشبكة.`
             });
+            
+            andThen?.();
             router.back();
-        } catch (e) {
-             const contextualError = new FirestorePermissionError({
+
+        } catch(e: any) {
+            console.error("Transaction failed:", e);
+            const contextualError = new FirestorePermissionError({
                 operation: 'write',
-                path: 'batch-write (withdrawal update)',
-                requestResourceData: { 
-                    update: { path: operationDocRef.path, data: { status: newStatus } },
-                    setNotif: { path: notificationRef.path, data: notificationData }
-                }
+                path: `Transaction for withdrawal update on ${operationDocRef.path}`,
+                requestResourceData: { note: "Failed to update withdrawal status and/or refund." }
             });
             errorEmitter.emit('permission-error', contextualError);
+             toast({
+                variant: "destructive",
+                title: "فشل التحديث",
+                description: e.message || "حدث خطأ أثناء تحديث حالة الطلب.",
+            });
         } finally {
             setIsUpdating(false);
         }
+    };
+
+    const handleCompleteAndNotify = () => {
+        handleStatusChange('completed', () => {
+             if (!operation?.details || !owner) return;
+             const recipientName = operation.details.recipientName || "غير محدد";
+             const bankName = operation.details.method || "غير محدد";
+             const accountNumber = operation.details.recipientAccount || "غير محدد";
+             const amount = Math.abs(operation.amount).toLocaleString('en-US');
+             const date = format(new Date(), "d MMMM yyyy", { locale: ar });
+
+             const message = `📣 *إشعار إيداع*
+تم إيداع في حساب ${recipientName} لدى ${bankName} (${accountNumber})
+مبلغ ${amount} ريال يمني إلى حسابكم بتاريخ ${date}
+
+*تطبيق شبكات — خدمة موثوقة، وأداء عالي*`;
+
+             const whatsappUrl = `https://wa.me/967${owner.phoneNumber}?text=${encodeURIComponent(message)}`;
+             window.open(whatsappUrl, "_blank");
+        });
     };
     
     const isLoading = isOperationLoading || isOwnerLoading;
@@ -223,13 +274,18 @@ export default function HandleWithdrawalPage() {
                                     </Label>
                                     <Textarea id="notes" placeholder="اكتب ملاحظة لمالك الشبكة (اختياري)..." value={notes} onChange={(e) => setNotes(e.target.value)} />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                     <Button onClick={() => handleStatusChange('completed')} disabled={isUpdating || operation.status === 'completed'} size="lg" className="bg-green-500 hover:bg-green-600 text-white">
-                                        {isUpdating ? <Loader2 className="animate-spin" /> : "مكتمل"}
+                                <div className="flex flex-col gap-3">
+                                     <Button onClick={handleCompleteAndNotify} disabled={isUpdating || operation.status === 'completed'} size="lg" className="bg-green-600 hover:bg-green-700 text-white w-full">
+                                        {isUpdating ? <Loader2 className="animate-spin" /> : "إكمال وإبلاغ"}
                                      </Button>
-                                     <Button onClick={() => handleStatusChange('failed')} disabled={isUpdating || operation.status === 'failed'} size="lg" variant="destructive">
-                                        {isUpdating ? <Loader2 className="animate-spin" /> : "مرفوض"}
-                                     </Button>
+                                     <div className="grid grid-cols-2 gap-3">
+                                        <Button onClick={() => handleStatusChange('completed')} disabled={isUpdating || operation.status === 'completed'} size="lg" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 w-full">
+                                            {isUpdating ? <Loader2 className="animate-spin" /> : "مكتمل فقط"}
+                                        </Button>
+                                        <Button onClick={() => handleStatusChange('failed')} disabled={isUpdating || operation.status === 'failed'} size="lg" variant="destructive" className="w-full">
+                                            {isUpdating ? <Loader2 className="animate-spin" /> : "مرفوض"}
+                                        </Button>
+                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -286,4 +342,3 @@ function LoadingSkeleton() {
         </div>
     );
 }
-

@@ -32,7 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDoc, useFirestore, useMemoFirebase, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, doc, writeBatch, getDocs, query, where, limit } from "firebase/firestore";
+import { collection, doc, writeBatch, getDocs, query, where, limit, runTransaction } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -153,58 +153,66 @@ function WithdrawContent() {
         return;
     }
 
-    const newBalance = owner.balance - withdrawAmount;
     const now = new Date().toISOString();
-    
     const ownerDocRef = doc(firestore, "customers", user.uid);
     const operationDocRef = doc(collection(firestore, `customers/${user.uid}/operations`));
 
-    const operationData = {
-        type: "withdraw" as const,
-        amount: -withdrawAmount,
-        date: now,
-        description: `طلب سحب إلى ${selectedMethod.name}`,
-        status: "pending" as const,
-        operationNumber: generateOperationNumber(),
-        details: {
-            method: selectedMethod.name,
-            recipientName,
-            recipientAccount,
-        },
-        balanceAfter: newBalance,
-    };
-    
-    const notificationData = {
-        type: "withdraw" as const,
-        title: "تم استلام طلب السحب",
-        body: `طلب سحب مبلغ ${withdrawAmount.toLocaleString('en-US')} ريال قيد المراجعة.`,
-        amount: -withdrawAmount,
-        date: now,
-        read: false,
-    };
-    
-    const adminNotificationData = {
-        title: "طلب سحب جديد",
-        body: `من ${owner.name} بمبلغ ${withdrawAmount.toLocaleString('en-US')} ريال`,
-        operationPath: operationDocRef.path,
-        ownerId: user.uid,
-        date: now,
-        status: "pending" as const,
-        read: false,
-    };
-    
-    const notificationDocRef = doc(collection(firestore, `customers/${user.uid}/notifications`));
-    const adminNotificationDocRef = doc(collection(firestore, 'admin_notifications'));
-
-    const batch = writeBatch(firestore);
-    
-    batch.update(ownerDocRef, { balance: newBalance });
-    batch.set(operationDocRef, operationData);
-    batch.set(notificationDocRef, notificationData);
-    batch.set(adminNotificationDocRef, adminNotificationData);
-
     try {
-        await batch.commit();
+        await runTransaction(firestore, async (transaction) => {
+            const ownerDoc = await transaction.get(ownerDocRef);
+            if (!ownerDoc.exists()) throw new Error("لم يتم العثور على حساب المالك.");
+            
+            const currentBalance = ownerDoc.data().balance;
+            if (currentBalance < withdrawAmount) throw new Error("رصيد غير كافٍ.");
+            
+            const newBalance = currentBalance - withdrawAmount;
+            
+            // Deduct balance
+            transaction.update(ownerDocRef, { balance: newBalance });
+
+            // Create operation log
+            const operationData = {
+                type: "withdraw" as const,
+                amount: -withdrawAmount,
+                date: now,
+                description: `طلب سحب إلى ${selectedMethod.name}`,
+                status: "pending" as const,
+                operationNumber: generateOperationNumber(),
+                details: {
+                    method: selectedMethod.name,
+                    recipientName,
+                    recipientAccount,
+                },
+                balanceAfter: newBalance,
+            };
+            transaction.set(operationDocRef, operationData);
+
+            // Create user notification
+            const notificationData = {
+                type: "withdraw" as const,
+                title: "تم استلام طلب السحب",
+                body: `طلب سحب مبلغ ${withdrawAmount.toLocaleString('en-US')} ريال قيد المراجعة.`,
+                amount: -withdrawAmount,
+                date: now,
+                read: false,
+            };
+            const notificationDocRef = doc(collection(firestore, `customers/${user.uid}/notifications`));
+            transaction.set(notificationDocRef, notificationData);
+
+            // Create admin notification
+            const adminNotificationData = {
+                title: "طلب سحب جديد",
+                body: `من ${owner.name} بمبلغ ${withdrawAmount.toLocaleString('en-US')} ريال`,
+                operationPath: operationDocRef.path,
+                ownerId: user.uid,
+                date: now,
+                status: "pending" as const,
+                read: false,
+            };
+            const adminNotificationDocRef = doc(collection(firestore, 'admin_notifications'));
+            transaction.set(adminNotificationDocRef, adminNotificationData);
+        });
+
         toast({
             title: "تم إرسال طلب السحب بنجاح",
             description: "سيتم مراجعة طلبك وتأكيد العملية في أقرب وقت ممكن.",
@@ -213,18 +221,23 @@ function WithdrawContent() {
         setRecipientAccount("");
         setAmount("");
         setSelectedMethod(null);
-    } catch(e) {
+
+    } catch(e: any) {
         const contextualError = new FirestorePermissionError({
             operation: 'write',
             path: 'batch-write (withdraw)',
             requestResourceData: { 
-                update: { path: ownerDocRef.path, data: { balance: newBalance } },
-                setOp: { path: operationDocRef.path, data: operationData },
-                setNotif: { path: notificationDocRef.path, data: notificationData },
-                setAdminNotif: { path: adminNotificationDocRef.path, data: adminNotificationData }
+                note: "Failed to process withdrawal request.",
+                ownerId: user.uid,
+                amount: withdrawAmount
              }
         });
         errorEmitter.emit('permission-error', contextualError);
+         toast({
+            variant: "destructive",
+            title: "فشل إنشاء الطلب",
+            description: e.message || "حدث خطأ أثناء معالجة الطلب.",
+        });
     } finally {
         setIsProcessing(false);
     }
@@ -381,9 +394,3 @@ function LoadingSkeleton() {
         </div>
     );
 }
-
-    
-
-    
-
-    
