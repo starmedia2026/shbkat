@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface OperationDetails {
     // For withdrawals
@@ -86,6 +87,7 @@ export default function OperationDetailsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { isAdmin, isOwner } = useAdmin();
 
   const operationDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !operationId) return null;
@@ -109,6 +111,12 @@ export default function OperationDetailsPage() {
   const config = operation ? operationConfig[operation.type] : null;
   const isIncome = operation && operation.amount > 0;
   const statusInfo = operation ? statusConfig[operation.status] : null;
+  
+  const descriptionText = (isAdmin || isOwner) && operation?.type === 'topup_admin' 
+    ? config?.label 
+    : operation?.type === 'topup_admin'
+    ? 'إيداع الى حسابك'
+    : operation?.description;
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -153,7 +161,7 @@ export default function OperationDetailsPage() {
                     </p>
                </div>
                <DetailRow icon={Calendar} label="التاريخ والوقت" value={format(new Date(operation.date), "eeee, d MMMM yyyy - h:mm a", { locale: ar })} />
-               <DetailRow icon={FileText} label="الوصف" value={operation.description} />
+               <DetailRow icon={FileText} label="الوصف" value={descriptionText} />
                <DetailRow icon={statusInfo.icon} label="الحالة" value={statusInfo.label} valueColor={statusInfo.color} />
                
                {operation.type === "topup_admin" && operation.details && (

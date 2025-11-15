@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { useAdmin } from "@/hooks/useAdmin";
 
 
 interface Operation {
@@ -138,7 +139,15 @@ function OperationCard({ operation }: { operation: Operation }) {
   const config = operationConfig[operation.type];
   const Icon = config.icon;
   const isIncome = operation.amount > 0;
+  const {isAdmin, isOwner} = useAdmin();
   
+  const descriptionText = (isAdmin || isOwner) && operation.type === 'topup_admin' 
+    ? config.label 
+    : operation.type === 'topup_admin'
+    ? 'إيداع الى حسابك'
+    : operation.description;
+
+
   return (
     <Link href={`/operations/${operation.id}`} className="block">
       <Card className="w-full shadow-md rounded-2xl bg-card/50 hover:bg-card/90 active:scale-[0.98] transition-all">
@@ -149,7 +158,7 @@ function OperationCard({ operation }: { operation: Operation }) {
                 <Icon className="h-5 w-5" />
               </div>
               <div>
-                <p className="font-semibold text-sm">{operation.type === 'topup_admin' ? config.label : operation.description}</p>
+                <p className="font-semibold text-sm">{descriptionText}</p>
                 <p className="text-xs text-muted-foreground">{operation.description}</p>
               </div>
             </div>

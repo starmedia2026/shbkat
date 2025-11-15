@@ -1,33 +1,17 @@
 [
   {
-    "id": "network-1763180531331",
-    "name": "شبكة دوعن ",
-    "address": "شبام - سيئون",
-    "logo": "",
-    "ownerPhone": "775555555",
-    "categories": [
-      {
-        "id": "new-cat-1763180755496",
-        "name": "للزلزلنن",
-        "price": 2000,
-        "validity": "ة",
-        "capacity": "اب"
-      }
-    ]
-  },
-  {
     "id": "network-1763194379592",
-    "name": "شبكة بيحم",
+    "name": "شبكة الخير",
     "address": "شبام",
     "logo": "",
     "ownerPhone": "776468668",
     "categories": [
       {
         "id": "new-cat-1763195005945",
-        "name": "فئة 200",
-        "price": 200,
-        "validity": "اسبوع",
-        "capacity": "500 ميقا"
+        "name": "فئة 300",
+        "price": 300,
+        "validity": "3 ايام",
+        "capacity": "مفتوح"
       }
     ]
   }

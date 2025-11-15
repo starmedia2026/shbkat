@@ -436,6 +436,8 @@ function LastOperationItem({ operation }: { operation: Operation }) {
     const Icon = config.icon;
     const isIncome = operation.amount > 0;
     
+    const descriptionText = operation.type === 'topup_admin' ? 'إيداع الى حسابك' : operation.description;
+
     return (
         <Card className="shadow-md rounded-xl bg-card">
             <CardContent className="p-4 flex items-center justify-between">
@@ -444,7 +446,7 @@ function LastOperationItem({ operation }: { operation: Operation }) {
                         <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                        <p className="text-sm font-bold">{operation.description}</p>
+                        <p className="text-sm font-bold">{descriptionText}</p>
                          <p className="text-xs text-muted-foreground">
                             {format(new Date(operation.date), "d MMM, yyyy", { locale: ar })}
                         </p>
@@ -457,5 +459,3 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
-
-    
