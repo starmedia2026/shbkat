@@ -217,11 +217,8 @@ export default function SignupPage() {
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-4 flex items-center gap-3">
           {isSettingsLoading ? (
-            <div className="relative flex h-28 w-40 items-center justify-center">
-                <div className="absolute inset-0">
-                    <Loader2 className="h-full w-full animate-spin text-primary" />
-                </div>
-                <div className="h-[90px] w-[150px] bg-background"></div>
+            <div className="flex flex-col items-center justify-center gap-6 h-[118px]">
+                <div className="h-[90px] w-[150px] bg-transparent"></div>
             </div>
           ) : (
             <Image

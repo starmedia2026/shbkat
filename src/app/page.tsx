@@ -106,25 +106,25 @@ export default function LoginPage() {
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-4 flex flex-col items-center gap-2">
             {isSettingsLoading ? (
-                 <div className="relative flex h-28 w-40 items-center justify-center">
-                    <div className="absolute inset-0">
-                        <Loader2 className="h-full w-full animate-spin text-primary" />
-                    </div>
-                     <div className="h-[90px] w-[150px] bg-background"></div>
+                 <div className="flex flex-col items-center justify-center gap-6 h-[146px]">
+                    <div className="h-[90px] w-[150px] bg-transparent"></div>
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : (
-                <Image
-                    src={logoUrl}
-                    alt="Shabakat Logo"
-                    width={150}
-                    height={90}
-                    priority
-                    className="h-[90px] w-auto object-contain"
-                />
+                 <div className="h-[146px] flex flex-col items-center gap-2">
+                     <Image
+                        src={logoUrl}
+                        alt="Shabakat Logo"
+                        width={150}
+                        height={90}
+                        priority
+                        className="h-[90px] w-auto object-contain"
+                    />
+                    <p className="text-xl text-muted-foreground font-semibold">
+                        {displayName ? `أهلاً ${displayName}` : 'أهلاً بك'}
+                    </p>
+                 </div>
             )}
-          <p className="text-xl text-muted-foreground font-semibold">
-            {displayName ? `أهلاً ${displayName}` : 'أهلاً بك'}
-          </p>
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
           <CardHeader className="space-y-1 text-center pt-0">
@@ -170,7 +170,7 @@ export default function LoginPage() {
                 </div>
               </div>
             </CardContent>
-             <CardFooter className="flex flex-col gap-4">
+             <CardFooter className="flex flex-col gap-2">
                 <div className="w-full text-left text-sm">
                     <Link
                     href="/forgot-password"
