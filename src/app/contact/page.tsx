@@ -60,7 +60,7 @@ export default function ContactPage() {
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-center flex-grow">تواصل معنا</h1>
+        <h1 className="text-lg font-normal text-center flex-grow">الدعم الفني</h1>
       </header>
       <main className="p-4 flex flex-col items-center justify-center text-center flex-grow space-y-6">
         
