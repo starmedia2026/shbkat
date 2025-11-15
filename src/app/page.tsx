@@ -164,16 +164,16 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
+              <div className="text-left text-sm">
+                <Link
+                  href="/forgot-password"
+                  className="font-medium text-primary hover:underline text-sm"
+                >
+                  نسيت كلمة المرور؟
+                </Link>
+              </div>
 
-              <div className="flex flex-col gap-4 pt-2">
-                <div className="text-left text-sm">
-                    <Link
-                    href="/forgot-password"
-                    className="font-medium text-primary hover:underline text-sm"
-                    >
-                    نسيت كلمة المرور؟
-                    </Link>
-                </div>
+              <div className="flex flex-col gap-4">
                 <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base" disabled={isLoading}>
                     {isLoading ? "جاري الدخول..." : "دخول"}
                 </Button>
