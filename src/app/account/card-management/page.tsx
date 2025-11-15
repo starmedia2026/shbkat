@@ -104,7 +104,9 @@ function CardManagementContent() {
     success: number;
     failed: number;
   } | null>(null);
+  
   const ALL_NETWORKS_VALUE = "all";
+
 
   const availableCategories = useMemo(() => {
     if (selectedNetworkId === ALL_NETWORKS_VALUE) return [];
@@ -250,7 +252,7 @@ function CardManagementContent() {
                       {networks.map((network) => (
                       <SelectItem key={network.id} value={network.id}>
                           {network.name}
-                      SelectItem>
+                      </SelectItem>
                       ))}
                   </SelectContent>
                   </Select>
