@@ -230,14 +230,12 @@ function CardSalesContent() {
         if (!allCards) return null;
         return [...allCards].sort((a, b) => {
             if ((a.status === 'used' || a.status === 'transferred') && (b.status === 'used' || b.status === 'transferred')) {
-                // Handle cases where usedAt might be missing (though it shouldn't for 'used' status)
                 const dateA = a.usedAt ? new Date(a.usedAt).getTime() : 0;
                 const dateB = b.usedAt ? new Date(b.usedAt).getTime() : 0;
                 return dateB - dateA;
             }
             if (a.status === 'used' || a.status === 'transferred') return -1;
             if (b.status === 'used' || b.status === 'transferred') return 1;
-            // Fallback to createdAt for 'available' cards
             const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
             return dateB - dateA;
@@ -249,7 +247,7 @@ function CardSalesContent() {
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
 
     useEffect(() => {
-        if (!firestore || !sortedCards || !isAdmin) {
+        if (!firestore || !sortedCards || (!isAdmin && !isOwner)) {
             setIsLoadingCustomers(false);
             return;
         }
@@ -290,7 +288,7 @@ function CardSalesContent() {
         };
 
         fetchCustomers();
-    }, [firestore, sortedCards, isAdmin]);
+    }, [firestore, sortedCards, isAdmin, isOwner]);
     
     const networksToDisplay = useMemo(() => {
         if (filterNetwork) {
@@ -618,7 +616,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                          <p className="flex items-center gap-2"><Tag className="h-4 w-4 text-primary"/> <span>{categoryName} ({categoryPrice} ريال)</span></p>
                     </div>
                      <div className="text-left space-y-2">
-                         <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{isAdmin && customer ? customer.name : "مشتري"}</span></p>
+                         <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{customer ? customer.name : "مشتري"}</span></p>
                          {isAdmin && customer && <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer.phoneNumber}</span> <Phone className="h-4 w-4 text-primary"/> </p>}
                          {!isAdmin && <p className="flex items-center justify-end gap-2" dir="ltr"><span>رقم غير متاح</span> <Phone className="h-4 w-4 text-primary"/> </p>}
                     </div>
@@ -760,3 +758,5 @@ function CardSkeleton() {
         </Card>
     );
 }
+
+    
