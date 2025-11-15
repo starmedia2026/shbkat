@@ -236,11 +236,10 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="flex-1 text-center">
-            <h2 className="text-sm text-muted-foreground">{greeting}</h2>
             {isLoading ? (
-              <Skeleton className="h-6 w-32 mt-1 mx-auto" />
+              <Skeleton className="h-6 w-48 mt-1 mx-auto" />
             ) : (
-              <h1 className="text-lg font-bold">{customer?.name ? formatDisplayName(customer.name) : '...'}</h1>
+                <h1 className="text-lg font-bold">{greeting}, {customer?.name ? formatDisplayName(customer.name) : '...'}</h1>
             )}
           </div>
           <div className="flex-1 flex justify-end">
@@ -455,3 +454,5 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
+
+    
