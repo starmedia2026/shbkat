@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, ChevronLeft, Wifi, Phone, MapPin, Heart, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useUser, useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from "@/firebase";
 import { collection, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
@@ -13,6 +13,14 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { allNetworksData, type Network } from "@/lib/networks";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { allLocations } from "@/lib/locations";
 
 
 interface Favorite {
@@ -28,6 +36,7 @@ export default function NetworksPage() {
   
   const [allNetworks] = useState<Network[]>(allNetworksData);
   const [areNetworksLoading, setAreNetworksLoading] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState("all");
 
   const favoritesCollectionRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -41,6 +50,13 @@ export default function NetworksPage() {
   const favoriteNetworkIds = React.useMemo(() => {
     return new Set(favorites?.map(fav => fav.id));
   }, [favorites]);
+  
+  const filteredNetworks = useMemo(() => {
+    if (selectedLocation === "all") {
+      return allNetworks;
+    }
+    return allNetworks.filter(network => network.address === selectedLocation);
+  }, [allNetworks, selectedLocation]);
 
   const toggleFavorite = (networkId: string, isCurrentlyFavorite: boolean) => {
     if (!firestore || !user?.uid) {
@@ -89,13 +105,27 @@ export default function NetworksPage() {
         </Button>
         <h1 className="text-lg font-normal text-center flex-grow">الشبكات</h1>
       </header>
-      <main className="p-4 space-y-4">
+       <div className="p-4">
+          <Select dir="rtl" onValueChange={setSelectedLocation} value={selectedLocation}>
+            <SelectTrigger>
+              <SelectValue placeholder="تصفية حسب الموقع" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل المواقع</SelectItem>
+              {allLocations.map((loc) => (
+                <SelectItem key={loc.id} value={loc.value}>{loc.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      <main className="p-4 pt-0 space-y-4">
         {isLoading ? (
             [...Array(3)].map((_, i) => <NetworkCardSkeleton key={i} />)
-        ) : allNetworks.length > 0 ? (
-            allNetworks.map((network) => {
+        ) : filteredNetworks.length > 0 ? (
+            filteredNetworks.map((network) => {
             const isFavorite = favoriteNetworkIds.has(network.id);
             const isToggling = togglingFavorites[network.id];
+            const networkLocation = allLocations.find(l => l.value === network.address)?.name;
 
             return (
             <Link href={`/networks/${network.id}`} key={network.id} className="block">
@@ -108,10 +138,10 @@ export default function NetworksPage() {
                         <div className="flex-grow text-right">
                             <h2 className="font-bold text-lg">{network.name}</h2>
                             <div className="flex flex-col items-start gap-1 text-xs text-primary-foreground/90 mt-1">
-                            {network.address && (
+                            {networkLocation && (
                             <div className="flex items-center gap-2">
                                 <MapPin className="h-3 w-3" />
-                                <span>{network.address}</span>
+                                <span>{networkLocation}</span>
                             </div>
                             )}
                             {network.ownerPhone && (
@@ -159,7 +189,7 @@ export default function NetworksPage() {
             <div className="text-center text-muted-foreground pt-16">
                 <Wifi className="mx-auto h-12 w-12" />
                 <h3 className="mt-4 text-lg font-semibold">لا توجد شبكات متاحة</h3>
-                <p className="mt-1 text-sm">لم يتم العثور على شبكات.</p>
+                <p className="mt-1 text-sm">لم يتم العثور على شبكات في الموقع المحدد.</p>
             </div>
         )}
       </main>
@@ -184,3 +214,5 @@ const NetworkCardSkeleton = () => (
         </CardContent>
     </Card>
 );
+
+    
