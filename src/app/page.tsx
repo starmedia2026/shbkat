@@ -61,6 +61,14 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    
+    if (phone.length !== 9) {
+        const msg = "رقم الهاتف يجب أن يتكون من 9 أرقام بالضبط.";
+        setError(msg);
+        toast({ variant: "destructive", title: "خطأ في رقم الهاتف", description: msg });
+        return;
+    }
+
     setIsLoading(true);
     const email = `${phone}@shabakat.app`;
 
@@ -146,6 +154,7 @@ export default function LoginPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
                   disabled={isLoading}
+                  maxLength={9}
                 />
               </div>
               <div className="grid gap-2 text-right">
