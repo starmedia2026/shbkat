@@ -29,7 +29,7 @@ export default async function Loading() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex flex-col items-center justify-center gap-6">
-        <div className="relative h-[120px] w-[200px]">
+        <div className="relative h-[120px] flex justify-center items-center">
             {/* Light Mode Logo */}
             <Image
               src={logoUrlLight}
