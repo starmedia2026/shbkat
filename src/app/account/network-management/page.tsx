@@ -25,7 +25,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
-import { networks as initialNetworks } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
     AlertDialog,
@@ -55,6 +54,7 @@ interface Network {
   name: string;
   logo?: string;
   address?: string;
+  ownerPhone?: string;
   categories: Category[];
 }
 
@@ -107,15 +107,36 @@ export default function NetworkManagementPage() {
 
 function NetworkManagementContent() {
   const { toast } = useToast();
-  const [networks, setNetworks] = useState<Network[]>(initialNetworks);
+  const [networks, setNetworks] = useState<Network[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+
   const [isSaving, setIsSaving] = useState(false);
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
-  const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string}>({name: "", logo: "", address: ""});
+  const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string, ownerPhone: string}>({name: "", logo: "", address: "", ownerPhone: ""});
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
   const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id'>>(initialGlobalCategoryState);
   
+  useEffect(() => {
+    async function fetchNetworks() {
+        setIsDataLoading(true);
+        try {
+            const response = await fetch('/api/get-networks');
+            if (!response.ok) throw new Error("Failed to fetch networks");
+            const data: Network[] = await response.json();
+            setNetworks(data);
+        } catch (e) {
+            console.error("Failed to fetch networks", e);
+            toast({ variant: 'destructive', title: "فشل", description: "فشل في تحميل بيانات الشبكات."});
+        } finally {
+            setIsDataLoading(false);
+        }
+    }
+    fetchNetworks();
+  }, [toast]);
+  
+
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
     setIsSaving(true);
     try {
@@ -131,6 +152,7 @@ function NetworkManagementContent() {
         throw new Error('فشل في حفظ البيانات على الخادم');
       }
 
+      setNetworks(updatedNetworks); // Update local state
       toast({
         title: "تم الحفظ",
         description: "تم حفظ تغييرات الشبكات بنجاح.",
@@ -148,24 +170,23 @@ function NetworkManagementContent() {
   }, [toast]);
   
   const updateAndSave = (newNetworks: Network[]) => {
-    setNetworks(newNetworks);
     handleSave(newNetworks);
   };
   
   const handleAddNetwork = () => {
-    const newId = `new-network-${Date.now()}`;
-    const newNetwork: Network = { id: newId, name: "", logo: "", address: "", categories: [] };
+    const newId = `network-${Date.now()}`;
+    const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: "", categories: [] };
     const newNetworks = [...networks, newNetwork];
     setNetworks(newNetworks);
     setEditingNetworkId(newId);
-    setEditingNetworkData({name: "", logo: "", address: ""});
+    setEditingNetworkData({name: "", logo: "", address: "", ownerPhone: ""});
   };
 
   const handleUpdateNetwork = (networkId: string) => {
     const newNetworks = networks.map(n => n.id === networkId ? { ...n, ...editingNetworkData } : n);
     updateAndSave(newNetworks);
     setEditingNetworkId(null);
-    setEditingNetworkData({name: "", logo: "", address: ""});
+    setEditingNetworkData({name: "", logo: "", address: "", ownerPhone: ""});
   };
 
   const handleDeleteNetwork = (networkId: string) => {
@@ -174,7 +195,7 @@ function NetworkManagementContent() {
   };
   
   const handleAddCategory = (networkId: string) => {
-    const newId = `new-cat-${Date.now()}`;
+    const newId = `cat-${Date.now()}`;
     const newCategory: Category = { id: newId, name: "", price: 0, validity: "", capacity: "" };
     setEditingCategoryId(newId);
     setEditingCategory(newCategory);
@@ -231,7 +252,10 @@ function NetworkManagementContent() {
     });
     setGlobalCategory(initialGlobalCategoryState);
   };
-
+  
+  if (isDataLoading) {
+      return <LoadingSkeleton />;
+  }
 
   return (
         <div className="space-y-6">
@@ -270,6 +294,7 @@ function NetworkManagementContent() {
                         <Input placeholder="اسم الشبكة" value={editingNetworkData.name} onChange={e => setEditingNetworkData(prev => ({...prev, name: e.target.value}))}/>
                         <Input placeholder="رابط الشعار" value={editingNetworkData.logo} onChange={e => setEditingNetworkData(prev => ({...prev, logo: e.target.value}))}/>
                         <Input placeholder="عنوان الشبكة" value={editingNetworkData.address} onChange={e => setEditingNetworkData(prev => ({...prev, address: e.target.value}))}/>
+                        <Input placeholder="هاتف المالك" value={editingNetworkData.ownerPhone} onChange={e => setEditingNetworkData(prev => ({...prev, ownerPhone: e.target.value}))}/>
                         <div className="flex justify-end gap-2 mt-2">
                             <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(network.id)}><Save className="h-4 w-4"/></Button>
                             <Button size="icon" variant="ghost" onClick={() => {
@@ -295,53 +320,62 @@ function NetworkManagementContent() {
                             </div>
                         </div>
                     )}
-                    <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(network.id); setEditingNetworkData({name: network.name, logo: network.logo || "", address: network.address || ""}); }}>
-                        <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                هل أنت متأكد من رغبتك في حذف شبكة "{network.name}"؟ سيتم حذف جميع الباقات المرتبطة بها.
-                            </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteNetwork(network.id)}>تأكيد الحذف</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                    </div>
+                    {editingNetworkId !== network.id && (
+                        <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => { setEditingNetworkId(network.id); setEditingNetworkData({name: network.name, logo: network.logo || "", address: network.address || "", ownerPhone: network.ownerPhone || ""}); }}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    هل أنت متأكد من رغبتك في حذف شبكة "{network.name}"؟ سيتم حذف جميع الباقات المرتبطة بها.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteNetwork(network.id)}>تأكيد الحذف</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        </div>
+                    )}
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {network.categories.map((category) => 
-                        editingCategoryId === category.id ? (
-                            <CategoryEditForm 
-                                key={category.id}
-                                category={editingCategory}
-                                setCategory={setEditingCategory}
-                                onSave={() => handleUpdateCategory(network.id)}
-                                onCancel={() => {
-                                    if (category.name === "") setNetworks(networks.map(n => n.id === network.id ? { ...n, categories: n.categories.filter(c => c.id !== category.id)} : n))
-                                    setEditingCategoryId(null);
-                                    setEditingCategory(null);
-                                }}
-                            />
-                        ) : (
-                            <CategoryCard 
-                                key={category.id} 
-                                category={category} 
-                                onEdit={() => { setEditingCategoryId(category.id); setEditingCategory(category); }}
-                                onDelete={() => handleDeleteCategory(network.id, category.id)}
-                            />
+                    {network.categories.length > 0 ? (
+                        network.categories.map((category) => 
+                            editingCategoryId === category.id ? (
+                                <CategoryEditForm 
+                                    key={category.id}
+                                    category={editingCategory}
+                                    setCategory={setEditingCategory}
+                                    onSave={() => handleUpdateCategory(network.id)}
+                                    onCancel={() => {
+                                        if (category.name === "") setNetworks(networks.map(n => n.id === network.id ? { ...n, categories: n.categories.filter(c => c.id !== category.id)} : n))
+                                        setEditingCategoryId(null);
+                                        setEditingCategory(null);
+                                    }}
+                                />
+                            ) : (
+                                <CategoryCard 
+                                    key={category.id} 
+                                    category={category} 
+                                    onEdit={() => { setEditingCategoryId(category.id); setEditingCategory(category); }}
+                                    onDelete={() => handleDeleteCategory(network.id, category.id)}
+                                />
+                            )
                         )
+                    ) : (
+                         <div className="p-4 border-2 border-dashed rounded-lg text-center text-muted-foreground">
+                            <p className="font-semibold">لم تقم بإضافة أي باقات بعد</p>
+                            <p className="text-sm">ابدأ بإضافة باقتك الأولى أدناه.</p>
+                        </div>
                     )}
                     <Button variant="outline" className="w-full" onClick={() => handleAddCategory(network.id)}>
                     <PlusCircle className="mr-2 h-4 w-4" />
