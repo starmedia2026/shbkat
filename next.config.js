@@ -13,6 +13,10 @@ const nextConfig = {
             }
         ],
     },
+    experimental: {
+        // This is to allow cross-origin requests from the development environment (Cloud Workstation).
+        allowedDevOrigins: ["*.cloudworkstations.dev"],
+    },
 };
 
 module.exports = nextConfig;
