@@ -120,8 +120,10 @@ export default function NetworksPage() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
-        <BackButton />
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">الشبكات</h1>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute right-4">
+            <ArrowRight className="h-6 w-6" />
+        </Button>
+        <h1 className="text-lg font-normal text-center flex-grow">الشبكات</h1>
       </header>
       <main className="p-4 space-y-4">
         {isLoading ? (
@@ -219,12 +221,4 @@ const NetworkCardSkeleton = () => (
     </Card>
 );
 
-// Simple Button to avoid importing the whole button component just for a back button
-const BackButton = () => {
-    const router = useRouter();
-    return (
-        <button onClick={() => router.back()} className="p-2">
-            <ArrowRight className="h-6 w-6" />
-        </button>
-    );
-};
+    

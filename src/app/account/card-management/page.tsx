@@ -69,10 +69,11 @@ export default function CardManagementPage() {
           variant="ghost"
           size="icon"
           onClick={() => router.back()}
+          className="absolute right-4"
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">
+        <h1 className="text-lg font-normal text-center flex-grow">
           إدارة الكروت
         </h1>
       </header>
@@ -383,5 +384,8 @@ function LoadingSkeleton() {
 }
 
     
+
+    
+
 
     

@@ -62,20 +62,19 @@ export default function WithdrawalRequestsPage() {
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
   useEffect(() => {
+    // Redirect non-admins after loading is complete
     if (!isAdminLoading && isAdmin === false) {
-      // Although we handle rendering below, an explicit redirect can be a good safeguard
-      // for any future changes. However, for this fix, we will rely on conditional rendering
-      // to prevent the query from running.
+      router.replace("/account");
     }
   }, [isAdmin, isAdminLoading, router]);
 
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute right-4">
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-2">
+        <h1 className="text-lg font-normal text-center flex-grow">
           طلبات السحب
         </h1>
       </header>
@@ -266,3 +265,5 @@ function RequestCardSkeleton() {
         </Card>
     );
 }
+
+    

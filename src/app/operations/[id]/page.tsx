@@ -112,10 +112,10 @@ export default function OperationDetailsPage() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute right-4">
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">
+        <h1 className="text-lg font-normal text-center flex-grow">
           تفاصيل العملية
         </h1>
       </header>
@@ -218,6 +218,8 @@ const DetailRow: React.FC<DetailRowProps> = ({ icon: Icon, label, value, valueCo
         )}
     </div>
 );
+
+    
 
     
 

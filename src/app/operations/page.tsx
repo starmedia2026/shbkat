@@ -90,12 +90,14 @@ export default function OperationsPage() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
-        <BackButton />
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">العمليات</h1>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute right-4">
+          <ArrowRight className="h-6 w-6" />
+        </Button>
+        <h1 className="text-lg font-normal text-center flex-grow">العمليات</h1>
         {operations && operations.length > 0 && (
             <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="ml-auto">
+                    <Button variant="ghost" size="icon">
                         <Archive className="h-5 w-5" />
                     </Button>
                 </AlertDialogTrigger>
@@ -189,14 +191,4 @@ function OperationSkeleton() {
     )
 }
 
-function BackButton() {
-  const router = useRouter();
-  return (
-    <button
-      onClick={() => router.back()}
-      className="p-2"
-    >
-      <ArrowRight className="h-6 w-6" />
-    </button>
-  );
-}
+    

@@ -89,18 +89,19 @@ export default function NotificationsPage() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
-        <Button
+        <UIButton
           variant="ghost"
           size="icon"
           onClick={() => router.back()}
+          className="absolute right-4"
         >
           <ArrowRight className="h-6 w-6" />
-        </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">الإشعارات</h1>
+        </UIButton>
+        <h1 className="text-lg font-normal text-center flex-grow">الإشعارات</h1>
          {notifications && notifications.length > 0 && (
             <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <UIButton variant="ghost" size="icon" className="ml-auto">
+                    <UIButton variant="ghost" size="icon">
                         <Archive className="h-5 w-5" />
                     </UIButton>
                 </AlertDialogTrigger>
@@ -216,9 +217,4 @@ function NotificationSkeleton() {
     )
 }
 
-// Simple Button to avoid importing the whole button component just for a back button
-const Button = ({ onClick, children, className, ...props }: any) => (
-    <button onClick={onClick} className={className} {...props}>
-      {children}
-    </button>
-  );
+    

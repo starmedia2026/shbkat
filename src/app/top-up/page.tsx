@@ -22,6 +22,7 @@ interface AppSettings {
 export default function TopUpPage() {
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(paymentMethods[0] || null);
   const firestore = useFirestore();
+  const router = useRouter();
 
   const appSettingsDocRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -52,8 +53,10 @@ export default function TopUpPage() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
-        <BackButton />
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">غذي حسابك</h1>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute right-4">
+          <ArrowRight className="h-6 w-6" />
+        </Button>
+        <h1 className="text-lg font-normal text-center flex-grow">غذي حسابك</h1>
       </header>
       <main className="p-4 space-y-6">
         <div>
@@ -144,18 +147,6 @@ function PaymentOption({ method, isSelected, onSelect }: { method: PaymentMethod
             </Card>
         </div>
     );
-}
-
-function BackButton() {
-  const router = useRouter();
-  return (
-    <button
-      onClick={() => router.back()}
-      className="p-2"
-    >
-      <ArrowRight className="h-6 w-6" />
-    </button>
-  );
 }
 
     

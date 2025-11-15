@@ -108,11 +108,11 @@ export default function NetworkDetailPage() {
               variant="ghost"
               size="icon"
               onClick={() => router.back()}
-              className="absolute left-4"
+              className="absolute right-4"
             >
               <ArrowRight className="h-6 w-6" />
             </Button>
-            <h1 className="text-lg font-normal text-right flex-grow mr-16">
+            <h1 className="text-lg font-normal text-center flex-grow">
               خطأ
             </h1>
         </header>
@@ -130,11 +130,11 @@ export default function NetworkDetailPage() {
           variant="ghost"
           size="icon"
           onClick={() => router.back()}
-          className="absolute left-4"
+          className="absolute right-4"
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-16">
+        <h1 className="text-lg font-normal text-center flex-grow">
           {network.name}
         </h1>
       </header>
@@ -444,8 +444,8 @@ function LoadingSkeleton() {
     return (
         <div className="bg-background text-foreground min-h-screen">
           <header className="p-4 flex items-center relative border-b">
-             <Skeleton className="h-10 w-10" />
-             <Skeleton className="h-6 w-32 flex-grow mr-16" />
+             <Skeleton className="h-10 w-10 absolute right-4" />
+             <Skeleton className="h-6 w-32 flex-grow mx-16" />
           </header>
           <main className="p-4 space-y-4">
             {[...Array(3)].map((_, i) => (
@@ -472,3 +472,5 @@ function LoadingSkeleton() {
         </div>
     );
 }
+
+    

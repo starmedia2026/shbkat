@@ -52,8 +52,15 @@ export default function ContactPage() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="p-4 flex items-center justify-between relative border-b">
-        <BackButton />
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">تواصل معنا</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.back()}
+          className="absolute right-4"
+        >
+          <ArrowRight className="h-6 w-6" />
+        </Button>
+        <h1 className="text-lg font-normal text-center flex-grow">تواصل معنا</h1>
       </header>
       <main className="p-4 flex flex-col items-center justify-center text-center flex-grow space-y-6">
         
@@ -104,14 +111,4 @@ export default function ContactPage() {
   );
 }
 
-function BackButton() {
-  const router = useRouter();
-  return (
-    <button
-      onClick={() => router.back()}
-      className="p-2"
-    >
-      <ArrowRight className="h-6 w-6" />
-    </button>
-  );
-}
+    

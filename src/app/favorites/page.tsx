@@ -44,10 +44,11 @@ export default function FavoritesPage() {
           variant="ghost"
           size="icon"
           onClick={() => router.back()}
+          className="absolute right-4"
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-4">المفضلة</h1>
+        <h1 className="text-lg font-normal text-center flex-grow">المفضلة</h1>
       </header>
       <main className="p-4 space-y-4">
         {isLoading ? (
@@ -117,3 +118,5 @@ export default function FavoritesPage() {
     </div>
   );
 }
+
+    

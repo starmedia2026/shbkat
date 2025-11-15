@@ -124,10 +124,11 @@ export default function CardSalesPage() {
           variant="ghost"
           size="icon"
           onClick={() => router.back()}
+          className="absolute right-4"
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-normal text-right flex-grow mr-2">
+        <h1 className="text-lg font-normal text-center flex-grow">
           تقرير مبيعات الكروت
         </h1>
       </header>
@@ -432,7 +433,7 @@ function LoadingSkeleton() {
 }
 
 function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardData; customer?: Customer, networkOwner?: Customer | null, firestore: any }) {
-    const { isAdmin } = useAdmin();
+    const { isAdmin, isOwner } = useAdmin();
     const categoryInfo = networkLookup[card.networkId]?.categories[card.categoryId];
     const networkName = networkLookup[card.networkId]?.name || 'شبكة غير معروفة';
     const categoryName = categoryInfo?.name || 'فئة غير معروفة';
@@ -616,12 +617,12 @@ ${customer.balance.toLocaleString('en-US')} ريال
                          <p className="flex items-center gap-2"><Tag className="h-4 w-4 text-primary"/> <span>{categoryName} ({categoryPrice} ريال)</span></p>
                     </div>
                      <div className="text-left space-y-2">
-                         <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{customer ? customer.name : "مشتري"}</span></p>
-                         {customer && <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer.phoneNumber}</span> <Phone className="h-4 w-4 text-primary"/> </p>}
+                        <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{customer ? customer.name : 'مشتري'}</span></p>
+                        {customer && <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer.phoneNumber}</span><Phone className="h-4 w-4 text-primary"/></p>}
                     </div>
                 </div>
-                {isAdmin && <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2 flex-wrap">
-                     {card.status === 'used' && networkOwner && (
+                {(isAdmin || isOwner) && <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2 flex-wrap">
+                     {isAdmin && card.status === 'used' && networkOwner && (
                         <>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -757,3 +758,6 @@ function CardSkeleton() {
         </Card>
     );
 }
+
+
+    
