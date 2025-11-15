@@ -106,19 +106,21 @@ export default function LoginPage() {
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-4 flex flex-col items-center gap-2">
             {isSettingsLoading ? (
-                 <div className="flex flex-col items-center justify-center gap-6 h-[146px]">
-                    <div className="h-[90px] w-[150px] bg-transparent"></div>
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                 <div className="flex flex-col items-center justify-center gap-6 h-[178px]">
+                    <div className="flex flex-col items-center justify-center gap-6">
+                        <div className="h-[120px] w-[200px] bg-transparent"></div>
+                         <Loader2 className="h-8 w-8 animate-spin text-black dark:text-white" />
+                    </div>
                 </div>
             ) : (
-                 <div className="h-[146px] flex flex-col items-center gap-2">
+                 <div className="h-[178px] flex flex-col items-center gap-6">
                      <Image
                         src={logoUrl}
                         alt="Shabakat Logo"
-                        width={150}
-                        height={90}
+                        width={200}
+                        height={120}
                         priority
-                        className="h-[90px] w-auto object-contain"
+                        className="h-[120px] w-auto object-contain"
                     />
                     <p className="text-xl text-muted-foreground font-semibold">
                         {displayName ? `أهلاً ${displayName}` : 'أهلاً بك'}
@@ -147,7 +149,15 @@ export default function LoginPage() {
                 />
               </div>
               <div className="grid gap-2 text-right">
-                <Label htmlFor="password">كلمة المرور</Label>
+                 <div className="flex justify-between items-center">
+                   <Label htmlFor="password">كلمة المرور</Label>
+                    <Link
+                    href="/forgot-password"
+                    className="font-medium text-primary hover:underline text-sm"
+                    >
+                    نسيت كلمة المرور؟
+                    </Link>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"
@@ -170,15 +180,7 @@ export default function LoginPage() {
                 </div>
               </div>
             </CardContent>
-             <CardFooter className="flex flex-col gap-2">
-                <div className="w-full text-left text-sm">
-                    <Link
-                    href="/forgot-password"
-                    className="font-medium text-primary hover:underline text-sm"
-                    >
-                    نسيت كلمة المرور؟
-                    </Link>
-                </div>
+             <CardFooter className="flex flex-col gap-4 pt-0">
                 <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base" disabled={isLoading}>
                     {isLoading ? "جاري الدخول..." : "دخول"}
                 </Button>

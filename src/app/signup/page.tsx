@@ -218,16 +218,17 @@ export default function SignupPage() {
         <div className="mb-4 flex items-center gap-3">
           {isSettingsLoading ? (
             <div className="flex flex-col items-center justify-center gap-6 h-[118px]">
-                <div className="h-[90px] w-[150px] bg-transparent"></div>
+                 <div className="h-[120px] w-[200px] bg-transparent"></div>
+                 <Loader2 className="h-8 w-8 animate-spin text-black dark:text-white" />
             </div>
           ) : (
             <Image
                 src={logoUrl}
                 alt="Shabakat Logo"
-                width={150}
-                height={90}
+                width={200}
+                height={120}
                 priority
-                className="h-[90px] w-auto object-contain"
+                className="h-[120px] w-auto object-contain"
             />
           )}
         </div>

@@ -30,12 +30,12 @@ export default async function Loading() {
         <Image
           src={logoUrl}
           alt="Shabakat Logo"
-          width={150}
-          height={90}
+          width={200}
+          height={120}
           priority
-          className="h-[90px] w-auto object-contain"
+          className="h-[120px] w-auto object-contain"
         />
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-black dark:text-white" />
       </div>
     </div>
   );
