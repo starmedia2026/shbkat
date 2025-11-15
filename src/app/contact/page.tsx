@@ -95,13 +95,13 @@ export default function ContactPage() {
             <Card className="w-full shadow-md rounded-xl hover:shadow-lg transition-all">
                 <CardContent className="p-5 flex items-center justify-between">
                      <div className="flex items-center gap-4">
-                        <WhatsAppIcon className="h-6 w-6 text-green-500"/>
+                        <WhatsAppIcon className="h-6 w-6 text-primary"/>
                         <div className="text-right">
                             <h3 className="font-semibold">محادثة واتساب</h3>
                             <p className="text-xs text-muted-foreground">أرسل لنا رسالة نصية</p>
                         </div>
                     </div>
-                    <Button onClick={handleWhatsAppRedirect} size="sm" disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white">ابدأ المحادثة</Button>
+                    <Button onClick={handleWhatsAppRedirect} size="sm" disabled={isLoading}>ابدأ المحادثة</Button>
                 </CardContent>
             </Card>
         </div>
@@ -110,5 +110,3 @@ export default function ContactPage() {
     </div>
   );
 }
-
-    
