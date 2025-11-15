@@ -130,37 +130,12 @@ export default function SignupPage() {
             setIsLoading(false);
             return;
         }
-
-        if (accountType === 'network-owner') {
-             const newNetwork = {
-                id: `network-${Date.now()}`,
-                name: networkName,
-                address: networkAddress,
-                logo: "",
-                ownerPhone: phone,
-                categories: [],
-            };
-            const currentNetworksRes = await fetch('/api/get-networks');
-            if(!currentNetworksRes.ok) throw new Error("Failed to get current networks list.");
-            const currentNetworks = await currentNetworksRes.json();
-            const updatedNetworks = [...currentNetworks, newNetwork];
-
-            const saveRes = await fetch('/api/save-networks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ networks: updatedNetworks }),
-            });
-            if (!saveRes.ok) {
-                const errorData = await saveRes.json();
-                throw new Error(errorData.message || "Failed to save the new network.");
-            }
-        }
         
+        // Step 1: Create the user in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-      if (user) {
-        
+        // Step 2: Create the customer document in Firestore
         const customerData = {
           id: user.uid,
           name: name,
@@ -171,17 +146,45 @@ export default function SignupPage() {
           accountType: phone === "770326828" ? "admin" : accountType,
           requiresPasswordChange: accountType === 'network-owner',
         };
-        
         const userDocRef = doc(firestore, "customers", user.uid);
-        
         await setDoc(userDocRef, customerData);
+
+        // Step 3: If network owner, add the network to the networks.json file
+        if (accountType === 'network-owner') {
+            const newNetwork = {
+                id: `network-${Date.now()}`,
+                name: networkName,
+                address: networkAddress,
+                logo: "",
+                ownerPhone: phone,
+                categories: [],
+            };
+            
+            // Fetch current networks
+            const currentNetworksRes = await fetch('/api/get-networks');
+            if(!currentNetworksRes.ok) throw new Error("فشل في جلب قائمة الشبكات الحالية.");
+            const currentNetworks = await currentNetworksRes.json();
+            const updatedNetworks = [...currentNetworks, newNetwork];
+
+            // Save updated networks
+            const saveRes = await fetch('/api/save-networks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ networks: updatedNetworks }),
+            });
+            if (!saveRes.ok) {
+                const errorData = await saveRes.json();
+                // We don't block signup, just inform about the network creation failure.
+                toast({ variant: "destructive", title: "فشل إضافة الشبكة", description: errorData.message || "فشل حفظ الشبكة الجديدة." });
+            }
+        }
         
         toast({
           title: "تم إنشاء الحساب بنجاح!",
           description: "يتم تسجيل دخولك الآن...",
         });
         router.push("/home");
-      }
+      
     } catch (error: any) {
       if (error.code === 'firestore/permission-denied') {
           const permissionError = new FirestorePermissionError({
