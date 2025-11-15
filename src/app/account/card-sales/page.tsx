@@ -587,6 +587,9 @@ ${customer.balance.toLocaleString('en-US')} ريال
         });
     };
 
+    const customerName = isAdmin ? (customer ? customer.name : 'مشتري') : 'مشتري';
+    const customerPhone = isAdmin ? customer?.phoneNumber : '*******';
+
 
     return (
         <Card className="w-full shadow-md rounded-2xl bg-card/50">
@@ -605,8 +608,8 @@ ${customer.balance.toLocaleString('en-US')} ريال
                          <p className="flex items-center gap-2"><Tag className="h-4 w-4 text-primary"/> <span>{categoryName} ({categoryPrice} ريال)</span></p>
                     </div>
                      <div className="text-left space-y-2">
-                        <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{customer ? customer.name : 'مشتري'}</span></p>
-                        <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer?.phoneNumber}</span><Phone className="h-4 w-4 text-primary"/></p>
+                        <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{customerName}</span></p>
+                        <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customerPhone}</span><Phone className="h-4 w-4 text-primary"/></p>
                     </div>
                 </div>
                 {(isAdmin || isOwner) && <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2 flex-wrap">
@@ -748,4 +751,3 @@ function CardSkeleton() {
         </Card>
     );
 }
-
