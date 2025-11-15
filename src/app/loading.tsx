@@ -17,12 +17,12 @@ async function getAppSettings() {
     } catch (error) {
         // This can happen during build time or if firebase isn't configured, it's safe to ignore.
     }
-    return { logoUrl: DEFAULT_LOGO_URL };
+    return { logoUrlLight: DEFAULT_LOGO_URL };
 }
 
 export default async function Loading() {
   const appSettings = await getAppSettings();
-  const logoUrl = appSettings?.logoUrl || DEFAULT_LOGO_URL;
+  const logoUrl = appSettings?.logoUrlLight || DEFAULT_LOGO_URL;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">

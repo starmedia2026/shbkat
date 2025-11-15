@@ -23,17 +23,51 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from "@/firebase";
-import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useTheme } from "@/context/ThemeContext";
 import { locations } from "@/lib/locations";
 
 
 interface AppSettings {
-    logoUrl?: string;
+    logoUrlLight?: string;
+    logoUrlDark?: string;
+}
+
+const ThemeAwareLogo = () => {
+    const { darkMode } = useTheme();
+    const firestore = useFirestore();
+    const appSettingsDocRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, "settings", "app");
+    }, [firestore]);
+    const { data: appSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(appSettingsDocRef);
+
+    const logoUrl = darkMode ? appSettings?.logoUrlDark : appSettings?.logoUrlLight;
+    const fallbackLogo = "https://i.postimg.cc/76FCwnKs/44.png";
+
+    if (isSettingsLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-6 h-[118px]">
+                 <div className="h-[120px] w-[200px] bg-transparent"></div>
+                 <Loader2 className="h-8 w-8 animate-spin text-black dark:text-white" />
+            </div>
+        );
+    }
+    
+    return (
+        <Image
+            src={logoUrl || fallbackLogo}
+            alt="Shabakat Logo"
+            width={200}
+            height={120}
+            priority
+            className="h-[120px] w-auto object-contain"
+        />
+    )
 }
 
 export default function SignupPage() {
@@ -55,13 +89,6 @@ export default function SignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-
-  const appSettingsDocRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, "settings", "app");
-  }, [firestore]);
-
-  const { data: appSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(appSettingsDocRef);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,27 +222,11 @@ export default function SignupPage() {
     }
   };
 
-  const logoUrl = appSettings?.logoUrl || "https://i.postimg.cc/76FCwnKs/44.png";
-
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-4 flex items-center gap-3">
-          {isSettingsLoading ? (
-            <div className="flex flex-col items-center justify-center gap-6 h-[118px]">
-                 <div className="h-[120px] w-[200px] bg-transparent"></div>
-                 <Loader2 className="h-8 w-8 animate-spin text-black dark:text-white" />
-            </div>
-          ) : (
-            <Image
-                src={logoUrl}
-                alt="Shabakat Logo"
-                width={200}
-                height={120}
-                priority
-                className="h-[120px] w-auto object-contain"
-            />
-          )}
+             <ThemeAwareLogo />
         </div>
         <Card className="w-full shadow-2xl">
           <CardHeader className="space-y-1 text-center">

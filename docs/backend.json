@@ -300,12 +300,16 @@
     },
     "AppSettings": {
       "title": "App Settings",
-      "description": "Stores global application settings like the logo.",
+      "description": "Stores global application settings like logos, share link, and support phone number.",
       "type": "object",
       "properties": {
-        "logoUrl": {
+        "logoUrlLight": {
           "type": "string",
-          "description": "The URL for the application logo."
+          "description": "The URL for the application logo in light mode."
+        },
+        "logoUrlDark": {
+          "type": "string",
+          "description": "The URL for the application logo in dark mode."
         },
         "shareLink": {
           "type": "string",
@@ -525,5 +529,3 @@
     "reasoning": "The database structure is designed to store customer information, including their account details, contact number, and balance, and to allow the application to update their balance. To ensure security and proper data segregation, each customer's data is stored under a collection named 'customers'. This structure offers a clear separation of customer records, making it easy to manage and scale customer-related operations. The 'settings' collection stores global application settings like theme color, font, and now the app logo, allowing an admin to update them for all users in real-time.\n\n**Authorization Independence:**  Since all customer data is self-contained within the `customers` collection, there is no reliance on data from other collections for authorization. Security rules can be applied directly to the `customers` collection based on the user's authentication status. The `settings` collection has its own rules allowing admin writes and public reads.\n\n**QAPs Support:** The segregation strategy ensures that listing customers is secure, as the rules applied to `/customers/{customerId}` govern access to each individual customer's document. There is no mixing of different access needs within the same collection."
   }
 }
-
-    

@@ -21,6 +21,8 @@ import {
   PlusCircle,
   HelpCircle,
   Map,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,7 +65,8 @@ import type { Location } from "@/lib/locations";
 
 
 interface AppSettings {
-  logoUrl?: string;
+  logoUrlLight?: string;
+  logoUrlDark?: string;
   shareLink?: string;
   supportPhoneNumber?: string;
 }
@@ -135,7 +138,8 @@ function AppSettingsContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [logoUrl, setLogoUrl] = useState("");
+  const [logoUrlLight, setLogoUrlLight] = useState("");
+  const [logoUrlDark, setLogoUrlDark] = useState("");
   const [shareLink, setShareLink] = useState("");
   const [supportPhoneNumber, setSupportPhoneNumber] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -161,7 +165,8 @@ function AppSettingsContent() {
 
   useEffect(() => {
     if (!isAppLoading && appSettings) {
-      setLogoUrl(appSettings.logoUrl || "");
+      setLogoUrlLight(appSettings.logoUrlLight || "");
+      setLogoUrlDark(appSettings.logoUrlDark || "");
       setShareLink(appSettings.shareLink || "");
       setSupportPhoneNumber(appSettings.supportPhoneNumber || "");
     }
@@ -186,7 +191,8 @@ function AppSettingsContent() {
     
     setIsSaving(true);
     const settingsToSave: AppSettings = {
-        logoUrl: logoUrl.trim(),
+        logoUrlLight: logoUrlLight.trim(),
+        logoUrlDark: logoUrlDark.trim(),
         shareLink: shareLink.trim(),
         supportPhoneNumber: supportPhoneNumber.trim(),
     };
@@ -294,12 +300,20 @@ function AppSettingsContent() {
             ) : (
                 <>
                     <div className="space-y-2">
-                        <Label htmlFor="logoUrl" className="flex items-center gap-2">
-                            <ImageIcon className="h-4 w-4" />
-                            <span>رابط شعار التطبيق (اختياري)</span>
+                        <Label htmlFor="logoUrlLight" className="flex items-center gap-2">
+                            <Sun className="h-4 w-4" />
+                            <span>رابط شعار الوضع الفاتح</span>
                         </Label>
-                        <Input id="logoUrl" placeholder="https://example.com/logo.png" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} dir="ltr" />
-                        {logoUrl && <div className="p-2 border rounded-md flex justify-center"><Image src={logoUrl} alt="Logo Preview" width={100} height={100} className="object-contain"/></div>}
+                        <Input id="logoUrlLight" placeholder="https://example.com/logo-light.png" value={logoUrlLight} onChange={(e) => setLogoUrlLight(e.target.value)} dir="ltr" />
+                        {logoUrlLight && <div className="p-2 border rounded-md flex justify-center bg-white"><Image src={logoUrlLight} alt="Light Logo Preview" width={100} height={100} className="object-contain"/></div>}
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="logoUrlDark" className="flex items-center gap-2">
+                            <Moon className="h-4 w-4" />
+                            <span>رابط شعار الوضع الداكن</span>
+                        </Label>
+                        <Input id="logoUrlDark" placeholder="https://example.com/logo-dark.png" value={logoUrlDark} onChange={(e) => setLogoUrlDark(e.target.value)} dir="ltr" />
+                        {logoUrlDark && <div className="p-2 border rounded-md flex justify-center bg-zinc-900"><Image src={logoUrlDark} alt="Dark Logo Preview" width={100} height={100} className="object-contain"/></div>}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="shareLink" className="flex items-center gap-2">
@@ -608,6 +622,8 @@ function LoadingSkeleton() {
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full mt-2" />
                 </CardContent>
             </Card>
@@ -633,10 +649,3 @@ function LoadingSkeleton() {
         </>
     );
 }
-
-    
-
-    
-
-
-    

@@ -22,9 +22,46 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTheme } from "@/context/ThemeContext";
 
 interface AppSettings {
-    logoUrl?: string;
+    logoUrlLight?: string;
+    logoUrlDark?: string;
+}
+
+const ThemeAwareLogo = () => {
+    const { darkMode } = useTheme();
+    const firestore = useFirestore();
+    const appSettingsDocRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, "settings", "app");
+    }, [firestore]);
+    const { data: appSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(appSettingsDocRef);
+
+    const logoUrl = darkMode ? appSettings?.logoUrlDark : appSettings?.logoUrlLight;
+    const fallbackLogo = "https://i.postimg.cc/76FCwnKs/44.png";
+
+    if (isSettingsLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-6 h-[178px]">
+                <div className="flex flex-col items-center justify-center gap-6">
+                    <div className="h-[120px] w-[200px] bg-transparent"></div>
+                     <Loader2 className="h-8 w-8 animate-spin text-black dark:text-white" />
+                </div>
+            </div>
+        );
+    }
+    
+    return (
+        <Image
+            src={logoUrl || fallbackLogo}
+            alt="Shabakat Logo"
+            width={200}
+            height={120}
+            priority
+            className="h-[120px] w-auto object-contain"
+        />
+    )
 }
 
 export default function LoginPage() {
@@ -36,15 +73,7 @@ export default function LoginPage() {
   const [lastUserName, setLastUserName] = useState<string | null>(null);
   const router = useRouter();
   const auth = useAuth();
-  const firestore = useFirestore();
   const { toast } = useToast();
-
-  const appSettingsDocRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, "settings", "app");
-  }, [firestore]);
-
-  const { data: appSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(appSettingsDocRef);
 
   useEffect(() => {
     const storedName = localStorage.getItem('lastUserName');
@@ -106,35 +135,17 @@ export default function LoginPage() {
   };
 
   const displayName = formatDisplayName(lastUserName);
-  const logoUrl = appSettings?.logoUrl || "https://i.postimg.cc/76FCwnKs/44.png";
-
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 relative">
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-4 flex flex-col items-center gap-2">
-            {isSettingsLoading ? (
-                 <div className="flex flex-col items-center justify-center gap-6 h-[178px]">
-                    <div className="flex flex-col items-center justify-center gap-6">
-                        <div className="h-[120px] w-[200px] bg-transparent"></div>
-                         <Loader2 className="h-8 w-8 animate-spin text-black dark:text-white" />
-                    </div>
-                </div>
-            ) : (
-                 <div className="h-[178px] flex flex-col items-center gap-6">
-                     <Image
-                        src={logoUrl}
-                        alt="Shabakat Logo"
-                        width={200}
-                        height={120}
-                        priority
-                        className="h-[120px] w-auto object-contain"
-                    />
-                    <p className="text-xl text-muted-foreground font-semibold">
-                        {displayName ? `أهلاً ${displayName}` : 'أهلاً بك'}
-                    </p>
-                 </div>
-            )}
+            <div className="h-[178px] flex flex-col items-center gap-6">
+                 <ThemeAwareLogo />
+                <p className="text-xl text-muted-foreground font-semibold">
+                    {displayName ? `أهلاً ${displayName}` : 'أهلاً بك'}
+                </p>
+            </div>
         </div>
         <Card className="w-full border-0 shadow-none bg-transparent">
           <CardHeader className="space-y-1 text-center pt-0">
@@ -158,7 +169,9 @@ export default function LoginPage() {
                 />
               </div>
               <div className="grid gap-2 text-right">
-                <Label htmlFor="password">كلمة المرور</Label>
+                 <div className="flex justify-between items-center">
+                    <Label htmlFor="password">كلمة المرور</Label>
+                 </div>
                 <div className="relative">
                   <Input
                     id="password"
@@ -167,7 +180,7 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pr-4 pl-10 text-right"
+                    className="text-right"
                     dir="ltr"
                     disabled={isLoading}
                   />
@@ -179,13 +192,13 @@ export default function LoginPage() {
                     {passwordVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-                <div className="text-left text-sm">
-                  <Link
-                    href="/forgot-password"
-                    className="font-medium text-primary hover:underline"
-                  >
-                    نسيت كلمة المرور؟
-                  </Link>
+                 <div className="text-left text-sm mt-1">
+                    <Link
+                        href="/forgot-password"
+                        className="font-medium text-primary hover:underline"
+                    >
+                        نسيت كلمة المرور؟
+                    </Link>
                 </div>
               </div>
             </CardContent>
