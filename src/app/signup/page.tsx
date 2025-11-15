@@ -144,7 +144,7 @@ export default function SignupPage() {
           balance: 0,
           accountNumber: Math.random().toString().slice(2, 12),
           accountType: phone === "770326828" ? "admin" : accountType,
-          requiresPasswordChange: accountType === 'network-owner',
+          requiresPasswordChange: false,
         };
         const userDocRef = doc(firestore, "customers", user.uid);
         await setDoc(userDocRef, customerData);
@@ -363,5 +363,7 @@ export default function SignupPage() {
     </main>
   );
 }
+
+    
 
     
