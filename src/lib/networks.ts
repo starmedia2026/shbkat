@@ -1,11 +1,9 @@
 
-
-
 const allNetworksData = [
   {
     "id": "network-1763202515559",
     "name": "شبكة الخير",
-    "address": "شبام",
+    "address": "شبام - سيئون ",
     "logo": "",
     "ownerPhone": "773108411",
     "categories": [

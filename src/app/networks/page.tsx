@@ -55,10 +55,16 @@ export default function NetworksPage() {
     if (selectedLocation === "all") {
       return allNetworks;
     }
-    return allNetworks.filter(network => {
-        const networkLocation = allLocations.find(l => l.name === network.address);
-        return networkLocation?.value === selectedLocation;
-    });
+    // Find the location object corresponding to the selected value
+    const locationFilter = allLocations.find(l => l.value === selectedLocation);
+    if (!locationFilter) {
+      return allNetworks; // Or an empty array if no match should show nothing
+    }
+
+    // Filter networks where the address string includes the name of the selected location
+    return allNetworks.filter(network => 
+      network.address && network.address.includes(locationFilter.name)
+    );
   }, [allNetworks, selectedLocation]);
 
   const toggleFavorite = (networkId: string, isCurrentlyFavorite: boolean) => {
@@ -216,5 +222,7 @@ const NetworkCardSkeleton = () => (
         </CardContent>
     </Card>
 );
+
+    
 
     
