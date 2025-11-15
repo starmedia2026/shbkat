@@ -415,7 +415,7 @@ const CategoryStats = ({ networkId, categoryId }: { networkId: string, categoryI
 };
 
 
-const CategoryCard = ({ category, networkId, onEdit, onDelete }: { category: Category, networkId: string, onEdit: () => void, onDelete: () => void }) => {
+const CategoryCard = ({ category, onEdit, onDelete }: { category: Category, onEdit: () => void, onDelete: () => void }) => {
     
     return (
         <Collapsible className="p-3 border rounded-lg bg-background">
@@ -656,7 +656,7 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
             </div>
             <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={onCancel}>إلغاء</Button>
-                <Button onClick={onSave}>حفظ الباقة</Button>
+                <Button onClick={handleSave}>حفظ الباقة</Button>
             </div>
         </div>
     )

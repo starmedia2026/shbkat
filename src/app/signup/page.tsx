@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
-import locations from "@/lib/locations.json";
+import { allLocations } from "@/lib/locations";
 
 
 interface AppSettings {
@@ -278,7 +278,7 @@ export default function SignupPage() {
                       <SelectValue placeholder="اختر موقعك" />
                     </SelectTrigger>
                     <SelectContent>
-                      {locations.map((loc) => (
+                      {allLocations.map((loc) => (
                         <SelectItem key={loc.id} value={loc.value}>{loc.name}</SelectItem>
                       ))}
                     </SelectContent>

@@ -1,4 +1,5 @@
-[
+
+const locationsData = [
   {
     "id": "loc_1716302588133",
     "name": "سيئون",
@@ -67,6 +68,14 @@
   {
     "id": "loc_1763456849012",
     "name": "الخشعة",
-    "value": "alkhashaa"
+    "value": "alkhasha"
   }
-]
+];
+
+export interface Location {
+    id: string;
+    name: string;
+    value: string;
+}
+
+export const allLocations: Location[] = locationsData;

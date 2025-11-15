@@ -270,6 +270,14 @@ function CardSalesContent() {
         return <LoadingSkeleton />;
     }
 
+    if (networksToDisplay.length === 0) {
+        return (
+            <div className="text-center text-muted-foreground pt-10">
+                <p>لا توجد شبكات لعرضها.</p>
+            </div>
+        );
+    }
+
     return (
         <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={defaultAccordionValue}>
             {networksToDisplay.map(network => (
@@ -282,11 +290,6 @@ function CardSalesContent() {
                     filterCategory={filterCategory}
                 />
             ))}
-             {networksToDisplay.length === 0 && !isLoading && (
-                <div className="text-center text-muted-foreground pt-10">
-                    <p>لا توجد شبكات لعرضها.</p>
-                </div>
-            )}
         </Accordion>
     );
 }

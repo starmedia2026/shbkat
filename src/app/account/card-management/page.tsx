@@ -250,7 +250,7 @@ function CardManagementContent() {
                       {networks.map((network) => (
                       <SelectItem key={network.id} value={network.id}>
                           {network.name}
-                      </SelectItem>
+                      SelectItem>
                       ))}
                   </SelectContent>
                   </Select>
