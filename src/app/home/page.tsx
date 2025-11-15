@@ -297,8 +297,8 @@ export default function HomePage() {
                     <h3 className="text-base font-bold">لوحة تحكم مالك الشبكة</h3>
                 </div>
                  <div className="grid grid-cols-2 gap-3 text-center">
-                    <ServiceGridItem href="/account/my-network" label="إدارة شبكتي" id="my-network" IconProp={Briefcase} />
-                    <ServiceGridItem href="/withdraw" label="سحب" id="withdraw" IconProp={Banknote} />
+                    <ServiceGridItem href="/account/my-network" label="إدارة شبكتي" id="my-network" IconProp={Briefcase} order={0} />
+                    <ServiceGridItem href="/withdraw" label="سحب" id="withdraw" IconProp={Banknote} order={0} />
                 </div>
             </div>
         )}
@@ -410,7 +410,7 @@ function ServiceIcon({ id, className }: { id: string; className?: string }) {
   }
 }
 
-function ServiceGridItem({ href, iconUrl, label, id, IconProp }: HomeService & { IconProp?: React.ElementType }) {
+function ServiceGridItem({ href, iconUrl, label, id, order, IconProp }: HomeService & { IconProp?: React.ElementType }) {
     
     return (
         <Link href={href} className="block">
