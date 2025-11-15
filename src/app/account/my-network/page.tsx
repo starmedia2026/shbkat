@@ -51,6 +51,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 
 interface Category {
@@ -252,7 +259,11 @@ function MyNetworkContent() {
 
   const handleUpdateCategory = () => {
     if (!editingCategory || !editingCategoryId || !network) return;
-    const updatedNetwork = { ...network, categories: network.categories.map(c => c.id === editingCategoryId ? editingCategory as Category : c) };
+    const categoryToSave = {
+        ...editingCategory,
+        name: `فئة ${editingCategory.price || 0}`
+    };
+    const updatedNetwork = { ...network, categories: network.categories.map(c => c.id === editingCategoryId ? categoryToSave as Category : c) };
     updateAndSave(updatedNetwork);
     setEditingCategoryId(null);
     setEditingCategory(null);
@@ -615,19 +626,58 @@ const AddCardsForm = ({ networkId, categoryId }: { networkId: string, categoryId
     );
 };
 
+const validityOptions = ["يوم", "يومين", "3 ايام", "اسبوع", "شهر"];
+
 const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { category: any, setCategory: any, onSave: () => void, onCancel: () => void }) => {
+    const [customValidity, setCustomValidity] = useState("");
+    const [showCustomValidity, setShowCustomValidity] = useState(false);
+
+    useEffect(() => {
+        if (category?.validity && !validityOptions.includes(category.validity)) {
+            setShowCustomValidity(true);
+            setCustomValidity(category.validity);
+        } else {
+            setShowCustomValidity(false);
+            setCustomValidity("");
+        }
+    }, [category?.validity]);
+
+    const handleValidityChange = (value: string) => {
+        if (value === 'آخرى') {
+            setShowCustomValidity(true);
+            // Don't set validity yet, wait for custom input
+        } else {
+            setShowCustomValidity(false);
+            setCustomValidity(""); // Clear custom input
+            handleChange('validity', value);
+        }
+    };
     
     const handleChange = (field: keyof Category, value: string | number) => {
         setCategory({ ...category, [field]: value });
     };
 
+    const handleCustomValidityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setCustomValidity(e.target.value);
+        handleChange('validity', e.target.value);
+    }
+    
+    const handleSave = () => {
+        if (!category.price || category.price <= 0) {
+            alert('الرجاء إدخال سعر صالح.');
+            return;
+        }
+        if (!category.validity) {
+            alert('الرجاء اختيار أو إدخال صلاحية.');
+            return;
+        }
+        onSave();
+    };
+
+
     return (
         <div className="p-4 border rounded-lg bg-background space-y-4">
              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor={`cat-name-${category.id}`}>اسم الباقة</Label>
-                    <Input id={`cat-name-${category.id}`} value={category.name} onChange={e => handleChange('name', e.target.value)} />
-                </div>
                  <div className="space-y-2">
                     <Label htmlFor={`cat-price-${category.id}`}>السعر</Label>
                     <Input id={`cat-price-${category.id}`} type="number" value={category.price === 0 ? '' : category.price} onChange={e => handleChange('price', Number(e.target.value))} />
@@ -636,19 +686,40 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
                     <Label htmlFor={`cat-capacity-${category.id}`}>السعة</Label>
                     <Input id={`cat-capacity-${category.id}`} value={category.capacity} onChange={e => handleChange('capacity', e.target.value)} />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 col-span-2">
                     <Label htmlFor={`cat-validity-${category.id}`}>الصلاحية</Label>
-                    <Input id={`cat-validity-${category.id}`} value={category.validity} onChange={e => handleChange('validity', e.target.value)} />
+                    <Select
+                        dir="rtl"
+                        onValueChange={handleValidityChange}
+                        value={showCustomValidity ? 'آخرى' : category.validity}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="اختر الصلاحية" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {validityOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                            <SelectItem value="آخرى">آخرى...</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
+                 {showCustomValidity && (
+                    <div className="space-y-2 col-span-2">
+                        <Label htmlFor={`cat-custom-validity-${category.id}`}>صلاحية مخصصة</Label>
+                        <Input
+                            id={`cat-custom-validity-${category.id}`}
+                            value={customValidity}
+                            onChange={handleCustomValidityChange}
+                            placeholder="مثال: 45 يوم"
+                        />
+                    </div>
+                )}
             </div>
             <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={onCancel}>إلغاء</Button>
-                <Button onClick={onSave}>حفظ الباقة</Button>
+                <Button onClick={handleSave}>حفظ الباقة</Button>
             </div>
         </div>
     )
 };
-
-    
 
     

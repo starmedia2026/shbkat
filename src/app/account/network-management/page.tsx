@@ -40,6 +40,14 @@ import {
 import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 interface Category {
   id: string;
@@ -58,8 +66,7 @@ interface Network {
   categories: Category[];
 }
 
-const initialGlobalCategoryState: Omit<Category, 'id'> = {
-    name: "",
+const initialGlobalCategoryState: Omit<Category, 'id' | 'name'> = {
     price: 0,
     validity: "",
     capacity: "",
@@ -117,7 +124,7 @@ function NetworkManagementContent() {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
-  const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id'>>(initialGlobalCategoryState);
+  const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id' | 'name'>>(initialGlobalCategoryState);
   
   useEffect(() => {
     async function fetchNetworks() {
@@ -211,10 +218,14 @@ function NetworkManagementContent() {
 
   const handleUpdateCategory = (networkId: string) => {
     if (!editingCategory || !editingCategoryId) return;
+    const categoryToSave = {
+        ...editingCategory,
+        name: `فئة ${editingCategory.price || 0}`
+    };
 
     const newNetworks = networks.map(n => 
       n.id === networkId 
-        ? { ...n, categories: n.categories.map(c => c.id === editingCategoryId ? editingCategory as Category : c) } 
+        ? { ...n, categories: n.categories.map(c => c.id === editingCategoryId ? categoryToSave as Category : c) } 
         : n
     );
     updateAndSave(newNetworks);
@@ -233,11 +244,11 @@ function NetworkManagementContent() {
   };
 
   const handleAddGlobalCategory = () => {
-    if (!globalCategory.name || globalCategory.price <= 0) {
+    if (!globalCategory.price || globalCategory.price <= 0 || !globalCategory.validity) {
         toast({
             variant: "destructive",
             title: "بيانات ناقصة",
-            description: "الرجاء إدخال اسم وسعر صالحين للفئة الموحدة.",
+            description: "الرجاء إدخال سعر وصلاحية صالحين للفئة الموحدة.",
         });
         return;
     }
@@ -246,14 +257,18 @@ function NetworkManagementContent() {
         ...network,
         categories: [
             ...network.categories,
-            { ...globalCategory, id: `cat-${Date.now()}-${network.id}` }
+            { 
+                ...globalCategory, 
+                id: `cat-${Date.now()}-${network.id}`, 
+                name: `فئة ${globalCategory.price}` 
+            }
         ]
     }));
     updateAndSave(newNetworks);
 
     toast({
         title: "تمت الإضافة والحفظ",
-        description: `تمت إضافة فئة "${globalCategory.name}" لجميع الشبكات.`,
+        description: `تمت إضافة فئة "${globalCategory.price}" لجميع الشبكات.`,
     });
     setGlobalCategory(initialGlobalCategoryState);
   };
@@ -466,42 +481,98 @@ const CategoryCard = ({ category, onEdit, onDelete }: { category: Category, onEd
     </div>
 );
 
+const validityOptions = ["يوم", "يومين", "3 ايام", "اسبوع", "شهر"];
+
 const CategoryEditForm = ({ category, setCategory, onSave, onCancel, isGlobalForm = false }: { category: any, setCategory: any, onSave: () => void, onCancel: () => void, isGlobalForm?: boolean }) => {
+    const [customValidity, setCustomValidity] = useState("");
+    const [showCustomValidity, setShowCustomValidity] = useState(false);
+
+    useEffect(() => {
+        if (category?.validity && !validityOptions.includes(category.validity)) {
+            setShowCustomValidity(true);
+            setCustomValidity(category.validity);
+        } else {
+            setShowCustomValidity(false);
+            setCustomValidity("");
+        }
+    }, [category?.validity]);
     
-    const handleChange = (field: keyof Category, value: string | number) => {
+    const handleChange = (field: keyof Omit<Category, 'id' | 'name'>, value: string | number) => {
         setCategory({ ...category, [field]: value });
+    };
+
+    const handleValidityChange = (value: string) => {
+        if (value === 'آخرى') {
+            setShowCustomValidity(true);
+        } else {
+            setShowCustomValidity(false);
+            setCustomValidity(""); // Clear custom input
+            handleChange('validity', value);
+        }
+    };
+    
+    const handleCustomValidityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setCustomValidity(e.target.value);
+        handleChange('validity', e.target.value);
+    }
+    
+    const handleSave = () => {
+        if (!category.price || category.price <= 0) {
+            alert('الرجاء إدخال سعر صالح.');
+            return;
+        }
+        if (!category.validity) {
+            alert('الرجاء اختيار أو إدخال صلاحية.');
+            return;
+        }
+        onSave();
     };
 
     return (
         <div className="p-4 border rounded-lg bg-background space-y-4">
              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor={`cat-name-${category.id}`}>اسم الباقة</Label>
-                    <Input id={`cat-name-${category.id}`} value={category.name} onChange={e => handleChange('name', e.target.value)} />
-                </div>
                  <div className="space-y-2">
                     <Label htmlFor={`cat-price-${category.id}`}>السعر</Label>
-                    <Input id={`cat-price-${category.id}`} type="number" value={category.price === 0 && isGlobalForm ? '' : category.price} onChange={e => handleChange('price', Number(e.target.value))} />
+                    <Input id={`cat-price-${category.id}`} type="number" value={category.price === 0 ? '' : category.price} onChange={e => handleChange('price', Number(e.target.value))} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor={`cat-capacity-${category.id}`}>السعة</Label>
                     <Input id={`cat-capacity-${category.id}`} value={category.capacity} onChange={e => handleChange('capacity', e.target.value)} />
                 </div>
-                <div className="space-y-2">
+                 <div className="space-y-2 col-span-2">
                     <Label htmlFor={`cat-validity-${category.id}`}>الصلاحية</Label>
-                    <Input id={`cat-validity-${category.id}`} value={category.validity} onChange={e => handleChange('validity', e.target.value)} />
+                    <Select
+                        dir="rtl"
+                        onValueChange={handleValidityChange}
+                        value={showCustomValidity ? 'آخرى' : category.validity}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="اختر الصلاحية" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {validityOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                            <SelectItem value="آخرى">آخرى...</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
+                {showCustomValidity && (
+                    <div className="space-y-2 col-span-2">
+                        <Label htmlFor={`cat-custom-validity-${category.id}`}>صلاحية مخصصة</Label>
+                        <Input
+                            id={`cat-custom-validity-${category.id}`}
+                            value={customValidity}
+                            onChange={handleCustomValidityChange}
+                            placeholder="مثال: 45 يوم"
+                        />
+                    </div>
+                )}
             </div>
             <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={onCancel}>{isGlobalForm ? 'إفراغ' : 'إلغاء'}</Button>
-                <Button onClick={onSave}>{isGlobalForm ? 'إضافة الفئة للجميع' : 'حفظ الباقة'}</Button>
+                <Button onClick={handleSave}>{isGlobalForm ? 'إضافة الفئة للجميع' : 'حفظ الباقة'}</Button>
             </div>
         </div>
     )
 };
-
-    
-
-    
 
     
