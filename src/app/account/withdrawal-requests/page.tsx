@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, errorEmitter, useUser } from "@/firebase";
 import { collectionGroup, query, where, doc, updateDoc, writeBatch, collection } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
@@ -59,14 +59,16 @@ const statusConfig: { [key in Operation['status']]: { icon: React.ElementType, c
 
 export default function WithdrawalRequestsPage() {
   const router = useRouter();
-  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+  const { isAdmin, isOwner, isLoading: areRolesLoading } = useAdmin();
+
+  const canViewPage = isAdmin || isOwner;
 
   useEffect(() => {
     // Redirect non-admins after loading is complete
-    if (!isAdminLoading && isAdmin === false) {
+    if (!areRolesLoading && !canViewPage) {
       router.replace("/account");
     }
-  }, [isAdmin, isAdminLoading, router]);
+  }, [canViewPage, areRolesLoading, router]);
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -79,10 +81,10 @@ export default function WithdrawalRequestsPage() {
         </h1>
       </header>
       <main className="p-4">
-        {isAdmin === true ? (
+        {areRolesLoading ? (
+             <LoadingSkeleton />
+        ) : canViewPage ? (
             <WithdrawalRequestsContent />
-        ) : isAdminLoading ? (
-            <LoadingSkeleton />
         ) : (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
                 <h2 className="text-xl font-bold mt-4">وصول غير مصرح به</h2>
@@ -98,15 +100,30 @@ export default function WithdrawalRequestsPage() {
 
 function WithdrawalRequestsContent() {
   const firestore = useFirestore();
+  const { user } = useUser();
+  const { isAdmin, isOwner } = useAdmin();
   
   const withdrawalRequestsQuery = useMemoFirebase(() => {
-    // This component is only rendered when isAdmin is true, so we don't need to check again.
-    if (!firestore) return null;
-    return query(
-      collectionGroup(firestore, "operations"), 
-      where("type", "==", "withdraw")
-    );
-  }, [firestore]);
+    if (!firestore || !user) return null;
+    
+    if (isAdmin) {
+      // Admins see all withdrawal requests from all users.
+      return query(
+        collectionGroup(firestore, "operations"), 
+        where("type", "==", "withdraw")
+      );
+    }
+    
+    if (isOwner) {
+      // Network owners see only their own withdrawal requests.
+      return query(
+        collection(firestore, `customers/${user.uid}/operations`),
+        where("type", "==", "withdraw")
+      );
+    }
+
+    return null; // Should not happen if page permissions are correct
+  }, [firestore, user, isAdmin, isOwner]);
   
   const { data: operations, isLoading: isOperationsLoading } = useCollection<Operation>(withdrawalRequestsQuery, {
       transform: (doc) => ({
@@ -141,6 +158,7 @@ function WithdrawalRequestsContent() {
 function RequestCard({ operation }: { operation: Operation }) {
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { isAdmin } = useAdmin();
     const [isUpdating, setIsUpdating] = useState(false);
     
     // This regex will fail if path structure changes. A more robust solution might be needed.
@@ -215,6 +233,7 @@ function RequestCard({ operation }: { operation: Operation }) {
                     <p><strong>طريقة السحب:</strong> {operation.details?.method || 'غير محدد'}</p>
                     <p><strong>رقم الحساب:</strong> {operation.details?.recipientAccount || 'غير محدد'}</p>
                 </div>
+                {isAdmin && (
                  <div className="mt-4 pt-3 border-t flex items-center justify-between">
                      <p className="text-xs text-muted-foreground">تغيير الحالة:</p>
                     <div className="flex gap-2">
@@ -223,6 +242,7 @@ function RequestCard({ operation }: { operation: Operation }) {
                         <Button onClick={() => handleStatusChange('failed')} disabled={isUpdating || operation.status === 'failed'} size="sm" variant="destructive" className="bg-red-500/10 text-red-600 hover:bg-red-500/20">مرفوض</Button>
                     </div>
                 </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -265,5 +285,3 @@ function RequestCardSkeleton() {
         </Card>
     );
 }
-
-    

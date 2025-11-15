@@ -55,11 +55,11 @@ service cloud.firestore {
       allow delete: if isExistingOwner(customerId) || isAdmin();
 
       match /operations/{operationId} {
-        allow read, list: if isOwner(customerId) || isAdmin();
+        allow read, list: if isOwner(customerId) || isAdmin() || isNetworkOwner();
         // Allow creating an operation for self, for another user (transfers), or allow admin/network-owner
         allow create: if isOwner(customerId) || isNetworkOwner() || isAdmin();
         // Allow admin to update any operation (e.g. to confirm a withdrawal)
-        allow update: if isAdmin();
+        allow update: if isAdmin() || (isNetworkOwner() && isOwner(customerId));
         // Allow owner to delete their own operations (archive)
         allow delete: if isOwner(customerId) || isAdmin();
       }
@@ -84,8 +84,9 @@ service cloud.firestore {
     
     // Rule for the collection group query on 'operations'
     match /{path=**}/operations/{operationId} {
-      // Allow admin to read from any 'operations' subcollection.
-      allow get, list: if isAdmin();
+      // Allow admin or network owner to read from any 'operations' subcollection.
+      // Network owner can only list their own operations, but this is filtered in the query.
+      allow get, list: if isAdmin() || isNetworkOwner();
       // Allow admin to update any operation.
       allow update: if isAdmin();
     }
