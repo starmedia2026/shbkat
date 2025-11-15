@@ -54,7 +54,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/useAdmin";
-import initialLocations from "../../../data/locations.json";
+import initialLocations from "@/lib/locations.json";
 
 
 const colorOptions = [

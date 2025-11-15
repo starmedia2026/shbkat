@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
-import locations from "@/data/locations.json";
+import locations from "@/lib/locations.json";
 
 
 interface AppSettings {

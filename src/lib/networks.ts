@@ -1,5 +1,5 @@
 
-import allNetworksData from '@/../data/networks.json';
+import allNetworksData from './networks.json';
 
 interface Category {
   id: string;

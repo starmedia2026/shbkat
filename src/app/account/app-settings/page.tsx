@@ -60,7 +60,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import initialLocations from "@/data/locations.json";
+import initialLocations from "@/lib/locations.json";
 
 
 interface Location {
