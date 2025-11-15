@@ -27,7 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDoc, useFirestore, useMemoFirebase, errorEmitter } from "@/firebase";
 import { doc, writeBatch, collection, getDoc } from "firebase/firestore";
 import { useRouter, useParams } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -287,4 +287,3 @@ function LoadingSkeleton() {
     );
 }
 
-    
