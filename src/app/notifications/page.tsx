@@ -66,45 +66,47 @@ export default function NotificationsPage() {
     };
     
     setIsLoading(true);
-    let unsubUser, unsubAdmin;
+    const combinedNotifications: Record<string, Notification> = {};
 
-    // Listener for user's own notifications
     const userNotificationsQuery = query(
         collection(firestore, `customers/${user.uid}/notifications`),
         orderBy("date", "desc")
     );
-    unsubUser = onSnapshot(userNotificationsQuery, (snapshot) => {
-        const userNotifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
-        setNotifications(prev => {
-            const combined = [...userNotifs, ...prev.filter(p => !p.id.startsWith('admin_'))];
-            return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    const unsubUser = onSnapshot(userNotificationsQuery, (snapshot) => {
+        snapshot.docs.forEach(doc => {
+            combinedNotifications[doc.id] = { id: doc.id, ...doc.data() } as Notification;
         });
+        setNotifications(Object.values(combinedNotifications).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setIsLoading(false); // Stop loading after user notifications are fetched
+    }, (error) => {
+        console.error("Error fetching user notifications:", error);
         setIsLoading(false);
     });
 
-    // Listener for admin notifications, if user is an admin
+    let unsubAdmin: (() => void) | undefined;
     if (isAdmin) {
         const adminNotificationsQuery = query(
             collection(firestore, `admin_notifications`),
             orderBy("date", "desc")
         );
         unsubAdmin = onSnapshot(adminNotificationsQuery, (snapshot) => {
-            const adminNotifs = snapshot.docs.map(doc => ({ id: `admin_${doc.id}`, ...doc.data() } as Notification));
-            setNotifications(prev => {
-                const combined = [...adminNotifs, ...prev.filter(p => !p.id.startsWith('admin_'))];
-                return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            snapshot.docs.forEach(doc => {
+                 // Use a prefix to avoid ID collisions
+                combinedNotifications[`admin_${doc.id}`] = { id: `admin_${doc.id}`, ...doc.data() } as Notification;
             });
-            setIsLoading(false);
+            setNotifications(Object.values(combinedNotifications).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        }, (error) => {
+            console.error("Error fetching admin notifications:", error);
+            // Don't set loading to false here as user notifs might still be loading
         });
-    } else {
-        // If not admin, ensure loading is false
-        setIsLoading(false);
     }
 
-
     return () => {
-        if (unsubUser) unsubUser();
-        if (unsubAdmin) unsubAdmin();
+        unsubUser();
+        if (unsubAdmin) {
+            unsubAdmin();
+        }
     };
 
   }, [firestore, user, isAdmin]);
@@ -288,7 +290,3 @@ function NotificationSkeleton() {
         </Card>
     )
 }
-
-    
-
-    
