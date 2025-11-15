@@ -111,26 +111,6 @@ export default function SignupPage() {
     const email = `${phone}@shabakat.app`;
 
     try {
-        const q = query(collection(firestore, "customers"), where("phoneNumber", "==", phone));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            const msg = "رقم الهاتف هذا مسجل بالفعل.";
-            setError(msg);
-            toast({ variant: "destructive", title: "خطأ في إنشاء الحساب", description: msg });
-            setIsLoading(false);
-            return;
-        }
-
-        const nameQuery = query(collection(firestore, "customers"), where("name", "==", name.trim()));
-        const nameSnapshot = await getDocs(nameQuery);
-        if (!nameSnapshot.empty) {
-            const msg = "هذا الاسم مسجل لدينا.";
-            setError(msg);
-            toast({ variant: "destructive", title: "خطأ في إنشاء الحساب", description: msg });
-            setIsLoading(false);
-            return;
-        }
-        
         // Step 1: Create the user in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
@@ -273,7 +253,6 @@ export default function SignupPage() {
                     type={passwordVisible ? "text" : "password"} 
                     required value={password} 
                     onChange={(e) => setPassword(e.target.value)}
-                    className="text-right"
                     dir="ltr"
                   />
                    <button
@@ -293,7 +272,6 @@ export default function SignupPage() {
                     type={confirmPasswordVisible ? "text" : "password"} 
                     required value={confirmPassword} 
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="text-right"
                     dir="ltr"
                   />
                   <button
