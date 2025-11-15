@@ -190,7 +190,9 @@ function CardSalesContent() {
     
     const cardsCollectionRef = useMemoFirebase(() => {
         if (!firestore) return null;
-        if (!isAdmin && !isOwner) return null;
+        // Ensure roles are loaded and user has permission before creating query
+        if (areRolesLoading) return null;
+        if (isAdmin === false && isOwner === false) return null;
 
         let q;
         if (isAdmin) {
@@ -211,7 +213,7 @@ function CardSalesContent() {
             return null;
         }
         return q;
-    }, [firestore, isAdmin, isOwner, ownedNetwork, filterNetwork, filterCategory]);
+    }, [firestore, isAdmin, isOwner, areRolesLoading, ownedNetwork, filterNetwork, filterCategory]);
 
     const { data: allCards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
     
