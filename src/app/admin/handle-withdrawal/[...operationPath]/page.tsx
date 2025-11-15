@@ -275,14 +275,14 @@ export default function HandleWithdrawalPage() {
                                     <Textarea id="notes" placeholder="اكتب ملاحظة لمالك الشبكة (اختياري)..." value={notes} onChange={(e) => setNotes(e.target.value)} />
                                 </div>
                                 <div className="flex flex-col gap-3">
-                                     <Button onClick={handleCompleteAndNotify} disabled={isUpdating || operation.status === 'completed'} size="lg" className="bg-green-600 hover:bg-green-700 text-white w-full">
+                                     <Button onClick={handleCompleteAndNotify} disabled={isUpdating || operation.status !== 'pending'} size="lg" className="bg-green-600 hover:bg-green-700 text-white w-full">
                                         {isUpdating ? <Loader2 className="animate-spin" /> : "إكمال وإبلاغ"}
                                      </Button>
                                      <div className="grid grid-cols-2 gap-3">
-                                        <Button onClick={() => handleStatusChange('completed')} disabled={isUpdating || operation.status === 'completed'} size="lg" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 w-full">
+                                        <Button onClick={() => handleStatusChange('completed')} disabled={isUpdating || operation.status !== 'pending'} size="lg" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 w-full">
                                             {isUpdating ? <Loader2 className="animate-spin" /> : "مكتمل فقط"}
                                         </Button>
-                                        <Button onClick={() => handleStatusChange('failed')} disabled={isUpdating || operation.status === 'failed'} size="lg" variant="destructive" className="w-full">
+                                        <Button onClick={() => handleStatusChange('failed')} disabled={isUpdating || operation.status !== 'pending'} size="lg" variant="destructive" className="w-full">
                                             {isUpdating ? <Loader2 className="animate-spin" /> : "مرفوض"}
                                         </Button>
                                      </div>
