@@ -158,7 +158,7 @@ function WithdrawContent() {
     const operationDocRef = doc(collection(firestore, `customers/${user.uid}/operations`));
 
     try {
-        await runTransaction(firestore, async (transaction) {
+        await runTransaction(firestore, async (transaction) => {
             const ownerDoc = await transaction.get(ownerDocRef);
             if (!ownerDoc.exists()) throw new Error("لم يتم العثور على حساب المالك.");
             
