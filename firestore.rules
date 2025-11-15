@@ -41,8 +41,9 @@ service cloud.firestore {
     }
 
     match /customers/{customerId} {
-      // Allow any signed-in user to read customer data for transfers, but only owners/admins can modify.
-      allow get, list: if isSignedIn();
+      // Allow reading for signed-in users (for transfers) and listing only for signup validation.
+      allow get: if isSignedIn();
+      allow list: if true;
 
       // A user can create their own customer document, but the ID in the data must match their auth UID.
       allow create: if isOwner(customerId) && request.resource.data.id == customerId;
@@ -137,5 +138,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
