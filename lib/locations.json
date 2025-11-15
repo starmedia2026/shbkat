@@ -1,14 +1,29 @@
 
 [
   {
+    "id": "loc_1716302588133",
+    "name": "سيئون",
+    "value": "sayun"
+  },
+  {
     "id": "loc_1716302581121",
     "name": "شبام",
     "value": "shibam"
   },
   {
-    "id": "loc_1716302588133",
-    "name": "سيئون",
-    "value": "sayun"
+    "id": "loc_1716302606821",
+    "name": "الغرفة",
+    "value": "alghurfa"
+  },
+  {
+    "id": "loc_1716302602739",
+    "name": "تريم",
+    "value": "tarim"
+  },
+  {
+    "id": "loc_1763456789012",
+    "name": "ساة",
+    "value": "sah"
   },
   {
     "id": "loc_1716302593645",
@@ -21,18 +36,38 @@
     "value": "alhawta"
   },
   {
-    "id": "loc_1716302602739",
-    "name": "تريم",
-    "value": "tarim"
-  },
-  {
-    "id": "loc_1716302606821",
-    "name": "الغرفة",
-    "value": "alghurfa"
+    "id": "loc_1763456799012",
+    "name": "وادي بن علي",
+    "value": "wadi_bin_ali"
   },
   {
     "id": "loc_1716302611139",
     "name": "العقاد",
     "value": "alaqad"
+  },
+  {
+    "id": "loc_1763456809012",
+    "name": "وادي عمد",
+    "value": "wadi_amd"
+  },
+  {
+    "id": "loc_1763456819012",
+    "name": "وادي العين",
+    "value": "wadi_alain"
+  },
+  {
+    "id": "loc_1763456829012",
+    "name": "بور",
+    "value": "bour"
+  },
+  {
+    "id": "loc_1763456839012",
+    "name": "تاربة",
+    "value": "tarbah"
+  },
+  {
+    "id": "loc_1763456849012",
+    "name": "الخشعة",
+    "value": "alkhashaa"
   }
 ]

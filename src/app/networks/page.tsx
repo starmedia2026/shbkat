@@ -12,6 +12,14 @@ import { collection, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/fi
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { locations } from "@/lib/locations";
 
 
 interface Category {
@@ -44,6 +52,7 @@ export default function NetworksPage() {
   
   const [allNetworks, setAllNetworks] = useState<Network[]>([]);
   const [areNetworksLoading, setAreNetworksLoading] = useState(true);
+  const [selectedLocation, setSelectedLocation] = useState<string>('all');
 
   useEffect(() => {
     async function fetchNetworks() {
@@ -77,6 +86,13 @@ export default function NetworksPage() {
   const favoriteNetworkIds = React.useMemo(() => {
     return new Set(favorites?.map(fav => fav.id));
   }, [favorites]);
+
+  const filteredNetworks = React.useMemo(() => {
+    if (selectedLocation === 'all') {
+      return allNetworks;
+    }
+    return allNetworks.filter(network => network.address?.includes(locations.find(l => l.value === selectedLocation)?.name || ''));
+  }, [allNetworks, selectedLocation]);
 
   const toggleFavorite = (networkId: string, isCurrentlyFavorite: boolean) => {
     if (!firestore || !user?.uid) {
@@ -126,10 +142,22 @@ export default function NetworksPage() {
         <h1 className="text-lg font-normal text-center flex-grow">الشبكات</h1>
       </header>
       <main className="p-4 space-y-4">
+        <Select dir="rtl" onValueChange={setSelectedLocation} value={selectedLocation}>
+            <SelectTrigger>
+                <SelectValue placeholder="تصفية حسب الموقع" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">كل المواقع</SelectItem>
+                {locations.map((loc) => (
+                    <SelectItem key={loc.id} value={loc.value}>{loc.name}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+
         {isLoading ? (
             [...Array(3)].map((_, i) => <NetworkCardSkeleton key={i} />)
-        ) : allNetworks.length > 0 ? (
-            allNetworks.map((network) => {
+        ) : filteredNetworks.length > 0 ? (
+            filteredNetworks.map((network) => {
             const isFavorite = favoriteNetworkIds.has(network.id);
             const isToggling = togglingFavorites[network.id];
 
@@ -195,7 +223,7 @@ export default function NetworksPage() {
             <div className="text-center text-muted-foreground pt-16">
                 <Wifi className="mx-auto h-12 w-12" />
                 <h3 className="mt-4 text-lg font-semibold">لا توجد شبكات متاحة</h3>
-                <p className="mt-1 text-sm">لم يقم المسؤول بإضافة أي شبكات حتى الآن. يرجى المحاولة مرة أخرى لاحقًا.</p>
+                <p className="mt-1 text-sm">لم يتم العثور على شبكات في الموقع المحدد.</p>
             </div>
         )}
       </main>
@@ -220,5 +248,3 @@ const NetworkCardSkeleton = () => (
         </CardContent>
     </Card>
 );
-
-    
