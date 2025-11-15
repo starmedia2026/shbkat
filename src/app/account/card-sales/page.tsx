@@ -656,7 +656,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => copyToClipboard(card.id)}>
                         <Copy className="h-4 w-4 text-muted-foreground"/>
                     </Button>
-                    {customer && <Button onClick={handleWhatsAppRedirect} variant="outline" size="icon" className="h-9 w-9 bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
+                    {isAdmin && customer && <Button onClick={handleWhatsAppRedirect} variant="outline" size="icon" className="h-9 w-9 bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
                         <MessageCircle className="h-5 w-5" />
                     </Button>}
                      <AlertDialog>
@@ -746,3 +746,4 @@ function CardSkeleton() {
         </Card>
     );
 }
+
