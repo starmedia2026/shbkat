@@ -21,6 +21,14 @@
     "address": "شبام",
     "logo": "",
     "ownerPhone": "776468668",
-    "categories": []
+    "categories": [
+      {
+        "id": "new-cat-1763195005945",
+        "name": "فئة 200",
+        "price": 200,
+        "validity": "اسبوع",
+        "capacity": "500 ميقا"
+      }
+    ]
   }
 ]

@@ -270,9 +270,9 @@ function PackageCard({ category, network }: { category: NetworkCategory, network
         >
             <CardContent className="p-0 flex h-full">
                 <div className="bg-primary/10 p-4 flex flex-col justify-center items-center w-24">
-                    <Tag className="h-6 w-6 text-primary mb-1"/>
+                    <Package className="h-6 w-6 text-primary mb-1"/>
                     <span className="text-primary font-bold text-lg text-center">
-                        {category.name.replace('فئة', '').replace('باقة', '').trim()}
+                        {category.capacity}
                     </span>
                 </div>
                 <div className="flex-grow p-3 pr-4 flex flex-col justify-between">
