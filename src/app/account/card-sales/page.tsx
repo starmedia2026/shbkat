@@ -473,8 +473,8 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
                 };
                 const notifData = { 
                     type: 'topup_admin', 
-                    title: 'تم استلام أرباح', 
-                    body: `تم إيداع ${profitAmount.toLocaleString('en-US')} ريال كأرباح بيع كرت فئة ${categoryName}.`, 
+                    title: 'ايداع شراء كرت', 
+                    body: `تم إيداع ${profitAmount.toLocaleString('en-US')} ريال كأرباح بيع كرت فئة ${categoryPrice} ريال.`, 
                     amount: profitAmount, 
                     date: now, 
                     read: false 
