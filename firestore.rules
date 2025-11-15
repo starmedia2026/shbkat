@@ -57,7 +57,7 @@ service cloud.firestore {
       match /operations/{operationId} {
         allow read, list: if isOwner(customerId) || isAdmin();
         // Allow creating an operation for self, for another user (transfers), or allow admin/network-owner
-        allow create: if isSignedIn() && (isOwner(customerId) || isNetworkOwner() || isAdmin());
+        allow create: if isOwner(customerId) || isNetworkOwner() || isAdmin();
         // Allow admin to update any operation (e.g. to confirm a withdrawal)
         allow update: if isAdmin();
         // Allow owner to delete their own operations (archive)
