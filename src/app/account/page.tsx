@@ -91,6 +91,7 @@ const adminAccountItems = [
   { id: "withdrawal-requests", href: "/account/withdrawal-requests", icon: Banknote, label: "طلبات السحب" },
   { id: "payment-management", href: "/account/payment-management", icon: Wallet, label: "إدارة الدفع" },
   { id: "ad-management", href: "/account/ad-management", icon: ImageIcon, label: "إدارة الإعلانات" },
+  { id: "send-notifications", href: "/account/send-notifications", icon: Send, label: "إرسال إشعارات" },
   { id: "app-settings", href: "/account/app-settings", icon: Settings, label: "إعدادات التطبيق" },
   { id: "change-password", href: "/change-password", icon: KeyRound, label: "تغيير كلمة المرور" },
   { id: "share", icon: Share2, label: "شارك التطبيق" },
@@ -216,7 +217,7 @@ export default function AccountPage() {
   const handleHelpClick = () => {
     const supportPhoneNumber = appSettings?.supportPhoneNumber || "770326828";
     const message = encodeURIComponent("مرحباً، أحتاج إلى مساعدة.");
-    window.open(`https://wa.me/${supportPhoneNumber}?text=${message}`, "_blank");
+    window.open(`https://wa.me/967${supportPhoneNumber}?text=${message}`, "_blank");
   };
 
 
