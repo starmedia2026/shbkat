@@ -101,10 +101,10 @@ export default function WithdrawalRequestsPage() {
 function WithdrawalRequestsContent() {
   const firestore = useFirestore();
   const { user } = useUser();
-  const { isAdmin, isOwner, isLoading: areRolesLoading } = useAdmin();
+  const { isAdmin, isOwner, areRolesLoading } = useAdmin();
   
   const withdrawalRequestsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || areRolesLoading) return null;
+    if (!firestore || !user ) return null;
     
     if (isAdmin) {
       // Admins see all withdrawal requests from all users.
@@ -123,7 +123,7 @@ function WithdrawalRequestsContent() {
     }
 
     return null; // Should not happen if page permissions are correct
-  }, [firestore, user, isAdmin, isOwner, areRolesLoading]);
+  }, [firestore, user, isAdmin, isOwner]);
   
   const { data: operations, isLoading: isOperationsLoading } = useCollection<Operation>(withdrawalRequestsQuery, {
       transform: (doc) => ({
