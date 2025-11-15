@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
-import allNetworks from "@/data/networks.json";
+import { allNetworksData } from "@/lib/networks";
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ interface Favorite {
     networkId: string;
 }
 
-const networksMap = new Map(allNetworks.map(n => [n.id, n]));
+const networksMap = new Map(allNetworksData.map(n => [n.id, n]));
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -32,8 +32,8 @@ export default function FavoritesPage() {
 
   const favoriteNetworks = React.useMemo(() => {
     if (!favorites) return [];
-    // Filter the networks from allNetworks based on the favorite IDs
-    return allNetworks.filter(network => favorites.some(fav => fav.id === network.id));
+    // Filter the networks from allNetworksData based on the favorite IDs
+    return allNetworksData.filter(network => favorites.some(fav => fav.id === network.id));
   }, [favorites]);
 
   return (
