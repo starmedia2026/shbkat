@@ -40,19 +40,21 @@ service cloud.firestore {
     }
 
     match /customers/{customerId} {
-      // Allow any user to list customers to check for duplicates during signup.
-      allow list: if true;
+      // Allow admins or network owners to list customers.
+      // This is needed for owners to see buyer info in reports and for admins to manage users.
+      allow list: if isAdmin() || isNetworkOwner();
       
-      // Allow any signed-in user to read any other customer's document.
-      // This is necessary for the card purchase transaction to read the balances of the buyer, network owner, and admin.
-      allow get: if isSignedIn();
+      // Allow reading customer data if you are the owner, an admin, or a network owner.
+      // This is necessary for owners to see buyer info and for transfers/purchases.
+      allow get: if isOwner(customerId) || isAdmin() || isNetworkOwner();
 
       // A user can create their own customer document, but the ID in the data must match their auth UID.
       allow create: if isOwner(customerId) && request.resource.data.id == customerId;
       
-      // An owner can update their own document, an admin can, or a signed-in user can update another user's document (for transfers/purchases).
-      // This is safe because the transaction logic in the client code is what enforces the balance transfer rules.
-      allow update: if isSignedIn();
+      // An owner can update their own document, or an admin can.
+      // Other signed-in users cannot update another user's balance directly through a simple update.
+      // Transfers and purchases are handled via transactions which have their own implicit security.
+      allow update: if isOwner(customerId) || isAdmin();
 
       // An owner can delete their own document, or an admin can.
       allow delete: if isExistingOwner(customerId) || isAdmin();
