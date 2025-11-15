@@ -79,6 +79,9 @@ interface Operation {
   amount: number;
   date: string; // ISO string
   description: string;
+  details?: {
+    cardPrice?: number;
+  }
 }
 
 const operationConfig: { [key in Operation['type']]: { icon: React.ElementType; color: string; } } = {
@@ -436,7 +439,12 @@ function LastOperationItem({ operation }: { operation: Operation }) {
     const Icon = config.icon;
     const isIncome = operation.amount > 0;
     
-    const descriptionText = operation.type === 'topup_admin' ? 'إيداع الى حسابك' : operation.description;
+    const descriptionText = operation.type === 'topup_admin' && operation.details?.cardPrice
+        ? 'ايداع شراء كرت'
+        : operation.type === 'topup_admin'
+        ? 'إيداع الى حسابك'
+        : operation.description;
+
 
     return (
         <Card className="shadow-md rounded-xl bg-card">

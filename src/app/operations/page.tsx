@@ -35,6 +35,9 @@ interface Operation {
   description: string;
   status: "completed" | "pending" | "failed";
   cardNumber?: string;
+  details?: {
+    cardPrice?: number;
+  }
 }
 
 const operationConfig = {
@@ -139,9 +142,8 @@ function OperationCard({ operation }: { operation: Operation }) {
   const config = operationConfig[operation.type];
   const Icon = config.icon;
   const isIncome = operation.amount > 0;
-  const {isAdmin, isOwner} = useAdmin();
   
-  const descriptionText = (isAdmin || isOwner) && operation.type === 'topup_admin' 
+  const descriptionText = operation.type === 'topup_admin' && operation.details?.cardPrice
     ? config.label 
     : operation.type === 'topup_admin'
     ? 'إيداع الى حسابك'

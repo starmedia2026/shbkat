@@ -112,10 +112,10 @@ export default function OperationDetailsPage() {
   const isIncome = operation && operation.amount > 0;
   const statusInfo = operation ? statusConfig[operation.status] : null;
   
-  const descriptionText = (isAdmin || isOwner) && operation?.type === 'topup_admin' 
+  const descriptionText = operation?.type === 'topup_admin' && operation.details?.cardPrice
     ? config?.label 
     : operation?.type === 'topup_admin'
-    ? 'إيداع الى حسابك'
+    ? 'إيداع إلى حسابك'
     : operation?.description;
 
   return (
@@ -148,7 +148,7 @@ export default function OperationDetailsPage() {
                  <div className={`p-2 rounded-full bg-muted ${config.color}`}>
                     <config.icon className="h-6 w-6" />
                  </div>
-                 <span>{config.label}</span>
+                 <span>{descriptionText}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-2">
@@ -161,7 +161,7 @@ export default function OperationDetailsPage() {
                     </p>
                </div>
                <DetailRow icon={Calendar} label="التاريخ والوقت" value={format(new Date(operation.date), "eeee, d MMMM yyyy - h:mm a", { locale: ar })} />
-               <DetailRow icon={FileText} label="الوصف" value={descriptionText} />
+               <DetailRow icon={FileText} label="الوصف" value={operation.description} />
                <DetailRow icon={statusInfo.icon} label="الحالة" value={statusInfo.label} valueColor={statusInfo.color} />
                
                {operation.type === "topup_admin" && operation.details && (
