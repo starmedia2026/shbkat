@@ -124,7 +124,6 @@ export default function SignupPage() {
           balance: 0,
           accountNumber: Math.random().toString().slice(2, 12),
           accountType: phone === "770326828" ? "admin" : accountType,
-          requiresPasswordChange: false, // Feature removed
         };
         const userDocRef = doc(firestore, "customers", user.uid);
         await setDoc(userDocRef, customerData);
@@ -254,6 +253,7 @@ export default function SignupPage() {
                     required value={password} 
                     onChange={(e) => setPassword(e.target.value)}
                     dir="ltr"
+                    className="text-right"
                   />
                    <button
                     type="button"
@@ -273,6 +273,7 @@ export default function SignupPage() {
                     required value={confirmPassword} 
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     dir="ltr"
+                    className="text-right"
                   />
                   <button
                     type="button"
