@@ -63,7 +63,9 @@ export default function WithdrawalRequestsPage() {
 
   useEffect(() => {
     if (!isAdminLoading && isAdmin === false) {
-      router.replace("/account");
+      // Although we handle rendering below, an explicit redirect can be a good safeguard
+      // for any future changes. However, for this fix, we will rely on conditional rendering
+      // to prevent the query from running.
     }
   }, [isAdmin, isAdminLoading, router]);
 
@@ -78,14 +80,16 @@ export default function WithdrawalRequestsPage() {
         </h1>
       </header>
       <main className="p-4">
-        {isAdminLoading ? (
-            <LoadingSkeleton />
-        ) : isAdmin ? (
+        {isAdmin === true ? (
             <WithdrawalRequestsContent />
+        ) : isAdminLoading ? (
+            <LoadingSkeleton />
         ) : (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
                 <h2 className="text-xl font-bold mt-4">وصول غير مصرح به</h2>
-                <p className="mt-2">أنت لا تملك الصلاحيات اللازمة لعرض هذه الصفحة.</p>
+                <p className="mt-2">
+                    أنت لا تملك الصلاحيات اللازمة لعرض هذه الصفحة.
+                </p>
             </div>
         )}
       </main>
@@ -95,15 +99,15 @@ export default function WithdrawalRequestsPage() {
 
 function WithdrawalRequestsContent() {
   const firestore = useFirestore();
-  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
   
   const withdrawalRequestsQuery = useMemoFirebase(() => {
-    if (!firestore || isAdmin !== true) return null;
+    // This component is only rendered when isAdmin is true, so we don't need to check again.
+    if (!firestore) return null;
     return query(
       collectionGroup(firestore, "operations"), 
       where("type", "==", "withdraw")
     );
-  }, [firestore, isAdmin]);
+  }, [firestore]);
   
   const { data: operations, isLoading: isOperationsLoading } = useCollection<Operation>(withdrawalRequestsQuery, {
       transform: (doc) => ({
@@ -118,12 +122,10 @@ function WithdrawalRequestsContent() {
       return operations.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [operations]);
 
-  const isLoading = isAdminLoading || isOperationsLoading;
-
 
   return (
     <div className="space-y-4">
-        {isLoading ? (
+        {isOperationsLoading ? (
             [...Array(3)].map((_, i) => <RequestCardSkeleton key={i} />)
         ) : sortedOperations.length > 0 ? (
             sortedOperations.map((op) => (
