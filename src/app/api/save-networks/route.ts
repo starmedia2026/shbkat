@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'بيانات الشبكات مفقودة' }, { status: 400 });
     }
 
-    const filePath = path.join(process.cwd(), 'src', 'lib', 'data', 'networks.json');
+    const filePath = path.join(process.cwd(), 'data', 'networks.json');
     
     // Construct the JSON file content
     const fileContent = JSON.stringify(networks, null, 2);
