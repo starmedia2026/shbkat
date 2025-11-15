@@ -179,6 +179,14 @@ export default function LoginPage() {
                     {passwordVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                <div className="text-left text-sm">
+                  <Link
+                    href="/forgot-password"
+                    className="font-medium text-primary hover:underline"
+                  >
+                    نسيت كلمة المرور؟
+                  </Link>
+                </div>
               </div>
             </CardContent>
              <CardFooter className="flex flex-col gap-4 pt-0">
