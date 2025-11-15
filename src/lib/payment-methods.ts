@@ -1,5 +1,5 @@
 
-import paymentMethodsData from './payment-methods.json';
+import paymentMethodsData from '../data/payment-methods.json';
 
 export interface PaymentMethod {
   id: string;
