@@ -12,8 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'بيانات طرق الدفع مفقودة' }, { status: 400 });
     }
 
-    // Changed path to be outside `src` to avoid dev server reloads
-    const filePath = path.join(process.cwd(), 'data', 'payment-methods.json');
+    const filePath = path.join(process.cwd(), 'src', 'lib', 'data', 'payment-methods.json');
     
     // Construct the JSON file content
     const fileContent = JSON.stringify(paymentMethods, null, 2);
