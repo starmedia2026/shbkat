@@ -91,7 +91,16 @@ export default function NetworksPage() {
     if (selectedLocation === 'all') {
       return allNetworks;
     }
-    return allNetworks.filter(network => network.address?.includes(locations.find(l => l.value === selectedLocation)?.name || ''));
+    const selectedLocationName = locations.find(l => l.value === selectedLocation)?.name;
+    if (!selectedLocationName) {
+      return allNetworks;
+    }
+    return allNetworks.filter(network => {
+      if (!network.address) return false;
+      // Split the address by " - " and trim each part, then check for inclusion
+      const networkLocations = network.address.split('-').map(loc => loc.trim());
+      return networkLocations.includes(selectedLocationName);
+    });
   }, [allNetworks, selectedLocation]);
 
   const toggleFavorite = (networkId: string, isCurrentlyFavorite: boolean) => {
