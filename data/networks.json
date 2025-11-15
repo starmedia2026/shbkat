@@ -1,21 +1,5 @@
 [
   {
-    "id": "network-1763201863159",
-    "name": "شبكة الخير",
-    "logo": "",
-    "address": "شبام",
-    "ownerPhone": "770326828",
-    "categories": [
-      {
-        "id": "cat-1763201878574",
-        "name": "فئة 2000",
-        "price": 2000,
-        "validity": "3 ايام",
-        "capacity": "1 قيقا"
-      }
-    ]
-  },
-  {
     "id": "network-1763202515559",
     "name": "شبكة الخير",
     "address": "شبام",

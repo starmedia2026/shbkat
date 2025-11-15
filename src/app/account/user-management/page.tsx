@@ -52,6 +52,13 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { generateOperationNumber } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 
 interface Customer {
@@ -66,6 +73,7 @@ export default function UserManagementPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
   const [searchTerm, setSearchTerm] = useState("");
+  const [accountTypeFilter, setAccountTypeFilter] = useState("all");
   
   const firestore = useFirestore();
   const customersCollectionRef = useMemoFirebase(() => {
@@ -84,12 +92,26 @@ export default function UserManagementPage() {
 
   const filteredCustomers = useMemo(() => {
       if (!customers) return [];
-      return customers.filter(
+      
+      const searched = customers.filter(
         (customer) =>
           customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           customer.phoneNumber.includes(searchTerm)
       );
-  }, [customers, searchTerm]);
+
+      if (accountTypeFilter === "all") {
+        return searched;
+      }
+      
+      return searched.filter(customer => {
+        if (accountTypeFilter === 'network-owner') {
+            return customer.accountType === 'network-owner';
+        }
+        // "user" filter should also include users with no accountType set
+        return customer.accountType === 'user' || !customer.accountType;
+      });
+
+  }, [customers, searchTerm, accountTypeFilter]);
   
   const isLoading = isAdminLoading || areCustomersLoading;
 
@@ -111,16 +133,28 @@ export default function UserManagementPage() {
         </header>
         <main className="p-4">
              <div className="space-y-6">
-                <div className="relative">
-                    <Input
-                        type="search"
-                        placeholder="البحث بالاسم أو رقم الهاتف..."
-                        className="w-full pr-10"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        disabled={isLoading}
-                    />
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="relative md:col-span-2">
+                        <Input
+                            type="search"
+                            placeholder="البحث بالاسم أو رقم الهاتف..."
+                            className="w-full pr-10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            disabled={isLoading}
+                        />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    </div>
+                     <Select dir="rtl" onValueChange={setAccountTypeFilter} value={accountTypeFilter} disabled={isLoading}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="تصفية حسب النوع" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">الكل</SelectItem>
+                            <SelectItem value="user">المستخدمين فقط</SelectItem>
+                            <SelectItem value="network-owner">ملاك الشبكات فقط</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 {isLoading ? (
@@ -538,7 +572,5 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
         </Dialog>
     );
 }
-
-    
 
     
