@@ -2,7 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Phone, MessageCircle } from "lucide-react";
+import { ArrowRight, Phone, Headset } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -42,7 +42,7 @@ export default function ContactPage() {
   const whatsappMessage = encodeURIComponent("مرحباً، أود التواصل معكم بخصوص تطبيق شبكات.");
 
   const handleWhatsAppRedirect = () => {
-    window.open(`https://wa.me/${phoneNumber}?text=${whatsappMessage}`, "_blank");
+    window.open(`https://wa.me/967${phoneNumber}?text=${whatsappMessage}`, "_blank");
   };
     
   const handleCallRedirect = () => {
@@ -67,7 +67,7 @@ export default function ContactPage() {
         <Card className="w-full max-w-sm shadow-lg rounded-2xl bg-primary/5 border-primary/20">
             <CardContent className="p-6 flex flex-col items-center gap-4">
                 <div className="p-4 bg-primary/10 rounded-full">
-                    <MessageCircle className="h-8 w-8 text-primary"/>
+                    <Headset className="h-8 w-8 text-primary"/>
                 </div>
                 <div className="text-center">
                     <h2 className="text-lg font-bold">يسعدنا تواصلك معنا</h2>
