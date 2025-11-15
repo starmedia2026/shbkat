@@ -2,26 +2,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Phone, Headset } from "lucide-react";
+import { ArrowRight, Phone, Headset, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-
-// WhatsApp icon component for the button
-const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-      {...props}
-      viewBox="0 0 32 32"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
-    >
-      <path
-        d="M16,2A13.993,13.993,0,0,0,2,16C2,23.422,6.588,29.5,13.5,30a13.9,13.9,0,0,0,1-2.585,11.027,11.027,0,0,1-2.43-.5,11.011,11.011,0,0,1-8.57-10.915,10.93,10.93,0,0,1,10.915-10.93,10.915,10.915,0,0,1,10.915,10.915,11.025,11.025,0,0,1-2.06,6.54,1,1,0,0,0-.24.78,1,1,0,0,0,.6.88,1,1,0,0,0,1.06-.3A13.882,13.882,0,0,0,30,16,14.015,14.015,0,0,0,16,2ZM22.96,18.38a3.744,3.744,0,0,1-2.31,2.31,3.74,3.74,0,0,1-4.63-1.4,1,1,0,0,0-1.74-.59A3.74,3.74,0,0,1,12.8,20.08a3.73,3.73,0,0,1-2.32,2.32,3.74,3.74,0,0,1-4.63-1.4,1,1,0,0,0-1.74-.59,3.74,3.74,0,0,1-1.4-4.63,3.74,3.74,0,0,1,2.31-2.32,3.74,3.74,0,0,1,4.63,1.4,1,1,0,0,0,1.74.59,3.74,3.74,0,0,1,1.4,4.63,3.74,3.74,0,0,1,2.32,2.32,3.74,3.74,0,0,1,1.4,4.63,1,1,0,0,0,.59,1.74,1,1,0,0,0,1.15-.59,3.74,3.74,0,0,1,4.63-1.4,3.74,3.74,0,0,1,2.31,2.31,1,1,0,0,0,1.74.59,1,1,0,0,0,.59-1.74,3.74,3.74,0,0,1-1.4-4.63Z"
-      />
-    </svg>
-);
 
 const DEFAULT_SUPPORT_PHONE = "770326828";
 
@@ -97,7 +83,7 @@ export default function ContactPage() {
             <Card className="w-full shadow-md rounded-xl hover:shadow-lg transition-all">
                 <CardContent className="p-5 flex items-center justify-between">
                      <div className="flex items-center gap-4">
-                        <WhatsAppIcon className="h-6 w-6 text-primary"/>
+                        <MessageCircle className="h-6 w-6 text-primary"/>
                         <div className="text-right">
                             <h3 className="font-semibold">محادثة واتساب</h3>
                             <p className="text-xs text-muted-foreground">أرسل لنا رسالة نصية</p>
@@ -112,3 +98,5 @@ export default function ContactPage() {
     </div>
   );
 }
+
+    

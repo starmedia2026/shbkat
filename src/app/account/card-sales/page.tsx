@@ -12,7 +12,8 @@ import {
   Tag,
   Trash2,
   Send,
-  Loader2
+  Loader2,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,21 +53,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
-
-
-// WhatsApp icon component for the button
-const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-      {...props}
-      viewBox="0 0 32 32"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
-    >
-      <path
-        d="M16,2A13.993,13.993,0,0,0,2,16C2,23.422,6.588,29.5,13.5,30a13.9,13.9,0,0,0,1-2.585,11.027,11.027,0,0,1-2.43-.5,11.011,11.011,0,0,1-8.57-10.915,10.93,10.93,0,0,1,10.915-10.93,10.915,10.915,0,0,1,10.915,10.915,11.025,11.025,0,0,1-2.06,6.54,1,1,0,0,0-.24.78,1,1,0,0,0,.6.88,1,1,0,0,0,1.06-.3A13.882,13.882,0,0,0,30,16,14.015,14.015,0,0,0,16,2ZM22.96,18.38a3.744,3.744,0,0,1-2.31,2.31,3.74,3.74,0,0,1-4.63-1.4,1,1,0,0,0-1.74-.59A3.74,3.74,0,0,1,12.8,20.08a3.73,3.73,0,0,1-2.32,2.32,3.74,3.74,0,0,1-4.63-1.4,1,1,0,0,0-1.74-.59,3.74,3.74,0,0,1-1.4-4.63,3.74,3.74,0,0,1,2.31-2.32,3.74,3.74,0,0,1,4.63,1.4,1,1,0,0,0,1.74.59,3.74,3.74,0,0,1,1.4,4.63,3.74,3.74,0,0,1,2.32,2.32,3.74,3.74,0,0,1,1.4,4.63,1,1,0,0,0,.59,1.74,1,1,0,0,0,1.15-.59,3.74,3.74,0,0,1,4.63-1.4,3.74,3.74,0,0,1,2.31,2.31,1,1,0,0,0,1.74.59,1,1,0,0,0,.59-1.74,3.74,3.74,0,0,1-1.4-4.63Z"
-      />
-    </svg>
-);
 
 
 interface Customer {
@@ -671,7 +657,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                         <Copy className="h-4 w-4 text-muted-foreground"/>
                     </Button>
                     {customer && <Button onClick={handleWhatsAppRedirect} variant="outline" size="icon" className="h-9 w-9 bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
-                        <WhatsAppIcon className="h-5 w-5"/>
+                        <MessageCircle className="h-5 w-5"/>
                     </Button>}
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -760,6 +746,5 @@ function CardSkeleton() {
         </Card>
     );
 }
-
 
     
