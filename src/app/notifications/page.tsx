@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, ArrowUp, ArrowDown, CreditCard, BellRing, Coins, Copy, Banknote, Archive } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, query, orderBy, writeBatch, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, writeBatch, getDocs, doc, onSnapshot } from "firebase/firestore";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,9 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useAdmin } from "@/hooks/useAdmin";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
 
 interface Notification {
@@ -33,6 +36,9 @@ interface Notification {
   date: string; // ISO string
   read: boolean;
   cardNumber?: string;
+  // For admin withdrawal notifications
+  operationPath?: string;
+  ownerId?: string;
 }
 
 const notificationConfig = {
@@ -49,16 +55,60 @@ export default function NotificationsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { isAdmin } = useAdmin();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const notificationsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return query(
+  useEffect(() => {
+    if (!firestore || !user?.uid) {
+        setIsLoading(false);
+        return;
+    };
+    
+    setIsLoading(true);
+    let unsubUser, unsubAdmin;
+
+    // Listener for user's own notifications
+    const userNotificationsQuery = query(
         collection(firestore, `customers/${user.uid}/notifications`),
         orderBy("date", "desc")
     );
-  }, [firestore, user?.uid]);
+    unsubUser = onSnapshot(userNotificationsQuery, (snapshot) => {
+        const userNotifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+        setNotifications(prev => {
+            const combined = [...userNotifs, ...prev.filter(p => !p.id.startsWith('admin_'))];
+            return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        });
+        setIsLoading(false);
+    });
 
-  const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
+    // Listener for admin notifications, if user is an admin
+    if (isAdmin) {
+        const adminNotificationsQuery = query(
+            collection(firestore, `admin_notifications`),
+            orderBy("date", "desc")
+        );
+        unsubAdmin = onSnapshot(adminNotificationsQuery, (snapshot) => {
+            const adminNotifs = snapshot.docs.map(doc => ({ id: `admin_${doc.id}`, ...doc.data() } as Notification));
+            setNotifications(prev => {
+                const combined = [...adminNotifs, ...prev.filter(p => !p.id.startsWith('admin_'))];
+                return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            });
+            setIsLoading(false);
+        });
+    } else {
+        // If not admin, ensure loading is false
+        setIsLoading(false);
+    }
+
+
+    return () => {
+        if (unsubUser) unsubUser();
+        if (unsubAdmin) unsubAdmin();
+    };
+
+  }, [firestore, user, isAdmin]);
+
 
   const handleArchiveAll = async () => {
     if (!firestore || !user?.uid || !notifications || notifications.length === 0) {
@@ -67,20 +117,27 @@ export default function NotificationsPage() {
     }
     
     const batch = writeBatch(firestore);
-    const notificationsCollectionRef = collection(firestore, `customers/${user.uid}/notifications`);
+    
+    // Determine which collections to clear
+    const userNotifsRef = collection(firestore, `customers/${user.uid}/notifications`);
+    const adminNotifsRef = collection(firestore, `admin_notifications`);
 
     try {
-        const querySnapshot = await getDocs(notificationsCollectionRef);
-        querySnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
+        const userNotifsSnapshot = await getDocs(userNotifsRef);
+        userNotifsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        if (isAdmin) {
+            const adminNotifsSnapshot = await getDocs(adminNotifsRef);
+            adminNotifsSnapshot.forEach(doc => batch.delete(doc.ref));
+        }
+
         await batch.commit();
         toast({ title: 'نجاح', description: 'تمت أرشفة جميع الإشعارات بنجاح.' });
     } catch(e) {
          const permissionError = new FirestorePermissionError({
-            path: `customers/${user.uid}/notifications`,
+            path: `notifications for user ${user.uid}`,
             operation: 'delete',
-            requestResourceData: {note: `Attempted to batch delete all notifications for user ${user.uid}`}
+            requestResourceData: {note: `Attempted to batch delete all notifications`}
         });
         errorEmitter.emit('permission-error', permissionError);
     }
@@ -139,10 +196,11 @@ export default function NotificationsPage() {
 }
 
 function NotificationCard({ notification }: { notification: Notification }) {
-    const config = notificationConfig[notification.type];
+    const config = notificationConfig[notification.type] || { icon: BellRing, color: "text-primary" };
     const Icon = config.icon;
     const isAmountPositive = notification.amount && notification.amount > 0;
     const { toast } = useToast();
+    const router = useRouter();
 
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text).then(() => {
@@ -154,8 +212,16 @@ function NotificationCard({ notification }: { notification: Notification }) {
             console.error("Failed to copy to clipboard:", err);
         });
     };
+    
+    const handleClick = () => {
+        if (notification.operationPath) {
+            // Encode the path to make it safe for URL
+            const encodedPath = encodeURIComponent(notification.operationPath);
+            router.push(`/admin/handle-withdrawal/${encodedPath}`);
+        }
+    }
 
-    return (
+    const cardContent = (
         <Card className={`w-full shadow-md rounded-2xl bg-card/50 ${!notification.read ? 'border-primary/50' : 'border-transparent'}`}>
             <CardContent className="p-4">
                 <div className="flex items-start justify-between">
@@ -173,7 +239,7 @@ function NotificationCard({ notification }: { notification: Notification }) {
                              <p className={`font-bold text-sm ${isAmountPositive ? 'text-green-500' : 'text-red-500'}`}>
                                 {notification.amount.toLocaleString('en-US')} {isAmountPositive ? '+' : ''}ريال يمني 
                              </p>
-                        ) : <div className="h-[20px]"></div>}
+                        ) : notification.title === "طلب سحب جديد" ? null : <div className="h-[20px]"></div>}
                         <p className="text-xs text-muted-foreground mt-1">
                           {format(new Date(notification.date), "d MMM, h:mm a", { locale: ar })}
                         </p>
@@ -195,6 +261,12 @@ function NotificationCard({ notification }: { notification: Notification }) {
             </CardContent>
         </Card>
     );
+
+    if (notification.operationPath) {
+        return <div onClick={handleClick} className="cursor-pointer">{cardContent}</div>;
+    }
+
+    return cardContent;
 }
 
 function NotificationSkeleton() {
@@ -216,5 +288,7 @@ function NotificationSkeleton() {
         </Card>
     )
 }
+
+    
 
     

@@ -32,7 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDoc, useFirestore, useMemoFirebase, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, doc, writeBatch } from "firebase/firestore";
+import { collection, doc, writeBatch, getDocs, query, where, limit } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -110,6 +110,20 @@ function WithdrawContent() {
   const { data: owner, isLoading: isCustomerLoading } = useDoc<Customer>(customerDocRef);
   const isLoading = isUserLoading || isCustomerLoading;
   
+  const findAdminUid = async (): Promise<string | null> => {
+      if (!firestore) return null;
+      try {
+          const q = query(collection(firestore, "customers"), where("phoneNumber", "==", "770326828"), limit(1));
+          const adminSnapshot = await getDocs(q);
+          if (!adminSnapshot.empty) {
+              return adminSnapshot.docs[0].id;
+          }
+      } catch (e) {
+          console.error("Could not find admin user:", e);
+      }
+      return null;
+  }
+
   const handleWithdraw = async () => {
     const withdrawAmount = Number(amount);
 
@@ -131,9 +145,20 @@ function WithdrawContent() {
     }
     
     setIsProcessing(true);
+    
+    const adminUid = await findAdminUid();
+    if (!adminUid) {
+        toast({ variant: "destructive", title: "خطأ في النظام", description: "تعذر العثور على حساب المشرف لإرسال الإشعار." });
+        setIsProcessing(false);
+        return;
+    }
+
     const newBalance = owner.balance - withdrawAmount;
     const now = new Date().toISOString();
     
+    const ownerDocRef = doc(firestore, "customers", user.uid);
+    const operationDocRef = doc(collection(firestore, `customers/${user.uid}/operations`));
+
     const operationData = {
         type: "withdraw" as const,
         amount: -withdrawAmount,
@@ -158,15 +183,25 @@ function WithdrawContent() {
         read: false,
     };
     
-    const ownerDocRef = doc(firestore, "customers", user.uid);
-    const operationDocRef = doc(collection(firestore, `customers/${user.uid}/operations`));
+    const adminNotificationData = {
+        title: "طلب سحب جديد",
+        body: `من ${owner.name} بمبلغ ${withdrawAmount.toLocaleString('en-US')} ريال`,
+        operationPath: operationDocRef.path,
+        ownerId: user.uid,
+        date: now,
+        status: "pending" as const,
+        read: false,
+    };
+    
     const notificationDocRef = doc(collection(firestore, `customers/${user.uid}/notifications`));
+    const adminNotificationDocRef = doc(collection(firestore, 'admin_notifications'));
 
     const batch = writeBatch(firestore);
     
     batch.update(ownerDocRef, { balance: newBalance });
     batch.set(operationDocRef, operationData);
     batch.set(notificationDocRef, notificationData);
+    batch.set(adminNotificationDocRef, adminNotificationData);
 
     try {
         await batch.commit();
@@ -186,6 +221,7 @@ function WithdrawContent() {
                 update: { path: ownerDocRef.path, data: { balance: newBalance } },
                 setOp: { path: operationDocRef.path, data: operationData },
                 setNotif: { path: notificationDocRef.path, data: notificationData },
+                setAdminNotif: { path: adminNotificationDocRef.path, data: adminNotificationData }
              }
         });
         errorEmitter.emit('permission-error', contextualError);
@@ -345,6 +381,8 @@ function LoadingSkeleton() {
         </div>
     );
 }
+
+    
 
     
 

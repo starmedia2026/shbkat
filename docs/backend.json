@@ -246,6 +246,44 @@
         "read"
       ]
     },
+    "AdminNotification": {
+      "title": "Admin Notification",
+      "description": "Represents a notification for the administrator, typically for withdrawal requests.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The title of the notification, e.g., 'New Withdrawal Request'."
+        },
+        "body": {
+          "type": "string",
+          "description": "A brief summary of the notification."
+        },
+        "operationPath": {
+          "type": "string",
+          "description": "The full Firestore path to the original operation document."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The UID of the user who initiated the action (e.g., the network owner)."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp of the notification."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the related operation.",
+          "enum": ["pending", "completed", "failed"]
+        },
+        "read": {
+          "type": "boolean",
+          "description": "Indicates if the notification has been read by the admin."
+        }
+      },
+      "required": ["title", "body", "operationPath", "ownerId", "date", "status", "read"]
+    },
     "ThemeSettings": {
       "title": "Theme Settings",
       "description": "Stores global application theme settings.",
@@ -437,6 +475,22 @@
           ]
         }
       },
+       {
+        "path": "/admin_notifications/{notificationId}",
+        "definition": {
+          "entityName": "AdminNotification",
+          "schema": {
+            "$ref": "#/backend/entities/AdminNotification"
+          },
+          "description": "Stores notifications intended for the administrator, like withdrawal requests.",
+          "params": [
+            {
+              "name": "notificationId",
+              "description": "The unique identifier for the admin notification."
+            }
+          ]
+        }
+      },
       {
         "path": "/settings/theme",
         "definition": {
@@ -471,3 +525,5 @@
     "reasoning": "The database structure is designed to store customer information, including their account details, contact number, and balance, and to allow the application to update their balance. To ensure security and proper data segregation, each customer's data is stored under a collection named 'customers'. This structure offers a clear separation of customer records, making it easy to manage and scale customer-related operations. The 'settings' collection stores global application settings like theme color, font, and now the app logo, allowing an admin to update them for all users in real-time.\n\n**Authorization Independence:**  Since all customer data is self-contained within the `customers` collection, there is no reliance on data from other collections for authorization. Security rules can be applied directly to the `customers` collection based on the user's authentication status. The `settings` collection has its own rules allowing admin writes and public reads.\n\n**QAPs Support:** The segregation strategy ensures that listing customers is secure, as the rules applied to `/customers/{customerId}` govern access to each individual customer's document. There is no mixing of different access needs within the same collection."
   }
 }
+
+    

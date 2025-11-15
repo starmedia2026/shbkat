@@ -13,6 +13,7 @@
  * - /cards/{cardId}: Stores scratch card information.
  * - /settings/theme: Stores global theme settings.
  * - /adverts/{advertId}: Stores advertisement images for the home page carousel.
+ * - /admin_notifications/{notificationId}: Notifications specifically for the admin.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -55,10 +56,12 @@ service cloud.firestore {
       allow delete: if isExistingOwner(customerId) || isAdmin();
 
       match /operations/{operationId} {
+        // Admins and Network Owners can see all operations. A user can only see their own.
         allow read, list: if isOwner(customerId) || isAdmin() || isNetworkOwner();
         // Allow creating an operation for self, for another user (transfers), or allow admin/network-owner
         allow create: if isOwner(customerId) || isNetworkOwner() || isAdmin();
         // Allow admin to update any operation (e.g. to confirm a withdrawal)
+        // Allow network owner to update their own operations
         allow update: if isAdmin() || (isNetworkOwner() && isOwner(customerId));
         // Allow owner to delete their own operations (archive)
         allow delete: if isOwner(customerId) || isAdmin();
@@ -88,6 +91,16 @@ service cloud.firestore {
       // Network owner can only list their own operations, but this is filtered in the query.
       allow get, list: if isAdmin() || isNetworkOwner();
       // Allow admin to update any operation.
+      allow update: if isAdmin();
+    }
+    
+    // Rules for admin-specific notifications
+    match /admin_notifications/{notificationId} {
+      // Only the admin can read, list, or delete these notifications.
+      allow read, list, delete: if isAdmin();
+      // Any authenticated user (specifically network owners) can create a notification for the admin.
+      allow create: if isSignedIn();
+      // Only the admin can update (e.g., mark as read or change status).
       allow update: if isAdmin();
     }
 
@@ -124,3 +137,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
