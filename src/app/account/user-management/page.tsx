@@ -10,6 +10,7 @@ import {
   Edit,
   Trash2,
   MessageCircle,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +51,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { generateOperationNumber } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 
 interface Customer {
@@ -57,6 +59,7 @@ interface Customer {
     name: string;
     phoneNumber: string;
     balance: number;
+    accountType?: "user" | "network-owner" | "admin";
 }
 
 export default function UserManagementPage() {
@@ -293,7 +296,15 @@ function CustomerCard({ customer }: { customer: Customer }) {
                             <User className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                            <p className="font-bold text-base">{customer.name}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="font-bold text-base">{customer.name}</p>
+                                {customer.accountType === 'network-owner' && (
+                                    <Badge variant="secondary" className="flex items-center gap-1">
+                                        <Briefcase className="h-3 w-3" />
+                                        مالك شبكة
+                                    </Badge>
+                                )}
+                            </div>
                             <div className="flex items-center space-x-2 space-x-reverse mt-1 text-xs text-muted-foreground">
                                 <Phone className="h-3.5 w-3.5" />
                                 <span dir="ltr">{customer.phoneNumber}</span>
@@ -527,5 +538,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
         </Dialog>
     );
 }
+
+    
 
     
