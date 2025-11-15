@@ -101,7 +101,7 @@ export default function WithdrawalRequestsPage() {
 function WithdrawalRequestsContent() {
   const firestore = useFirestore();
   const { user } = useUser();
-  const { isAdmin, isOwner, areRolesLoading } = useAdmin();
+  const { isAdmin, isOwner } = useAdmin();
   
   const withdrawalRequestsQuery = useMemoFirebase(() => {
     if (!firestore || !user ) return null;
@@ -158,7 +158,7 @@ function WithdrawalRequestsContent() {
 function RequestCard({ operation }: { operation: Operation }) {
     const firestore = useFirestore();
     const { toast } = useToast();
-    const { isAdmin, isOwner } = useAdmin();
+    const { isAdmin } = useAdmin();
     const [isUpdating, setIsUpdating] = useState(false);
     
     // This regex will fail if path structure changes. A more robust solution might be needed.
@@ -210,7 +210,6 @@ function RequestCard({ operation }: { operation: Operation }) {
     };
 
     const statusInfo = statusConfig[operation.status];
-    const canUpdate = isAdmin || (isOwner && ownerId === useUser().user?.uid);
 
     return (
         <Card className="w-full shadow-md rounded-2xl bg-card/50">
@@ -234,7 +233,7 @@ function RequestCard({ operation }: { operation: Operation }) {
                     <p><strong>طريقة السحب:</strong> {operation.details?.method || 'غير محدد'}</p>
                     <p><strong>رقم الحساب:</strong> {operation.details?.recipientAccount || 'غير محدد'}</p>
                 </div>
-                {canUpdate && (
+                {isAdmin && (
                  <div className="mt-4 pt-3 border-t flex items-center justify-between">
                      <p className="text-xs text-muted-foreground">تغيير الحالة:</p>
                     <div className="flex gap-2">
