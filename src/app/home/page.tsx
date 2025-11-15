@@ -239,7 +239,10 @@ export default function HomePage() {
             {isLoading ? (
               <Skeleton className="h-6 w-48 mt-1 mx-auto" />
             ) : (
-                <h1 className="text-lg font-bold">{greeting}, {customer?.name ? formatDisplayName(customer.name) : '...'}</h1>
+                <div className="flex flex-col items-center justify-center">
+                    <span className="text-sm font-normal text-muted-foreground">{greeting}</span>
+                    <span className="text-lg font-bold -mt-1">{customer?.name ? formatDisplayName(customer.name) : '...'}</span>
+                </div>
             )}
           </div>
           <div className="flex-1 flex justify-end">
