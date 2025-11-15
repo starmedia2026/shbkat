@@ -273,6 +273,8 @@ export default function SignupPage() {
                     type={passwordVisible ? "text" : "password"} 
                     required value={password} 
                     onChange={(e) => setPassword(e.target.value)}
+                    className="text-right"
+                    dir="ltr"
                   />
                    <button
                     type="button"
@@ -291,6 +293,8 @@ export default function SignupPage() {
                     type={confirmPasswordVisible ? "text" : "password"} 
                     required value={confirmPassword} 
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="text-right"
+                    dir="ltr"
                   />
                   <button
                     type="button"
@@ -332,11 +336,11 @@ export default function SignupPage() {
                   <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2 text-right">
                           <Label htmlFor="networkName">اسم الشبكة</Label>
-                          <Input id="networkName" placeholder="مثال: شبكة ببحم" required={accountType === 'network-owner'} value={networkName} onChange={(e) => setNetworkName(e.target.value)} />
+                          <Input id="networkName" placeholder="مثال شبكة ستار" required={accountType === 'network-owner'} value={networkName} onChange={(e) => setNetworkName(e.target.value)} />
                       </div>
                       <div className="grid gap-2 text-right">
                           <Label htmlFor="networkAddress">عنوان الشبكة</Label>
-                          <Input id="networkAddress" placeholder="مثال: مديرية شبام" required={accountType === 'network-owner'} value={networkAddress} onChange={(e) => setNetworkAddress(e.target.value)} />
+                          <Input id="networkAddress" placeholder="مثال شبام" required={accountType === 'network-owner'} value={networkAddress} onChange={(e) => setNetworkAddress(e.target.value)} />
                       </div>
                   </div>
               )}
@@ -362,10 +366,3 @@ export default function SignupPage() {
     </main>
   );
 }
-
-    
-
-    
-
-
-    
