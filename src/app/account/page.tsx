@@ -54,7 +54,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/useAdmin";
-import { locations } from "@/lib/locations";
+import locations from "@/data/locations.json";
 
 const colorOptions = [
   { name: 'blue', hsl: '210 100% 56%' },
@@ -438,5 +438,3 @@ function AccountItem({
 
   return <li>{content}</li>;
 }
-
-    
