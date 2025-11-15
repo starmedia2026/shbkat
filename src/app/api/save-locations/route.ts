@@ -12,8 +12,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'بيانات المواقع مفقودة' }, { status: 400 });
     }
     
-    // Save to the .data directory at the project root
-    const filePath = path.join(process.cwd(), '.data', 'locations.json');
+    // Save to the data directory at the project root
+    const filePath = path.join(process.cwd(), 'data', 'locations.json');
     
     const fileContent = JSON.stringify(locations, null, 2);
 

@@ -12,8 +12,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'بيانات طرق الدفع مفقودة' }, { status: 400 });
     }
 
-    // Save to the .data directory at the project root
-    const filePath = path.join(process.cwd(), '.data', 'payment-methods.json');
+    // Save to the data directory at the project root
+    const filePath = path.join(process.cwd(), 'data', 'payment-methods.json');
     
     const fileContent = JSON.stringify(paymentMethods, null, 2);
 

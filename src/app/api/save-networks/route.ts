@@ -12,8 +12,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'بيانات الشبكات مفقودة' }, { status: 400 });
     }
 
-    // Save to the .data directory at the project root
-    const filePath = path.join(process.cwd(), '.data', 'networks.json');
+    // Save to the data directory at the project root
+    const filePath = path.join(process.cwd(), 'data', 'networks.json');
     
     const fileContent = JSON.stringify(networks, null, 2);
 
