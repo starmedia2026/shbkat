@@ -161,11 +161,12 @@ function CardSalesContent() {
     // Admin sees all cards. Owner sees only their network's cards.
     const cardsCollectionRef = useMemoFirebase(() => {
         if (!firestore) return null;
-        if (!isAdmin && !isOwner) return null; // Don't query if user role isn't determined yet
+        if (!isAdmin && !isOwner) return null;
 
         let q;
         if (isAdmin) {
-             q = query(collection(firestore, "cards"), orderBy("usedAt", "desc"));
+             // Admin fetches all cards. Sorting is done client-side to include available cards.
+             q = query(collection(firestore, "cards"));
              if (filterNetwork) {
                  q = query(q, where("networkId", "==", filterNetwork));
              }
@@ -174,7 +175,8 @@ function CardSalesContent() {
              }
         }
         else if (isOwner && ownedNetwork) {
-             q = query(collection(firestore, "cards"), where("networkId", "==", ownedNetwork.id), orderBy("usedAt", "desc"));
+             // Owner query can be more specific and include server-side ordering.
+             q = query(collection(firestore, "cards"), where("networkId", "==", ownedNetwork.id));
              if (filterCategory) {
                 q = query(q, where("categoryId", "==", filterCategory));
              }
@@ -185,24 +187,38 @@ function CardSalesContent() {
     }, [firestore, isAdmin, isOwner, ownedNetwork, filterNetwork, filterCategory]);
 
     const { data: allCards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
+    
+    const sortedCards = useMemo(() => {
+        if (!allCards) return null;
+        return [...allCards].sort((a, b) => {
+            // Sort used cards by date, newest first
+            if (a.usedAt && b.usedAt) {
+                return new Date(b.usedAt).getTime() - new Date(a.usedAt).getTime();
+            }
+            // Put used cards before available cards
+            if (a.usedAt) return -1;
+            if (b.usedAt) return 1;
+            // Keep original order for available cards (or sort by creation if needed)
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+    }, [allCards]);
+
 
     const [customerMap, setCustomerMap] = useState<Map<string, Customer>>(new Map());
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
 
     useEffect(() => {
-        if (!firestore || !allCards) return;
+        if (!firestore || !sortedCards) return;
         
         const fetchCustomers = async () => {
             setIsLoadingCustomers(true);
-            const userIds = [...new Set(allCards.map(card => card.usedBy).filter(Boolean) as string[])];
+            const userIds = [...new Set(sortedCards.map(card => card.usedBy).filter(Boolean) as string[])];
             if (userIds.length === 0) {
                 setIsLoadingCustomers(false);
                 return;
             }
             
             const customersRef = collection(firestore, 'customers');
-            // Firestore 'in' queries are limited to 30 elements.
-            // If we have more than 30 user IDs, we need to split them into chunks.
             const chunks = [];
             for (let i = 0; i < userIds.length; i += 30) {
                 chunks.push(userIds.slice(i, i + 30));
@@ -230,7 +246,7 @@ function CardSalesContent() {
         };
 
         fetchCustomers();
-    }, [firestore, allCards]);
+    }, [firestore, sortedCards]);
     
     const networksToDisplay = useMemo(() => {
         if (filterNetwork) {
@@ -251,7 +267,7 @@ function CardSalesContent() {
                 <NetworkAccordionItem 
                     key={network.id} 
                     network={network} 
-                    allCards={allCards} 
+                    allCards={sortedCards} 
                     customerMap={customerMap}
                     isLoading={isLoading}
                     filterCategory={filterCategory}
@@ -689,6 +705,8 @@ function CardSkeleton() {
         </Card>
     );
 }
+
+    
 
     
 
