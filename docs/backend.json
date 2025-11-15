@@ -99,10 +99,6 @@
           "description": "The customer's account balance.",
           "format": "number"
         },
-        "requiresPasswordChange": {
-          "type": "boolean",
-          "description": "If true, the user must change their password on next login."
-        },
         "accountType": {
           "type": "string",
           "description": "The type of user account.",

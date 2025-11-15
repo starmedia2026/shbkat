@@ -146,11 +146,6 @@ export default function AccountPage() {
       : userAccountItems;
   }, [isAdmin, isOwner, isLoading]);
   
-  useEffect(() => {
-    if (!isLoading && user && customer?.requiresPasswordChange) {
-      router.replace('/force-password-change');
-    }
-  }, [isLoading, user, customer, router]);
 
   const handleLogout = async () => {
     try {

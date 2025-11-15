@@ -144,13 +144,13 @@ export default function SignupPage() {
           balance: 0,
           accountNumber: Math.random().toString().slice(2, 12),
           accountType: phone === "770326828" ? "admin" : accountType,
-          requiresPasswordChange: false,
+          requiresPasswordChange: false, // Feature removed
         };
         const userDocRef = doc(firestore, "customers", user.uid);
         await setDoc(userDocRef, customerData);
 
         // Step 3: If network owner, add the network to the networks.json file
-        if (accountType === 'network-owner') {
+        if (customerData.accountType === 'network-owner') {
             const newNetwork = {
                 id: `network-${Date.now()}`,
                 name: networkName,

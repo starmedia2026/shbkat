@@ -68,7 +68,6 @@ interface Customer {
     name: string;
     phoneNumber: string;
     balance: number;
-    requiresPasswordChange?: boolean;
 }
 
 export default function UserManagementPage() {
@@ -319,9 +318,6 @@ function CustomerCard({ customer }: { customer: Customer }) {
                             {customer.balance.toLocaleString('en-US')}
                              <span className="text-xs">ريال يمني</span>
                         </p>
-                         {customer.requiresPasswordChange && (
-                            <p className="text-xs text-yellow-500 font-bold mt-1">يتطلب تغيير كلمة السر</p>
-                        )}
                     </div>
                 </div>
                  <div className="mt-4 pt-4 border-t">

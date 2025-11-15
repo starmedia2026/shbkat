@@ -138,11 +138,6 @@ export default function HomePage() {
   }, [firestore]);
   const { data: homeSettings, isLoading: isHomeLoading } = useDoc<HomeSettings>(homeSettingsDocRef);
   
-  useEffect(() => {
-    if (!isCustomerLoading && user && customer?.requiresPasswordChange) {
-      router.replace('/force-password-change');
-    }
-  }, [isCustomerLoading, user, customer, router]);
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
