@@ -164,19 +164,20 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-              <div className="text-left text-sm">
-                <Link
-                  href="/forgot-password"
-                  className="font-medium text-primary hover:underline text-sm"
-                >
-                  نسيت كلمة المرور؟
-                </Link>
-              </div>
-              <div className="flex flex-col gap-3 pt-2">
-                 <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base" disabled={isLoading}>
+
+              <div className="flex flex-col gap-4 pt-2">
+                <div className="text-left text-sm">
+                    <Link
+                    href="/forgot-password"
+                    className="font-medium text-primary hover:underline text-sm"
+                    >
+                    نسيت كلمة المرور؟
+                    </Link>
+                </div>
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base" disabled={isLoading}>
                     {isLoading ? "جاري الدخول..." : "دخول"}
-                 </Button>
-                 <div className="text-base text-muted-foreground">
+                </Button>
+                <div className="text-base text-muted-foreground">
                     ليس لديك حساب؟{" "}
                     <Link
                     href="/signup"
@@ -186,6 +187,7 @@ export default function LoginPage() {
                     </Link>
                 </div>
               </div>
+              
                {error && <p className="text-destructive text-sm mt-2">{error}</p>}
             </CardContent>
           </form>
