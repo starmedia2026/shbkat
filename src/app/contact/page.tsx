@@ -88,7 +88,7 @@ export default function ContactPage() {
                             <p className="text-xs text-muted-foreground">تحدث مع أحد ممثلينا</p>
                         </div>
                     </div>
-                    <Button onClick={handleCallRedirect} size="sm" disabled={isLoading}>اتصل الآن</Button>
+                    <Button onClick={handleCallRedirect} size="sm" disabled={isLoading} className="w-28">اتصل الآن</Button>
                 </CardContent>
             </Card>
 
@@ -101,7 +101,7 @@ export default function ContactPage() {
                             <p className="text-xs text-muted-foreground">أرسل لنا رسالة نصية</p>
                         </div>
                     </div>
-                    <Button onClick={handleWhatsAppRedirect} size="sm" disabled={isLoading}>ابدأ المحادثة</Button>
+                    <Button onClick={handleWhatsAppRedirect} size="sm" disabled={isLoading} className="w-28">ابدأ المحادثة</Button>
                 </CardContent>
             </Card>
         </div>
