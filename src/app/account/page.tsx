@@ -54,7 +54,8 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/useAdmin";
-import locations from "@/data/locations.json";
+import initialLocations from "../../../data/locations.json";
+
 
 const colorOptions = [
   { name: 'blue', hsl: '210 100% 56%' },
@@ -176,7 +177,7 @@ export default function AccountPage() {
 
   const getArabicLocation = (locationKey?: string): string => {
     if (!locationKey) return "";
-    const location = locations.find(loc => loc.value === locationKey);
+    const location = initialLocations.find(loc => loc.value === locationKey);
     return location ? location.name : locationKey;
   };
   
