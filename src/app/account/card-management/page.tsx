@@ -28,7 +28,6 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
-import { networks } from "@/lib/networks";
 import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { writeBatch, collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +37,14 @@ interface Category {
   id: string;
   name: string;
   price: number;
+}
+interface Network {
+  id: string;
+  name: string;
+  logo?: string;
+  address?: string;
+  ownerPhone?: string;
+  categories: Category[];
 }
 
 interface CardInput {
@@ -90,6 +97,9 @@ function CardManagementContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
+  const [networks, setNetworks] = useState<Network[]>([]);
+  const [areNetworksLoading, setAreNetworksLoading] = useState(true);
+
   const [selectedNetworkId, setSelectedNetworkId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [cardsInput, setCardsInput] = useState<string>("");
@@ -101,11 +111,31 @@ function CardManagementContent() {
   } | null>(null);
   const ALL_NETWORKS_VALUE = "all";
 
+   useEffect(() => {
+    async function fetchNetworks() {
+        setAreNetworksLoading(true);
+        try {
+            const response = await fetch('/api/get-networks');
+            if (!response.ok) {
+                throw new Error("Failed to fetch networks");
+            }
+            const data: Network[] = await response.json();
+            setNetworks(data);
+        } catch (e) {
+            console.error("Failed to fetch networks", e);
+            toast({ variant: 'destructive', title: "فشل", description: "فشل في تحميل بيانات الشبكات."});
+        } finally {
+            setAreNetworksLoading(false);
+        }
+    }
+    fetchNetworks();
+  }, [toast]);
+
   const availableCategories = useMemo(() => {
     if (selectedNetworkId === ALL_NETWORKS_VALUE) return [];
     const network = networks.find((n) => n.id === selectedNetworkId);
     return network ? network.categories : [];
-  }, [selectedNetworkId]);
+  }, [selectedNetworkId, networks]);
   
   useEffect(() => {
     // Reset category when network changes
@@ -220,6 +250,10 @@ function CardManagementContent() {
         setIsSaving(false);
     });
   };
+
+  if (areNetworksLoading) {
+    return <LoadingSkeleton />;
+  }
 
   return (
         <Card className="w-full shadow-lg rounded-2xl">
