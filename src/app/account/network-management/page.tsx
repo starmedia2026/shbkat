@@ -113,7 +113,7 @@ function NetworkManagementContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
   const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string, ownerPhone: string}>({name: "", logo: "", address: "", ownerPhone: ""});
-  const [editingCategoryId, setEditingCategoryId] useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
   const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id' | 'name'>>(initialGlobalCategoryState);
