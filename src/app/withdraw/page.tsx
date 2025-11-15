@@ -99,7 +99,7 @@ function WithdrawContent() {
   const [recipientName, setRecipientName] = useState("");
   const [recipientAccount, setRecipientAccount] = useState("");
   const [amount, setAmount] = useState("");
-  const [selectedMethod, setSelectedMethod] = useState<typeof paymentMethods[0] | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<(typeof paymentMethods)[0] | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const customerDocRef = useMemoFirebase(() => {
@@ -359,7 +359,7 @@ function WithdrawContent() {
 }
 
 
-function PaymentOption({ method, isSelected, onSelect }: { method: typeof paymentMethods[0]; isSelected: boolean; onSelect: () => void; }) {
+function PaymentOption({ method, isSelected, onSelect }: { method: (typeof paymentMethods)[0]; isSelected: boolean; onSelect: () => void; }) {
     return (
         <div 
             onClick={onSelect}

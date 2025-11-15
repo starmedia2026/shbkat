@@ -40,7 +40,7 @@ import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { useAdmin } from "@/hooks/useAdmin";
-import { networks } from "@/lib/networks";
+import { allNetworksData } from "@/lib/networks";
 
 
 interface Notification {

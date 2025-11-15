@@ -8,24 +8,10 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import paymentMethodsData from "@/data/payment-methods.json";
+import { paymentMethods } from "@/lib/payment-methods";
 import Image from "next/image";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
-
-interface PaymentMethod {
-  id: string;
-  name: string;
-  description: string;
-  accountName: string;
-  accountNumber: string;
-  logoUrl?: string; 
-  theme: {
-    iconBg: string;
-    iconColor: string;
-    borderColor: string;
-  };
-}
 
 const DEFAULT_SUPPORT_PHONE = "770326828";
 
@@ -34,8 +20,7 @@ interface AppSettings {
 }
 
 export default function TopUpPage() {
-  const [paymentMethods] = useState<PaymentMethod[]>(paymentMethodsData);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(paymentMethods[0] || null);
+  const [selectedPayment, setSelectedPayment] = useState<(typeof paymentMethods)[0] | null>(paymentMethods[0] || null);
   const firestore = useFirestore();
   const router = useRouter();
 
@@ -139,7 +124,7 @@ export default function TopUpPage() {
   );
 }
 
-function PaymentOption({ method, isSelected, onSelect }: { method: PaymentMethod; isSelected: boolean; onSelect: () => void; }) {
+function PaymentOption({ method, isSelected, onSelect }: { method: (typeof paymentMethods)[0]; isSelected: boolean; onSelect: () => void; }) {
     return (
         <div 
             onClick={onSelect}
@@ -163,5 +148,3 @@ function PaymentOption({ method, isSelected, onSelect }: { method: PaymentMethod
         </div>
     );
 }
-
-    

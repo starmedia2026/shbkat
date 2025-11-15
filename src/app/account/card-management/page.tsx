@@ -32,21 +32,13 @@ import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase
 import { writeBatch, collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import allNetworks from '@/data/networks.json';
+import { allNetworksData, type Network } from "@/lib/networks";
 
 
 interface Category {
   id: string;
   name: string;
   price: number;
-}
-interface Network {
-  id: string;
-  name: string;
-  logo?: string;
-  address?: string;
-  ownerPhone?: string;
-  categories: Category[];
 }
 
 interface CardInput {
@@ -100,7 +92,7 @@ function CardManagementContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [networks] = useState<Network[]>(allNetworks);
+  const [networks] = useState<Network[]>(allNetworksData);
   const [areNetworksLoading, setAreNetworksLoading] = useState(false);
 
   const [selectedNetworkId, setSelectedNetworkId] = useState<string>("");
@@ -357,10 +349,3 @@ function LoadingSkeleton() {
         </Card>
     );
 }
-
-    
-
-    
-
-
-    

@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
-import allNetworksData from '@/data/networks.json';
+import { allNetworksData, type Network } from "@/lib/networks";
 
 
 interface Customer {
@@ -70,16 +70,6 @@ interface NetworkCategory {
     price: number;
     capacity: string;
 }
-
-interface Network {
-  id: string;
-  name: string;
-  logo?: string;
-  address?: string;
-  ownerPhone?: string;
-  categories: NetworkCategory[];
-}
-
 
 interface CardData {
   id: string; // card number
@@ -735,7 +725,3 @@ function CardSkeleton() {
         </Card>
     );
 }
-
-    
-
-    

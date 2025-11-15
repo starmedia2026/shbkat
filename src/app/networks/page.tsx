@@ -12,33 +12,8 @@ import { collection, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/fi
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import locations from "@/data/locations.json";
-import allNetworksData from '@/data/networks.json';
+import { allNetworksData, type Network } from "@/lib/networks";
 
-
-interface Category {
-  id: string;
-  name: string;
-  price: number;
-  validity: string;
-  capacity: string;
-}
-
-interface Network {
-  id: string;
-  name: string;
-  logo?: string;
-  address?: string;
-  ownerPhone?: string;
-  categories: Category[];
-}
 
 interface Favorite {
     id: string;
@@ -53,7 +28,6 @@ export default function NetworksPage() {
   
   const [allNetworks] = useState<Network[]>(allNetworksData);
   const [areNetworksLoading, setAreNetworksLoading] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<string>('all');
 
   const favoritesCollectionRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -67,22 +41,6 @@ export default function NetworksPage() {
   const favoriteNetworkIds = React.useMemo(() => {
     return new Set(favorites?.map(fav => fav.id));
   }, [favorites]);
-
-  const filteredNetworks = React.useMemo(() => {
-    if (selectedLocation === 'all') {
-      return allNetworks;
-    }
-    const selectedLocationName = locations.find(l => l.value === selectedLocation)?.name;
-    if (!selectedLocationName) {
-      return allNetworks;
-    }
-    return allNetworks.filter(network => {
-      if (!network.address) return false;
-      // Split the address by " - " and trim each part, then check for inclusion
-      const networkLocations = network.address.split('-').map(loc => loc.trim());
-      return networkLocations.includes(selectedLocationName);
-    });
-  }, [allNetworks, selectedLocation]);
 
   const toggleFavorite = (networkId: string, isCurrentlyFavorite: boolean) => {
     if (!firestore || !user?.uid) {
@@ -132,22 +90,10 @@ export default function NetworksPage() {
         <h1 className="text-lg font-normal text-center flex-grow">الشبكات</h1>
       </header>
       <main className="p-4 space-y-4">
-        <Select dir="rtl" onValueChange={setSelectedLocation} value={selectedLocation}>
-            <SelectTrigger>
-                <SelectValue placeholder="تصفية حسب الموقع" />
-            </SelectTrigger>
-            <SelectContent>
-                <SelectItem value="all">كل المواقع</SelectItem>
-                {locations.map((loc) => (
-                    <SelectItem key={loc.id} value={loc.value}>{loc.name}</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
-
         {isLoading ? (
             [...Array(3)].map((_, i) => <NetworkCardSkeleton key={i} />)
-        ) : filteredNetworks.length > 0 ? (
-            filteredNetworks.map((network) => {
+        ) : allNetworks.length > 0 ? (
+            allNetworks.map((network) => {
             const isFavorite = favoriteNetworkIds.has(network.id);
             const isToggling = togglingFavorites[network.id];
 
@@ -213,7 +159,7 @@ export default function NetworksPage() {
             <div className="text-center text-muted-foreground pt-16">
                 <Wifi className="mx-auto h-12 w-12" />
                 <h3 className="mt-4 text-lg font-semibold">لا توجد شبكات متاحة</h3>
-                <p className="mt-1 text-sm">لم يتم العثور على شبكات في الموقع المحدد.</p>
+                <p className="mt-1 text-sm">لم يتم العثور على شبكات.</p>
             </div>
         )}
       </main>

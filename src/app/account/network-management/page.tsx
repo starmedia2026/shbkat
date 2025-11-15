@@ -47,7 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import allNetworksData from '@/data/networks.json';
+import { allNetworksData, type Network } from "@/lib/networks";
 
 
 interface Category {
@@ -56,15 +56,6 @@ interface Category {
   price: number;
   validity: string;
   capacity: string;
-}
-
-interface Network {
-  id: string;
-  name: string;
-  logo?: string;
-  address?: string;
-  ownerPhone?: string;
-  categories: Category[];
 }
 
 const initialGlobalCategoryState: Omit<Category, 'id' | 'name'> = {
@@ -122,7 +113,7 @@ function NetworkManagementContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
   const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string, ownerPhone: string}>({name: "", logo: "", address: "", ownerPhone: ""});
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
   const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id' | 'name'>>(initialGlobalCategoryState);
@@ -533,5 +524,3 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel, isGlobalFor
         </div>
     )
 };
-
-    

@@ -58,7 +58,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import allNetworksData from '@/data/networks.json';
+import { allNetworksData, type Network } from "@/lib/networks";
 
 
 interface Category {
@@ -67,15 +67,6 @@ interface Category {
   price: number;
   validity: string;
   capacity: string;
-}
-
-interface Network {
-  id: string;
-  name: string;
-  logo?: string;
-  address?: string;
-  ownerPhone?: string;
-  categories: Category[];
 }
 
 interface CardData {
@@ -665,12 +656,8 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
             </div>
             <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={onCancel}>إلغاء</Button>
-                <Button onClick={handleSave}>حفظ الباقة</Button>
+                <Button onClick={onSave}>حفظ الباقة</Button>
             </div>
         </div>
     )
 };
-
-    
-
-

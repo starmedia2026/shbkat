@@ -27,7 +27,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
-import initialPaymentMethods from "@/data/payment-methods.json";
 import { useToast } from "@/hooks/use-toast";
 import {
     AlertDialog,
@@ -43,20 +42,7 @@ import {
 import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
-
-export interface PaymentMethod {
-  id: string;
-  name: string;
-  description: string;
-  accountName: string;
-  accountNumber: string;
-  logoUrl?: string; // The URL for the payment method's logo
-  theme: {
-    iconBg: string;
-    iconColor: string;
-    borderColor: string;
-  };
-}
+import { paymentMethods, type PaymentMethod } from "@/lib/payment-methods";
 
 
 export default function PaymentManagementPage() {
@@ -102,7 +88,7 @@ export default function PaymentManagementPage() {
 
 function PaymentManagementContent() {
   const { toast } = useToast();
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(initialPaymentMethods);
+  const [paymentMethodsState, setPaymentMethodsState] = useState<PaymentMethod[]>(paymentMethods);
   const [isSaving, setIsSaving] = useState(false);
   const [editingMethodId, setEditingMethodId] = useState<string | null>(null);
   
@@ -124,7 +110,7 @@ function PaymentManagementContent() {
   }, [toast]);
   
   const updateAndSave = (newMethods: PaymentMethod[]) => {
-    setPaymentMethods(newMethods);
+    setPaymentMethodsState(newMethods);
     handleSave(newMethods);
   };
 
@@ -143,20 +129,20 @@ function PaymentManagementContent() {
             borderColor: "border-gray-500",
         }
     };
-    const newMethods = [...paymentMethods, newMethod];
-    setPaymentMethods(newMethods);
+    const newMethods = [...paymentMethodsState, newMethod];
+    setPaymentMethodsState(newMethods);
     setEditingMethodId(newId);
     setEditFormData({ name: "", description: "", accountName: "", accountNumber: "", logoUrl: ""});
   };
 
   const handleUpdateMethod = (methodId: string) => {
-    const newMethods = paymentMethods.map(m => m.id === methodId ? { ...m, ...editFormData } : m);
+    const newMethods = paymentMethodsState.map(m => m.id === methodId ? { ...m, ...editFormData } : m);
     updateAndSave(newMethods);
     setEditingMethodId(null);
   };
 
   const handleDeleteMethod = (methodId: string) => {
-    const newMethods = paymentMethods.filter(m => m.id !== methodId);
+    const newMethods = paymentMethodsState.filter(m => m.id !== methodId);
     updateAndSave(newMethods);
   };
 
@@ -172,9 +158,9 @@ function PaymentManagementContent() {
   }
 
   const cancelEditing = (methodId: string) => {
-      const originalMethod = initialPaymentMethods.find(m => m.id === methodId);
+      const originalMethod = paymentMethods.find(m => m.id === methodId);
       if (!originalMethod) {
-          setPaymentMethods(paymentMethods.filter(m => m.id !== methodId));
+          setPaymentMethodsState(paymentMethodsState.filter(m => m.id !== methodId));
       }
       setEditingMethodId(null);
   }
@@ -187,7 +173,7 @@ function PaymentManagementContent() {
                     <span>جاري الحفظ...</span>
                 </div>
             )}
-          {paymentMethods.map((method) => (
+          {paymentMethodsState.map((method) => (
             <Card key={method.id} className="w-full shadow-md rounded-2xl bg-card/50">
                 {editingMethodId === method.id ? (
                     <EditForm
@@ -323,7 +309,3 @@ const EditForm = ({ formData, setFormData, onSave, onCancel }: { formData: any, 
         </div>
     )
 };
-
-    
-
-    

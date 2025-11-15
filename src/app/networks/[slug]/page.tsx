@@ -34,7 +34,7 @@ import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import allNetworks from "@/data/networks.json";
+import { allNetworksData, type Network } from "@/lib/networks";
 
 
 interface NetworkCategory {
@@ -43,15 +43,6 @@ interface NetworkCategory {
     price: number;
     validity: string;
     capacity: string;
-}
-
-interface Network {
-  id: string;
-  name: string;
-  logo?: string;
-  address?: string;
-  ownerPhone?: string;
-  categories: NetworkCategory[];
 }
 
 interface Customer {
@@ -77,7 +68,7 @@ export default function NetworkDetailPage() {
 
   useEffect(() => {
     if (slug) {
-        const foundNetwork = allNetworks.find(n => n.id === slug);
+        const foundNetwork = allNetworksData.find(n => n.id === slug);
         setNetwork(foundNetwork || null);
     }
     setIsLoading(false);
