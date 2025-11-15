@@ -659,25 +659,27 @@ ${customer.balance.toLocaleString('en-US')} ريال
                     {isAdmin && customer && <Button onClick={handleWhatsAppRedirect} variant="outline" size="icon" className="h-9 w-9 bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
                         <MessageCircle className="h-5 w-5" />
                     </Button>}
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon">
-                                <Trash2 className="h-4 w-4"/>
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                هل أنت متأكد من رغبتك في حذف سجل هذا الكرت المباع؟ هذا الإجراء لا يمكن التراجع عنه.
-                            </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteCard}>تأكيد الحذف</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                     {isAdmin && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon">
+                                    <Trash2 className="h-4 w-4"/>
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    هل أنت متأكد من رغبتك في حذف سجل هذا الكرت المباع؟ هذا الإجراء لا يمكن التراجع عنه.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteCard}>تأكيد الحذف</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                     )}
                 </div>}
             </CardContent>
         </Card>
