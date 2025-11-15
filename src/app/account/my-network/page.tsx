@@ -46,7 +46,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
-import { writeBatch, collection, doc, query, where } from "firebase/firestore";
+import { writeBatch, collection, doc, query, where, getDocs } from "firebase/firestore";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -393,27 +393,46 @@ const CategoryStats = ({ networkId, categoryId }: { networkId: string, categoryI
     const [stats, setStats] = useState({ sold: 0, available: 0 });
     const [isLoading, setIsLoading] = useState(true);
 
-    const cardsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(
-            collection(firestore, "cards"),
-            where("networkId", "==", networkId),
-            where("categoryId", "==", categoryId)
-        );
-    }, [firestore, networkId, categoryId]);
-
-    const { data: cards } = useCollection<CardData>(cardsQuery);
-    
     useEffect(() => {
-        if (cards) {
-            const soldCount = cards.filter(c => c.status === 'used' || c.status === 'transferred').length;
-            const availableCount = cards.filter(c => c.status === 'available').length;
-            setStats({ sold: soldCount, available: availableCount });
-            setIsLoading(false);
-        } else {
+        if (!firestore) return;
+        
+        const fetchStats = async () => {
             setIsLoading(true);
-        }
-    }, [cards]);
+            const cardsRef = collection(firestore, "cards");
+            const q = query(
+                cardsRef,
+                where("networkId", "==", networkId),
+                where("categoryId", "==", categoryId)
+            );
+
+            try {
+                const snapshot = await getDocs(q);
+                let soldCount = 0;
+                let availableCount = 0;
+                snapshot.forEach(doc => {
+                    const card = doc.data() as CardData;
+                    if (card.status === 'used' || card.status === 'transferred') {
+                        soldCount++;
+                    } else if (card.status === 'available') {
+                        availableCount++;
+                    }
+                });
+                setStats({ sold: soldCount, available: availableCount });
+            } catch (error) {
+                console.error("Failed to fetch card stats:", error);
+                const permissionError = new FirestorePermissionError({
+                    path: 'cards',
+                    operation: 'list',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, [firestore, networkId, categoryId]);
+    
 
     if (isLoading) {
         return <Skeleton className="h-10 w-full mt-2" />;
@@ -628,3 +647,5 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
+
+    
