@@ -19,7 +19,7 @@ import { useAuth, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -106,7 +106,12 @@ export default function LoginPage() {
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-4 flex flex-col items-center gap-2">
             {isSettingsLoading ? (
-                 <Skeleton className="h-[90px] w-[150px]" />
+                 <div className="relative flex h-28 w-40 items-center justify-center">
+                    <div className="absolute inset-0">
+                        <Loader2 className="h-full w-full animate-spin text-primary" />
+                    </div>
+                     <div className="h-[90px] w-[150px] bg-background"></div>
+                </div>
             ) : (
                 <Image
                     src={logoUrl}
@@ -114,7 +119,7 @@ export default function LoginPage() {
                     width={150}
                     height={90}
                     priority
-                    className="object-contain"
+                    className="h-[90px] w-auto object-contain"
                 />
             )}
           <p className="text-xl text-muted-foreground font-semibold">
@@ -164,16 +169,16 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-              <div className="text-left text-sm">
-                <Link
-                  href="/forgot-password"
-                  className="font-medium text-primary hover:underline text-sm"
-                >
-                  نسيت كلمة المرور؟
-                </Link>
-              </div>
-
-              <div className="flex flex-col gap-4">
+            </CardContent>
+             <CardFooter className="flex flex-col gap-4">
+                <div className="w-full text-left text-sm">
+                    <Link
+                    href="/forgot-password"
+                    className="font-medium text-primary hover:underline text-sm"
+                    >
+                    نسيت كلمة المرور؟
+                    </Link>
+                </div>
                 <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg text-base" disabled={isLoading}>
                     {isLoading ? "جاري الدخول..." : "دخول"}
                 </Button>
@@ -186,10 +191,9 @@ export default function LoginPage() {
                     سجل الآن
                     </Link>
                 </div>
-              </div>
               
                {error && <p className="text-destructive text-sm mt-2">{error}</p>}
-            </CardContent>
+            </CardFooter>
           </form>
         </Card>
       </div>

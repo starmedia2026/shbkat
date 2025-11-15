@@ -185,8 +185,8 @@ export default function SignupPage() {
       if (error.code === 'firestore/permission-denied') {
           const permissionError = new FirestorePermissionError({
               path: `customers`,
-              operation: 'list',
-              requestResourceData: { note: 'Failed to query customers collection during signup' }
+              operation: 'create',
+              requestResourceData: { note: 'Failed to create customer document during signup' }
           });
           errorEmitter.emit('permission-error', permissionError);
       } else {
@@ -217,7 +217,12 @@ export default function SignupPage() {
       <div className="flex w-full max-w-md flex-col items-center text-center">
         <div className="mb-4 flex items-center gap-3">
           {isSettingsLoading ? (
-            <Skeleton className="h-[90px] w-[150px]" />
+            <div className="relative flex h-28 w-40 items-center justify-center">
+                <div className="absolute inset-0">
+                    <Loader2 className="h-full w-full animate-spin text-primary" />
+                </div>
+                <div className="h-[90px] w-[150px] bg-background"></div>
+            </div>
           ) : (
             <Image
                 src={logoUrl}
@@ -225,7 +230,7 @@ export default function SignupPage() {
                 width={150}
                 height={90}
                 priority
-                className="object-contain"
+                className="h-[90px] w-auto object-contain"
             />
           )}
         </div>
