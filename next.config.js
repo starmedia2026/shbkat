@@ -16,5 +16,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-
-// Stable version
