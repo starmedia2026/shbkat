@@ -40,13 +40,12 @@ service cloud.firestore {
     }
 
     match /customers/{customerId} {
-      // Allow admins or network owners to list customers.
-      // This is needed for owners to see buyer info in reports and for admins to manage users.
-      allow list: if isAdmin() || isNetworkOwner();
+      // Allow admins to list customers. Network owners cannot list all customers for privacy.
+      allow list: if isAdmin();
       
-      // Allow reading customer data if you are the owner, an admin, or a network owner.
-      // This is necessary for owners to see buyer info and for transfers/purchases.
-      allow get: if isOwner(customerId) || isAdmin() || isNetworkOwner();
+      // Allow reading customer data if you are the owner or an admin.
+      // Network owners cannot read other users' data directly.
+      allow get: if isOwner(customerId) || isAdmin();
 
       // A user can create their own customer document, but the ID in the data must match their auth UID.
       allow create: if isOwner(customerId) && request.resource.data.id == customerId;

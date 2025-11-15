@@ -230,11 +230,17 @@ function CardSalesContent() {
         if (!allCards) return null;
         return [...allCards].sort((a, b) => {
             if ((a.status === 'used' || a.status === 'transferred') && (b.status === 'used' || b.status === 'transferred')) {
-                return new Date(b.usedAt!).getTime() - new Date(a.usedAt!).getTime();
+                // Handle cases where usedAt might be missing (though it shouldn't for 'used' status)
+                const dateA = a.usedAt ? new Date(a.usedAt).getTime() : 0;
+                const dateB = b.usedAt ? new Date(b.usedAt).getTime() : 0;
+                return dateB - dateA;
             }
             if (a.status === 'used' || a.status === 'transferred') return -1;
             if (b.status === 'used' || b.status === 'transferred') return 1;
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            // Fallback to createdAt for 'available' cards
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
         });
     }, [allCards]);
 
@@ -243,7 +249,10 @@ function CardSalesContent() {
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
 
     useEffect(() => {
-        if (!firestore || !sortedCards) return;
+        if (!firestore || !sortedCards || !isAdmin) {
+            setIsLoadingCustomers(false);
+            return;
+        }
         
         const fetchCustomers = async () => {
             setIsLoadingCustomers(true);
@@ -270,7 +279,7 @@ function CardSalesContent() {
                 }
                 setCustomerMap(map);
             } catch (serverError) {
-                const permissionError = new FirestorePermissionError({
+                 const permissionError = new FirestorePermissionError({
                     path: customersRef.path,
                     operation: 'list',
                 });
@@ -281,7 +290,7 @@ function CardSalesContent() {
         };
 
         fetchCustomers();
-    }, [firestore, sortedCards]);
+    }, [firestore, sortedCards, isAdmin]);
     
     const networksToDisplay = useMemo(() => {
         if (filterNetwork) {
@@ -425,6 +434,7 @@ function LoadingSkeleton() {
 }
 
 function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardData; customer?: Customer, networkOwner?: Customer | null, firestore: any }) {
+    const { isAdmin } = useAdmin();
     const categoryInfo = networkLookup[card.networkId]?.categories[card.categoryId];
     const networkName = networkLookup[card.networkId]?.name || 'شبكة غير معروفة';
     const categoryName = categoryInfo?.name || 'فئة غير معروفة';
@@ -608,11 +618,12 @@ ${customer.balance.toLocaleString('en-US')} ريال
                          <p className="flex items-center gap-2"><Tag className="h-4 w-4 text-primary"/> <span>{categoryName} ({categoryPrice} ريال)</span></p>
                     </div>
                      <div className="text-left space-y-2">
-                         <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{customer?.name || 'مستخدم غير معروف'}</span></p>
-                         <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer?.phoneNumber || 'لا يوجد رقم'}</span> <Phone className="h-4 w-4 text-primary"/> </p>
+                         <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{isAdmin && customer ? customer.name : "مشتري"}</span></p>
+                         {isAdmin && customer && <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer.phoneNumber}</span> <Phone className="h-4 w-4 text-primary"/> </p>}
+                         {!isAdmin && <p className="flex items-center justify-end gap-2" dir="ltr"><span>رقم غير متاح</span> <Phone className="h-4 w-4 text-primary"/> </p>}
                     </div>
                 </div>
-                <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2 flex-wrap">
+                {isAdmin && <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2 flex-wrap">
                      {card.status === 'used' && networkOwner && (
                         <>
                             <AlertDialog>
@@ -659,9 +670,9 @@ ${customer.balance.toLocaleString('en-US')} ريال
                      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => copyToClipboard(card.id)}>
                         <Copy className="h-4 w-4 text-muted-foreground"/>
                     </Button>
-                    <Button onClick={handleWhatsAppRedirect} variant="outline" size="icon" className="h-9 w-9 bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
+                    {customer && <Button onClick={handleWhatsAppRedirect} variant="outline" size="icon" className="h-9 w-9 bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
                         <WhatsAppIcon className="h-5 w-5"/>
-                    </Button>
+                    </Button>}
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="icon">
@@ -681,7 +692,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                </div>
+                </div>}
             </CardContent>
         </Card>
     )
