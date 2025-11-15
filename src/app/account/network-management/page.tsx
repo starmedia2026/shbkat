@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -118,12 +119,23 @@ function NetworkManagementContent() {
   const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id' | 'name'>>(initialGlobalCategoryState);
   
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
-    toast({
-        variant: 'destructive',
-        title: 'غير قابل للتعديل',
-        description: 'لا يمكن تعديل بيانات الشبكات في هذا الوضع. تواصل مع المطور.',
-    });
-    return;
+    setIsSaving(true);
+    try {
+        const response = await fetch('/api/save-networks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ networks: updatedNetworks }),
+        });
+        if (!response.ok) throw new Error('فشل حفظ الشبكات على الخادم');
+        
+        setNetworks(updatedNetworks);
+        toast({ title: "تم الحفظ", description: "تم حفظ قائمة الشبكات بنجاح." });
+    } catch (error) {
+        console.error(error);
+        toast({ variant: "destructive", title: "فشل الحفظ", description: "حدث خطأ أثناء حفظ الشبكات." });
+    } finally {
+        setIsSaving(false);
+    }
   }, [toast]);
   
   const updateAndSave = (newNetworks: Network[]) => {

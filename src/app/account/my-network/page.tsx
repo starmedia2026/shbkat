@@ -142,13 +142,27 @@ function MyNetworkContent() {
   
 
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
-    toast({
-        variant: 'destructive',
-        title: 'غير قابل للتعديل',
-        description: 'لا يمكن تعديل بيانات الشبكات في هذا الوضع. تواصل مع المطور.',
-    });
-    return;
-  }, [toast]);
+    setIsSaving(true);
+    try {
+        const response = await fetch('/api/save-networks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ networks: updatedNetworks }),
+        });
+        if (!response.ok) throw new Error('فشل حفظ الشبكات على الخادم');
+        
+        const myPhone = user?.email?.split('@')[0];
+        const ownedNetwork = updatedNetworks.find(n => n.ownerPhone === myPhone);
+        setNetwork(ownedNetwork || null);
+
+        toast({ title: "تم الحفظ", description: "تم حفظ بيانات شبكتك بنجاح." });
+    } catch (error) {
+        console.error(error);
+        toast({ variant: "destructive", title: "فشل الحفظ", description: "حدث خطأ أثناء حفظ الشبكات." });
+    } finally {
+        setIsSaving(false);
+    }
+  }, [toast, user]);
   
   const updateAndSave = (updatedNetwork: Network) => {
     const networksToSave = allNetworks.map(n => n.id === updatedNetwork.id ? updatedNetwork : n);
@@ -415,7 +429,7 @@ const CategoryStats = ({ networkId, categoryId }: { networkId: string, categoryI
 };
 
 
-const CategoryCard = ({ category, onEdit, onDelete }: { category: Category, onEdit: () => void, onDelete: () => void }) => {
+const CategoryCard = ({ category, networkId, onEdit, onDelete }: { category: Category, networkId: string, onEdit: () => void, onDelete: () => void }) => {
     
     return (
         <Collapsible className="p-3 border rounded-lg bg-background">

@@ -101,12 +101,23 @@ function PaymentManagementContent() {
   });
 
   const handleSave = useCallback(async (updatedMethods: PaymentMethod[]) => {
-    toast({
-        variant: 'destructive',
-        title: 'غير قابل للتعديل',
-        description: 'لا يمكن تعديل بيانات الدفع في هذا الوضع. تواصل مع المطور.',
-    });
-    return;
+    setIsSaving(true);
+    try {
+        const response = await fetch('/api/save-payment-methods', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentMethods: updatedMethods }),
+        });
+        if (!response.ok) throw new Error('فشل حفظ طرق الدفع على الخادم');
+        
+        setPaymentMethodsState(updatedMethods);
+        toast({ title: "تم الحفظ", description: "تم حفظ قائمة طرق الدفع بنجاح." });
+    } catch (error) {
+        console.error(error);
+        toast({ variant: "destructive", title: "فشل الحفظ", description: "حدث خطأ أثناء حفظ طرق الدفع." });
+    } finally {
+        setIsSaving(false);
+    }
   }, [toast]);
   
   const updateAndSave = (newMethods: PaymentMethod[]) => {
