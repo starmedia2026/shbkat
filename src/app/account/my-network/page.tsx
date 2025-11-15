@@ -30,7 +30,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { networks as initialNetworksData } from "@/lib/networks";
 import { useToast } from "@/hooks/use-toast";
 import {
     AlertDialog,
@@ -82,46 +81,12 @@ interface CardData {
 export default function MyNetworkPage() {
   const router = useRouter();
   const { isOwner, isLoading } = useAdmin();
-  const { user } = useUser();
-  const [networks, setNetworks] = useState<Network[]>(initialNetworksData);
-  const [initialNetwork, setInitialNetwork] = useState<Network | null>(null);
-  const [isDataLoading, setIsDataLoading] = useState(true);
-
-  // Fetch the latest networks data on component mount
-  useEffect(() => {
-    async function fetchNetworks() {
-      try {
-        // In a real app, this might be an API call. Here we simulate it.
-        // Forcing a re-fetch of the module to get the latest JSON data.
-        const freshNetworks = await import('@/lib/networks?v=' + Date.now());
-        setNetworks(freshNetworks.networks);
-      } catch (e) {
-        console.error("Failed to fetch latest networks data", e);
-      }
-    }
-    fetchNetworks();
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading && user?.email && networks.length > 0) {
-      const phone = user.email.split('@')[0];
-      const owned = networks.find(n => n.ownerPhone === phone) || null;
-      setInitialNetwork(owned);
-    }
-    // This effect should run when user or networks data changes
-    if(!isLoading) {
-        setIsDataLoading(false);
-    }
-  }, [isOwner, user, isLoading, networks]);
-
-
+  
   useEffect(() => {
     if (!isLoading && isOwner === false) {
       router.replace("/account");
     }
   }, [isOwner, isLoading, router]);
-
-  const pageIsLoading = isLoading || isDataLoading;
 
   return (
     <div className="bg-background text-foreground min-h-screen pb-20">
@@ -138,10 +103,10 @@ export default function MyNetworkPage() {
         </h1>
       </header>
       <main className="p-4">
-        {pageIsLoading ? (
+        {isLoading ? (
             <LoadingSkeleton />
         ) : isOwner ? (
-            <MyNetworkContent initialNetwork={initialNetwork} allNetworks={networks} />
+            <MyNetworkContent />
         ) : (
              <div className="flex flex-col items-center justify-center text-center text-muted-foreground pt-16">
                 <h2 className="text-xl font-bold mt-4">وصول غير مصرح به</h2>
@@ -153,15 +118,49 @@ export default function MyNetworkPage() {
   );
 }
 
-function MyNetworkContent({ initialNetwork, allNetworks }: { initialNetwork: Network | null, allNetworks: Network[] }) {
+function MyNetworkContent() {
   const { toast } = useToast();
-  const [network, setNetwork] = useState<Network | null>(initialNetwork);
+  const { user } = useUser();
+  const [allNetworks, setAllNetworks] = useState<Network[]>([]);
+  const [network, setNetwork] = useState<Network | null>(null);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  
   const [isSaving, setIsSaving] = useState(false);
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
   const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string}>({name: "", logo: "", address: ""});
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
-  const { user } = useUser();
+  
+  useEffect(() => {
+    async function fetchNetworks() {
+        setIsDataLoading(true);
+        try {
+            const response = await fetch('/api/get-networks');
+            if (!response.ok) {
+                throw new Error("Failed to fetch networks");
+            }
+            const data: Network[] = await response.json();
+            setAllNetworks(data);
+            
+            if (user?.email) {
+                const phone = user.email.split('@')[0];
+                const ownedNetwork = data.find(n => n.ownerPhone === phone);
+                setNetwork(ownedNetwork || null);
+            }
+        } catch (e) {
+            console.error("Failed to fetch networks", e);
+            toast({ variant: 'destructive', title: "فشل", description: "فشل في تحميل بيانات الشبكة."});
+        } finally {
+            setIsDataLoading(false);
+        }
+    }
+    if (user?.email) {
+        fetchNetworks();
+    } else {
+        // If user is not loaded yet, we wait.
+        setIsDataLoading(false);
+    }
+  }, [user, toast]);
   
 
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
@@ -180,10 +179,11 @@ function MyNetworkContent({ initialNetwork, allNetworks }: { initialNetwork: Net
       }
       
       const phone = user?.email?.split('@')[0];
-      const updatedNetwork = updatedNetworks.find(n => n.ownerPhone === phone);
-
-      if(updatedNetwork) {
-        setNetwork(updatedNetwork);
+      const updatedNetworkForState = updatedNetworks.find(n => n.ownerPhone === phone);
+      
+      setAllNetworks(updatedNetworks);
+      if(updatedNetworkForState) {
+        setNetwork(updatedNetworkForState);
       }
 
       toast({
@@ -251,13 +251,8 @@ function MyNetworkContent({ initialNetwork, allNetworks }: { initialNetwork: Net
 
   const handleUpdateCategory = () => {
     if (!editingCategory || !editingCategoryId || !network) return;
-
-    const isNewCategory = !network.categories.some(c => c.id === editingCategoryId && c.name !== "");
-
     const updatedNetwork = { ...network, categories: network.categories.map(c => c.id === editingCategoryId ? editingCategory as Category : c) };
-    
     updateAndSave(updatedNetwork);
-
     setEditingCategoryId(null);
     setEditingCategory(null);
   };
@@ -268,6 +263,10 @@ function MyNetworkContent({ initialNetwork, allNetworks }: { initialNetwork: Net
      updateAndSave(updatedNetwork);
   };
   
+  if (isDataLoading) {
+      return <LoadingSkeleton />;
+  }
+
   return (
         <div className="space-y-6">
              {isSaving && (
@@ -288,7 +287,8 @@ function MyNetworkContent({ initialNetwork, allNetworks }: { initialNetwork: Net
                             <Button size="icon" variant="ghost" onClick={handleUpdateNetwork}><Save className="h-4 w-4"/></Button>
                             <Button size="icon" variant="ghost" onClick={() => {
                                 setEditingNetworkId(null);
-                                if (!initialNetwork) {
+                                const originalNetwork = allNetworks.find(n => n.id === network.id);
+                                if (!originalNetwork) { // This means it was a new network being added
                                     setNetwork(null);
                                 }
                             }}><X className="h-4 w-4"/></Button>
