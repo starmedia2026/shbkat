@@ -51,9 +51,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { DateRange } from "react-day-picker";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
 
@@ -692,15 +689,5 @@ function CardSkeleton() {
         </Card>
     );
 }
-
-    
-
-    
-
-    
-
-
-
-    
 
     
