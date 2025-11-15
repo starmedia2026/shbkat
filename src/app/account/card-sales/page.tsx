@@ -28,7 +28,6 @@ import { collection, query, orderBy, doc, deleteDoc, writeBatch, runTransaction,
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
-import { networks } from "@/lib/networks";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -76,6 +75,23 @@ interface Customer {
   accountType?: string;
 }
 
+interface NetworkCategory {
+    id: string;
+    name: string;
+    price: number;
+    capacity: string;
+}
+
+interface Network {
+  id: string;
+  name: string;
+  logo?: string;
+  address?: string;
+  ownerPhone?: string;
+  categories: NetworkCategory[];
+}
+
+
 interface CardData {
   id: string; // card number
   networkId: string;
@@ -87,19 +103,7 @@ interface CardData {
 }
 
 // Create a lookup map for faster access to network/category names and prices
-const networkLookup = networks.reduce((acc, net) => {
-    acc[net.id] = {
-        name: net.name,
-        logo: net.logo,
-        ownerPhone: net.ownerPhone,
-        categories: net.categories.reduce((catAcc, cat) => {
-            catAcc[cat.id] = { name: cat.name, price: cat.price, capacity: cat.capacity };
-            return catAcc;
-        }, {} as Record<string, { name: string; price: number, capacity: string }>)
-    };
-    return acc;
-}, {} as Record<string, { name: string; logo?: string; ownerPhone?: string; categories: Record<string, { name: string; price: number, capacity: string }> }>);
-
+let networkLookup: Record<string, { name: string; logo?: string; ownerPhone?: string; categories: Record<string, { name: string; price: number, capacity: string }> }> = {};
 
 export default function CardSalesPage() {
   const router = useRouter();
@@ -150,22 +154,57 @@ function CardSalesContent() {
     const searchParams = useSearchParams();
     const filterNetwork = searchParams.get('network');
     const filterCategory = searchParams.get('category');
+    const { toast } = useToast();
+
+    const [allNetworks, setAllNetworks] = useState<Network[]>([]);
+    const [areNetworksLoading, setAreNetworksLoading] = useState(true);
+    
+     useEffect(() => {
+        async function fetchNetworks() {
+            setAreNetworksLoading(true);
+            try {
+                const response = await fetch('/api/get-networks');
+                if (!response.ok) {
+                    throw new Error("Failed to fetch networks");
+                }
+                const data: Network[] = await response.json();
+                setAllNetworks(data);
+                // Re-build lookup on fetch
+                networkLookup = data.reduce((acc, net) => {
+                    acc[net.id] = {
+                        name: net.name,
+                        logo: net.logo,
+                        ownerPhone: net.ownerPhone,
+                        categories: net.categories.reduce((catAcc, cat) => {
+                            catAcc[cat.id] = { name: cat.name, price: cat.price, capacity: cat.capacity };
+                            return catAcc;
+                        }, {} as Record<string, { name: string; price: number, capacity: string }>)
+                    };
+                    return acc;
+                }, {} as typeof networkLookup);
+            } catch (e) {
+                console.error("Failed to fetch networks", e);
+                toast({ variant: 'destructive', title: "فشل", description: "فشل في تحميل بيانات الشبكات."});
+            } finally {
+                setAreNetworksLoading(false);
+            }
+        }
+        fetchNetworks();
+    }, [toast]);
 
 
     const ownedNetwork = useMemo(() => {
         if (!isOwner || !user || !user.email) return null;
         const phone = user.email.split('@')[0];
-        return networks.find(n => n.ownerPhone === phone) || null;
-    }, [isOwner, user]);
+        return allNetworks.find(n => n.ownerPhone === phone) || null;
+    }, [isOwner, user, allNetworks]);
     
-    // Admin sees all cards. Owner sees only their network's cards.
     const cardsCollectionRef = useMemoFirebase(() => {
         if (!firestore) return null;
         if (!isAdmin && !isOwner) return null;
 
         let q;
         if (isAdmin) {
-             // Admin fetches all cards. Sorting is done client-side to include available cards.
              q = query(collection(firestore, "cards"));
              if (filterNetwork) {
                  q = query(q, where("networkId", "==", filterNetwork));
@@ -175,13 +214,12 @@ function CardSalesContent() {
              }
         }
         else if (isOwner && ownedNetwork) {
-             // Owner query can be more specific and include server-side ordering.
              q = query(collection(firestore, "cards"), where("networkId", "==", ownedNetwork.id));
              if (filterCategory) {
                 q = query(q, where("categoryId", "==", filterCategory));
              }
         } else {
-            return null; // Don't query if not admin or owner
+            return null;
         }
         return q;
     }, [firestore, isAdmin, isOwner, ownedNetwork, filterNetwork, filterCategory]);
@@ -191,14 +229,11 @@ function CardSalesContent() {
     const sortedCards = useMemo(() => {
         if (!allCards) return null;
         return [...allCards].sort((a, b) => {
-            // Sort used cards by date, newest first
-            if (a.usedAt && b.usedAt) {
-                return new Date(b.usedAt).getTime() - new Date(a.usedAt).getTime();
+            if ((a.status === 'used' || a.status === 'transferred') && (b.status === 'used' || b.status === 'transferred')) {
+                return new Date(b.usedAt!).getTime() - new Date(a.usedAt!).getTime();
             }
-            // Put used cards before available cards
-            if (a.usedAt) return -1;
-            if (b.usedAt) return 1;
-            // Keep original order for available cards (or sort by creation if needed)
+            if (a.status === 'used' || a.status === 'transferred') return -1;
+            if (b.status === 'used' || b.status === 'transferred') return 1;
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
     }, [allCards]);
@@ -250,16 +285,20 @@ function CardSalesContent() {
     
     const networksToDisplay = useMemo(() => {
         if (filterNetwork) {
-            return networks.filter(n => n.id === filterNetwork);
+            return allNetworks.filter(n => n.id === filterNetwork);
         }
-        if (isAdmin) return networks;
+        if (isAdmin) return allNetworks;
         if (isOwner && ownedNetwork) return [ownedNetwork];
         return [];
-    }, [isAdmin, isOwner, ownedNetwork, filterNetwork]);
+    }, [isAdmin, isOwner, ownedNetwork, filterNetwork, allNetworks]);
 
 
-    const isLoading = areCardsLoading || isLoadingCustomers || areRolesLoading;
+    const isLoading = areCardsLoading || isLoadingCustomers || areRolesLoading || areNetworksLoading;
     const defaultAccordionValue = (isOwner && ownedNetwork) ? ownedNetwork.id : (filterNetwork || undefined);
+
+    if (isLoading) {
+        return <LoadingSkeleton />;
+    }
 
     return (
         <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={defaultAccordionValue}>
@@ -273,11 +312,16 @@ function CardSalesContent() {
                     filterCategory={filterCategory}
                 />
             ))}
+             {networksToDisplay.length === 0 && !isLoading && (
+                <div className="text-center text-muted-foreground pt-10">
+                    <p>لا توجد شبكات لعرضها.</p>
+                </div>
+            )}
         </Accordion>
     );
 }
 
-function NetworkAccordionItem({ network, allCards, customerMap, isLoading, filterCategory } : { network: typeof networks[0], allCards: CardData[] | null, customerMap: Map<string, Customer>, isLoading: boolean, filterCategory: string | null }) {
+function NetworkAccordionItem({ network, allCards, customerMap, isLoading, filterCategory } : { network: Network, allCards: CardData[] | null, customerMap: Map<string, Customer>, isLoading: boolean, filterCategory: string | null }) {
     
     const { soldCards, availableCards } = useMemo(() => {
         if (!allCards) return { soldCards: [], availableCards: [] };
@@ -381,8 +425,8 @@ function LoadingSkeleton() {
 }
 
 function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardData; customer?: Customer, networkOwner?: Customer | null, firestore: any }) {
-    const networkName = networkLookup[card.networkId]?.name || 'شبكة غير معروفة';
     const categoryInfo = networkLookup[card.networkId]?.categories[card.categoryId];
+    const networkName = networkLookup[card.networkId]?.name || 'شبكة غير معروفة';
     const categoryName = categoryInfo?.name || 'فئة غير معروفة';
     const categoryPrice = categoryInfo?.price || 0;
     const categoryCapacity = categoryInfo?.capacity || 'غير محدد';
@@ -487,7 +531,7 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
 
 *نشكر لكم ثقتكم الدائمة وتعاملاتكم المستمرة معنا*
 نظام شبكات — خدمة موثوقة، وأداء عالي`;
-            const whatsappUrl = `https://wa.me/${networkOwner.phoneNumber}?text=${encodeURIComponent(message)}`;
+            const whatsappUrl = `https://wa.me/967${networkOwner.phoneNumber}?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, "_blank");
         }
     };
@@ -525,7 +569,7 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
 💳 *رصيدك المتبقي في التطبيق :*
 ${customer.balance.toLocaleString('en-US')} ريال
 `;
-        const whatsappUrl = `https://wa.me/${customer.phoneNumber}?text=${encodeURIComponent(message)}`;
+        const whatsappUrl = `https://wa.me/967${customer.phoneNumber}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, "_blank");
     };
     
@@ -705,9 +749,3 @@ function CardSkeleton() {
         </Card>
     );
 }
-
-    
-
-    
-
-    
