@@ -12,11 +12,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'بيانات طرق الدفع مفقودة' }, { status: 400 });
     }
 
-    const filePath = path.join(process.cwd(), 'data', 'payment-methods.json');
+    // Save to the .data directory at the project root
+    const filePath = path.join(process.cwd(), '.data', 'payment-methods.json');
     
-    // Construct the JSON file content
     const fileContent = JSON.stringify(paymentMethods, null, 2);
 
+    // Ensure directory exists
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, fileContent, 'utf-8');
 
     return NextResponse.json({ message: 'تم حفظ طرق الدفع بنجاح.' }, { status: 200 });

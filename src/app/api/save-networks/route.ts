@@ -12,11 +12,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'بيانات الشبكات مفقودة' }, { status: 400 });
     }
 
-    const filePath = path.join(process.cwd(), 'data', 'networks.json');
+    // Save to the .data directory at the project root
+    const filePath = path.join(process.cwd(), '.data', 'networks.json');
     
-    // Construct the JSON file content
     const fileContent = JSON.stringify(networks, null, 2);
 
+    // Ensure directory exists
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, fileContent, 'utf-8');
 
     return NextResponse.json({ message: 'تم حفظ الشبكات بنجاح.' }, { status: 200 });
