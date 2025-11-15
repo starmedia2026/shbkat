@@ -26,16 +26,18 @@ export default async function Loading() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="flex flex-col items-center justify-center gap-4">
+      <div className="relative flex h-40 w-40 items-center justify-center">
+        <div className="absolute inset-0">
+            <Loader2 className="h-full w-full animate-spin text-primary" />
+        </div>
         <Image
           src={logoUrl}
           alt="Shabakat Logo"
-          width={150}
-          height={150}
+          width={100}
+          height={100}
           priority
           className="object-contain"
         />
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     </div>
   );
