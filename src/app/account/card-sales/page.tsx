@@ -617,8 +617,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                     </div>
                      <div className="text-left space-y-2">
                          <p className="flex items-center justify-end gap-2"><User className="h-4 w-4 text-primary"/> <span>{customer ? customer.name : "مشتري"}</span></p>
-                         {isAdmin && customer && <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer.phoneNumber}</span> <Phone className="h-4 w-4 text-primary"/> </p>}
-                         {!isAdmin && <p className="flex items-center justify-end gap-2" dir="ltr"><span>رقم غير متاح</span> <Phone className="h-4 w-4 text-primary"/> </p>}
+                         {customer && <p className="flex items-center justify-end gap-2" dir="ltr"><span>{customer.phoneNumber}</span> <Phone className="h-4 w-4 text-primary"/> </p>}
                     </div>
                 </div>
                 {isAdmin && <div className="mt-4 pt-3 border-t flex items-center justify-end gap-2 flex-wrap">
@@ -758,5 +757,3 @@ function CardSkeleton() {
         </Card>
     );
 }
-
-    
