@@ -55,7 +55,10 @@ export default function NetworksPage() {
     if (selectedLocation === "all") {
       return allNetworks;
     }
-    return allNetworks.filter(network => network.address === selectedLocation);
+    return allNetworks.filter(network => {
+        const networkLocation = allLocations.find(l => l.name === network.address);
+        return networkLocation?.value === selectedLocation;
+    });
   }, [allNetworks, selectedLocation]);
 
   const toggleFavorite = (networkId: string, isCurrentlyFavorite: boolean) => {
@@ -125,8 +128,7 @@ export default function NetworksPage() {
             filteredNetworks.map((network) => {
             const isFavorite = favoriteNetworkIds.has(network.id);
             const isToggling = togglingFavorites[network.id];
-            const networkLocation = allLocations.find(l => l.value === network.address)?.name;
-
+            
             return (
             <Link href={`/networks/${network.id}`} key={network.id} className="block">
                 <Card className="w-full shadow-lg rounded-2xl hover:shadow-xl transition-shadow cursor-pointer bg-primary text-primary-foreground overflow-hidden">
@@ -138,25 +140,25 @@ export default function NetworksPage() {
                         <div className="flex-grow text-right">
                             <h2 className="font-bold text-lg">{network.name}</h2>
                             <div className="flex flex-col items-start gap-1 text-xs text-primary-foreground/90 mt-1">
-                            {networkLocation && (
-                            <div className="flex items-center gap-2">
-                                <MapPin className="h-3 w-3" />
-                                <span>{networkLocation}</span>
-                            </div>
-                            )}
-                            {network.ownerPhone && (
+                                {network.address && (
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="h-3 w-3" />
+                                    <span>{network.address}</span>
+                                </div>
+                                )}
+                                {network.ownerPhone && (
                                 <button
                                     className="flex items-center gap-2"
                                     onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        window.location.href = `tel:${network.ownerPhone}`;
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    window.location.href = `tel:${network.ownerPhone}`;
                                     }}
                                 >
                                     <Phone className="h-3 w-3" />
                                     <span dir="ltr">{network.ownerPhone}</span>
                                 </button>
-                            )}
+                                )}
                             </div>
                         </div>
                     </div>
