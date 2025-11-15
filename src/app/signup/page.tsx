@@ -151,7 +151,8 @@ export default function SignupPage() {
                 body: JSON.stringify({ networks: updatedNetworks }),
             });
             if (!saveRes.ok) {
-                throw new Error("Failed to save the new network.");
+                const errorData = await saveRes.json();
+                throw new Error(errorData.message || "Failed to save the new network.");
             }
         }
         
@@ -197,6 +198,8 @@ export default function SignupPage() {
           errorMessage = "رقم الهاتف غير صالح.";
         } else if (error.code === 'auth/weak-password') {
           errorMessage = "كلمة المرور ضعيفة جدا. يجب أن تتكون من 6 أحرف على الأقل.";
+        } else {
+          errorMessage = error.message;
         }
         setError(errorMessage);
         toast({
