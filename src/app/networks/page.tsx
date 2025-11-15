@@ -7,12 +7,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { useUser, useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from "@/firebase";
+import { useUser, useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter, useDoc } from "@/firebase";
 import { collection, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { allNetworksData, type Network } from "@/lib/networks";
 import {
   Select,
   SelectContent,
@@ -20,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { allLocations } from "@/lib/locations";
+import { type Network } from "../account/network-management/page";
+import { type Location } from "../account/app-settings/page";
 
 
 interface Favorite {
@@ -28,15 +28,37 @@ interface Favorite {
     networkId: string;
 }
 
+interface NetworksData {
+    all: Network[];
+}
+
+interface LocationsData {
+    all: Location[];
+}
+
+
 export default function NetworksPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const [allNetworks] = useState<Network[]>(allNetworksData);
-  const [areNetworksLoading, setAreNetworksLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("all");
+
+  const networksDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "networks");
+  }, [firestore]);
+
+  const locationsDocRef = useMemoFirebase(() => {
+      if (!firestore) return null;
+      return doc(firestore, "settings", "locations");
+  }, [firestore]);
+
+  const { data: networksData, isLoading: areNetworksLoading } = useDoc<NetworksData>(networksDocRef);
+  const { data: locationsData, isLoading: areLocationsLoading } = useDoc<LocationsData>(locationsDocRef);
+  const allNetworks = networksData?.all || [];
+  const allLocations = locationsData?.all || [];
 
   const favoritesCollectionRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -55,17 +77,14 @@ export default function NetworksPage() {
     if (selectedLocation === "all") {
       return allNetworks;
     }
-    // Find the location object corresponding to the selected value
     const locationFilter = allLocations.find(l => l.value === selectedLocation);
     if (!locationFilter) {
-      return allNetworks; // Or an empty array if no match should show nothing
+      return allNetworks;
     }
-
-    // Filter networks where the address string includes the name of the selected location
     return allNetworks.filter(network => 
       network.address && network.address.includes(locationFilter.name)
     );
-  }, [allNetworks, selectedLocation]);
+  }, [allNetworks, selectedLocation, allLocations]);
 
   const toggleFavorite = (networkId: string, isCurrentlyFavorite: boolean) => {
     if (!firestore || !user?.uid) {
@@ -78,7 +97,6 @@ export default function NetworksPage() {
     const favDocRef = doc(firestore, `customers/${user.uid}/favorites`, networkId);
 
     if (isCurrentlyFavorite) {
-        // Remove from favorites
         deleteDoc(favDocRef)
             .catch(error => {
                 const permissionError = new FirestorePermissionError({
@@ -89,7 +107,6 @@ export default function NetworksPage() {
             })
             .finally(() => setTogglingFavorites(prev => ({...prev, [networkId]: false})));
     } else {
-        // Add to favorites
         const favoriteData = { networkId, createdAt: serverTimestamp() };
         setDoc(favDocRef, favoriteData)
             .catch(error => {
@@ -104,7 +121,7 @@ export default function NetworksPage() {
     }
   }
 
-  const isLoading = isUserLoading || areFavoritesLoading || areNetworksLoading;
+  const isLoading = isUserLoading || areFavoritesLoading || areNetworksLoading || areLocationsLoading;
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -222,7 +239,5 @@ const NetworkCardSkeleton = () => (
         </CardContent>
     </Card>
 );
-
-    
 
     

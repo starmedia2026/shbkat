@@ -29,12 +29,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
-import { allLocations } from "@/lib/locations";
+import { type Location } from "../account/app-settings/page";
 
 
 interface AppSettings {
     logoUrlLight?: string;
     logoUrlDark?: string;
+}
+
+interface LocationsData {
+    all: Location[];
 }
 
 const ThemeAwareLogo = () => {
@@ -89,6 +93,15 @@ export default function SignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const locationsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "locations");
+  }, [firestore]);
+
+  const { data: locationsData, isLoading: areLocationsLoading } = useDoc<LocationsData>(locationsDocRef);
+  const allLocations = locationsData?.all || [];
+
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,7 +286,7 @@ export default function SignupPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2 text-right">
                   <Label htmlFor="location">موقعك</Label>
-                  <Select dir="rtl" onValueChange={setLocation} value={location} required>
+                  <Select dir="rtl" onValueChange={setLocation} value={location} required disabled={areLocationsLoading}>
                     <SelectTrigger id="location">
                       <SelectValue placeholder="اختر موقعك" />
                     </SelectTrigger>
@@ -331,3 +344,5 @@ export default function SignupPage() {
     </main>
   );
 }
+
+    

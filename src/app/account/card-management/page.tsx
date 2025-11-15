@@ -28,11 +28,11 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
-import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from "@/firebase";
 import { writeBatch, collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { allNetworksData, type Network } from "@/lib/networks";
+import { type Network } from "./network-management/page";
 
 
 interface Category {
@@ -43,6 +43,10 @@ interface Category {
 
 interface CardInput {
   cardNumber: string;
+}
+
+interface NetworksData {
+    all: Network[];
 }
 
 export default function CardManagementPage() {
@@ -92,9 +96,14 @@ function CardManagementContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [networks] = useState<Network[]>(allNetworksData);
-  const [areNetworksLoading, setAreNetworksLoading] = useState(false);
+  const networksDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "networks");
+  }, [firestore]);
 
+  const { data: networksData, isLoading: areNetworksLoading } = useDoc<NetworksData>(networksDocRef);
+  const networks = networksData?.all || [];
+  
   const [selectedNetworkId, setSelectedNetworkId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [cardsInput, setCardsInput] = useState<string>("");
@@ -351,3 +360,5 @@ function LoadingSkeleton() {
         </Card>
     );
 }
+
+    

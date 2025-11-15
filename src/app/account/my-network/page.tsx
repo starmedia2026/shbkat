@@ -44,9 +44,9 @@ import {
   } from "@/components/ui/alert-dialog";
 import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
-import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
-import { writeBatch, collection, doc, query, where, getDocs } from "firebase/firestore";
+import { writeBatch, collection, doc, query, where, getDocs, setDoc } from "firebase/firestore";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -58,7 +58,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { allNetworksData, type Network } from "@/lib/networks";
+import { type Network } from "../network-management/page";
 
 
 interface Category {
@@ -67,6 +67,10 @@ interface Category {
   price: number;
   validity: string;
   capacity: string;
+}
+
+interface NetworksData {
+    all: Network[];
 }
 
 interface CardData {
@@ -121,10 +125,17 @@ export default function MyNetworkPage() {
 function MyNetworkContent() {
   const { toast } = useToast();
   const { user } = useUser();
-  const [allNetworks, setAllNetworks] = useState<Network[]>(allNetworksData);
-  const [network, setNetwork] = useState<Network | null>(null);
-  const [isDataLoading, setIsDataLoading] = useState(true);
+  const firestore = useFirestore();
+
+  const networksDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "networks");
+  }, [firestore]);
+
+  const { data: networksData, isLoading: isDataLoading } = useDoc<NetworksData>(networksDocRef);
+  const allNetworks = networksData?.all || [];
   
+  const [network, setNetwork] = useState<Network | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
   const [editingNetworkData, setEditingNetworkData] = useState<{name: string, logo: string, address: string}>({name: "", logo: "", address: ""});
@@ -132,37 +143,32 @@ function MyNetworkContent() {
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
   useEffect(() => {
-    if (user?.email) {
+    if (user?.email && allNetworks.length > 0) {
         const phone = user.email.split('@')[0];
-        const ownedNetwork = allNetworksData.find(n => n.ownerPhone === phone);
+        const ownedNetwork = allNetworks.find(n => n.ownerPhone === phone);
         setNetwork(ownedNetwork || null);
     }
-    setIsDataLoading(false);
-  }, [user]);
+  }, [user, allNetworks]);
   
 
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
+    if (!networksDocRef) return;
     setIsSaving(true);
     try {
-        const response = await fetch('/api/save-networks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ networks: updatedNetworks }),
-        });
-        if (!response.ok) throw new Error('فشل حفظ الشبكات على الخادم');
-        
-        const myPhone = user?.email?.split('@')[0];
-        const ownedNetwork = updatedNetworks.find(n => n.ownerPhone === myPhone);
-        setNetwork(ownedNetwork || null);
-
+        await setDoc(networksDocRef, { all: updatedNetworks }, { merge: true });
         toast({ title: "تم الحفظ", description: "تم حفظ بيانات شبكتك بنجاح." });
     } catch (error) {
         console.error(error);
-        toast({ variant: "destructive", title: "فشل الحفظ", description: "حدث خطأ أثناء حفظ الشبكات." });
+        const permissionError = new FirestorePermissionError({
+            path: networksDocRef.path,
+            operation: 'write',
+            requestResourceData: { all: updatedNetworks }
+        });
+        errorEmitter.emit('permission-error', permissionError);
     } finally {
         setIsSaving(false);
     }
-  }, [toast, user]);
+  }, [networksDocRef, toast]);
   
   const updateAndSave = (updatedNetwork: Network) => {
     const networksToSave = allNetworks.map(n => n.id === updatedNetwork.id ? updatedNetwork : n);
@@ -181,7 +187,8 @@ function MyNetworkContent() {
     }
     const newId = `new-network-${Date.now()}`;
     const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: phone, categories: [] };
-    setNetwork(newNetwork);
+    
+    handleSave([...allNetworks, newNetwork]);
     setEditingNetworkId(newId);
     setEditingNetworkData({name: "", logo: "", address: ""});
   };
@@ -204,11 +211,12 @@ function MyNetworkContent() {
     if(!network) return;
     const newId = `new-cat-${Date.now()}`;
     const newCategory: Category = { id: newId, name: "", price: 0, validity: "", capacity: "" };
+    
+    const updatedNetwork = { ...network, categories: [...network.categories, newCategory] };
+    updateAndSave(updatedNetwork);
+
     setEditingCategoryId(newId);
     setEditingCategory(newCategory);
-
-    const updatedNetwork = { ...network, categories: [...network.categories, newCategory] };
-    setNetwork(updatedNetwork);
   };
 
   const handleUpdateCategory = () => {
@@ -254,8 +262,8 @@ function MyNetworkContent() {
                             <Button size="icon" variant="ghost" onClick={() => {
                                 setEditingNetworkId(null);
                                 const originalNetwork = allNetworks.find(n => n.id === network.id);
-                                if (!originalNetwork) { // This means it was a new network being added
-                                    setNetwork(null);
+                                if (!originalNetwork?.name) { // This means it was a new network being added
+                                    handleSave(allNetworks.filter(n => n.id !== network.id));
                                 }
                             }}><X className="h-4 w-4"/></Button>
                         </div>
@@ -294,7 +302,8 @@ function MyNetworkContent() {
                                     onSave={() => handleUpdateCategory()}
                                     onCancel={() => {
                                         if (category.name === "") {
-                                            setNetwork(prev => prev ? {...prev, categories: prev.categories.filter(c => c.id !== category.id) } : null);
+                                            const updatedNetwork = { ...network, categories: network.categories.filter(c => c.id !== category.id) };
+                                            updateAndSave(updatedNetwork);
                                         }
                                         setEditingCategoryId(null);
                                         setEditingCategory(null);
@@ -675,3 +684,5 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
+
+    

@@ -60,7 +60,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { allLocations, type Location } from "@/lib/locations";
 
 
 interface AppSettings {
@@ -81,6 +80,17 @@ interface Service {
 interface HomeSettings {
     services?: Service[];
 }
+
+export interface Location {
+    id: string;
+    name: string;
+    value: string;
+}
+
+interface LocationsData {
+    all: Location[];
+}
+
 
 const initialServices: Service[] = [
     { id: "networks", href: "/networks", iconUrl: '', label: "الشبكات", order: 1 },
@@ -425,29 +435,36 @@ function AppSettingsContent() {
 
 function LocationManagementCard() {
     const { toast } = useToast();
-    const [locations, setLocations] = useState<Location[]>(allLocations);
+    const firestore = useFirestore();
     const [isSaving, setIsSaving] = useState(false);
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
 
+    const locationsDocRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, "settings", "locations");
+    }, [firestore]);
+
+    const { data: locationsData, isLoading } = useDoc<LocationsData>(locationsDocRef);
+    const locations = locationsData?.all || [];
+
     const handleSaveLocations = useCallback(async (updatedLocations: Location[]) => {
+        if (!locationsDocRef) return;
         setIsSaving(true);
         try {
-            const response = await fetch('/api/save-locations', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ locations: updatedLocations }),
-            });
-            if (!response.ok) throw new Error('فشل حفظ المواقع على الخادم');
-            
-            setLocations(updatedLocations); // Update local state on success
+            await setDoc(locationsDocRef, { all: updatedLocations }, { merge: true });
             toast({ title: "تم الحفظ", description: "تم حفظ قائمة المواقع بنجاح." });
         } catch (error) {
             console.error(error);
-            toast({ variant: "destructive", title: "فشل الحفظ", description: "حدث خطأ أثناء حفظ المواقع." });
+            const permissionError = new FirestorePermissionError({
+                path: locationsDocRef.path,
+                operation: 'write',
+                requestResourceData: { all: updatedLocations }
+            });
+            errorEmitter.emit('permission-error', permissionError);
         } finally {
             setIsSaving(false);
         }
-    }, [toast]);
+    }, [locationsDocRef, toast]);
 
     const handleAddLocation = () => {
         setEditingLocation({ id: `loc_${Date.now()}`, name: '', value: '' });
@@ -485,7 +502,10 @@ function LocationManagementCard() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-                {locations.map(location => (
+                 {isSaving && <Loader2 className="animate-spin" />}
+                {isLoading ? (
+                     [...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)
+                ) : locations.map(location => (
                     <div key={location.id} className="flex items-center gap-2 p-2 border rounded-lg bg-card">
                         <Map className="h-5 w-5 text-muted-foreground" />
                         <div className="flex-grow">
@@ -648,3 +668,5 @@ function LoadingSkeleton() {
         </>
     );
 }
+
+    

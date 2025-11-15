@@ -54,8 +54,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/useAdmin";
-import { allLocations } from "@/lib/locations";
-
+import { type Location } from "./app-settings/page";
 
 const colorOptions = [
   { name: 'blue', hsl: '210 100% 56%' },
@@ -104,6 +103,11 @@ interface AppSettings {
   supportPhoneNumber?: string;
 }
 
+interface LocationsData {
+    all: Location[];
+}
+
+
 export default function AccountPage() {
   const { 
     darkMode, 
@@ -133,9 +137,16 @@ export default function AccountPage() {
     if (!firestore) return null;
     return doc(firestore, "settings", "app");
   }, [firestore]);
+  
+  const locationsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "locations");
+  }, [firestore]);
 
   const { data: customer, isLoading: isCustomerLoading } = useDoc(customerDocRef);
   const { data: appSettings } = useDoc<AppSettings>(appSettingsDocRef);
+  const { data: locationsData } = useDoc<LocationsData>(locationsDocRef);
+  const allLocations = locationsData?.all || [];
 
   const isLoading = isUserLoading || isCustomerLoading || areRolesLoading;
   
@@ -439,3 +450,5 @@ function AccountItem({
 
   return <li>{content}</li>;
 }
+
+    

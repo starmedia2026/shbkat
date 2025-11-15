@@ -42,8 +42,27 @@ import {
 import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
-import { paymentMethods, type PaymentMethod } from "@/lib/payment-methods";
+import { useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { doc, setDoc } from "firebase/firestore";
 
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  description: string;
+  accountName: string;
+  accountNumber: string;
+  logoUrl?: string;
+  theme: {
+    iconBg: string;
+    iconColor: string;
+    borderColor: string;
+  };
+}
+
+interface PaymentMethodsData {
+    all: PaymentMethod[];
+}
 
 export default function PaymentManagementPage() {
   const router = useRouter();
@@ -88,7 +107,16 @@ export default function PaymentManagementPage() {
 
 function PaymentManagementContent() {
   const { toast } = useToast();
-  const [paymentMethodsState, setPaymentMethodsState] = useState<PaymentMethod[]>(paymentMethods);
+  const firestore = useFirestore();
+
+  const paymentMethodsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "paymentMethods");
+  }, [firestore]);
+
+  const { data: paymentMethodsData, isLoading } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
+  const paymentMethodsState = paymentMethodsData?.all || [];
+
   const [isSaving, setIsSaving] = useState(false);
   const [editingMethodId, setEditingMethodId] = useState<string | null>(null);
   
@@ -101,30 +129,24 @@ function PaymentManagementContent() {
   });
 
   const handleSave = useCallback(async (updatedMethods: PaymentMethod[]) => {
+    if (!paymentMethodsDocRef) return;
     setIsSaving(true);
     try {
-        const response = await fetch('/api/save-payment-methods', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentMethods: updatedMethods }),
-        });
-        if (!response.ok) throw new Error('فشل حفظ طرق الدفع على الخادم');
-        
-        setPaymentMethodsState(updatedMethods);
+        await setDoc(paymentMethodsDocRef, { all: updatedMethods }, { merge: true });
         toast({ title: "تم الحفظ", description: "تم حفظ قائمة طرق الدفع بنجاح." });
     } catch (error) {
         console.error(error);
-        toast({ variant: "destructive", title: "فشل الحفظ", description: "حدث خطأ أثناء حفظ طرق الدفع." });
+        const permissionError = new FirestorePermissionError({
+            path: paymentMethodsDocRef.path,
+            operation: 'write',
+            requestResourceData: { all: updatedMethods }
+        });
+        errorEmitter.emit('permission-error', permissionError);
     } finally {
         setIsSaving(false);
     }
-  }, [toast]);
+  }, [paymentMethodsDocRef, toast]);
   
-  const updateAndSave = (newMethods: PaymentMethod[]) => {
-    setPaymentMethodsState(newMethods);
-    handleSave(newMethods);
-  };
-
   const handleAddMethod = () => {
     const newId = `new-method-${Date.now()}`;
     const newMethod: PaymentMethod = { 
@@ -141,20 +163,20 @@ function PaymentManagementContent() {
         }
     };
     const newMethods = [...paymentMethodsState, newMethod];
-    setPaymentMethodsState(newMethods);
+    handleSave(newMethods);
     setEditingMethodId(newId);
     setEditFormData({ name: "", description: "", accountName: "", accountNumber: "", logoUrl: ""});
   };
 
   const handleUpdateMethod = (methodId: string) => {
     const newMethods = paymentMethodsState.map(m => m.id === methodId ? { ...m, ...editFormData } : m);
-    updateAndSave(newMethods);
+    handleSave(newMethods);
     setEditingMethodId(null);
   };
 
   const handleDeleteMethod = (methodId: string) => {
     const newMethods = paymentMethodsState.filter(m => m.id !== methodId);
-    updateAndSave(newMethods);
+    handleSave(newMethods);
   };
 
   const startEditing = (method: PaymentMethod) => {
@@ -169,9 +191,9 @@ function PaymentManagementContent() {
   }
 
   const cancelEditing = (methodId: string) => {
-      const originalMethod = paymentMethods.find(m => m.id === methodId);
-      if (!originalMethod) {
-          setPaymentMethodsState(paymentMethodsState.filter(m => m.id !== methodId));
+      const originalMethod = paymentMethodsState.find(m => m.id === methodId);
+      if (originalMethod && !originalMethod.name) {
+          handleSave(paymentMethodsState.filter(m => m.id !== methodId));
       }
       setEditingMethodId(null);
   }
@@ -184,62 +206,66 @@ function PaymentManagementContent() {
                     <span>جاري الحفظ...</span>
                 </div>
             )}
-          {paymentMethodsState.map((method) => (
-            <Card key={method.id} className="w-full shadow-md rounded-2xl bg-card/50">
-                {editingMethodId === method.id ? (
-                    <EditForm
-                        formData={editFormData}
-                        setFormData={setEditFormData}
-                        onSave={() => handleUpdateMethod(method.id)}
-                        onCancel={() => cancelEditing(method.id)}
-                    />
-                ) : (
-                    <>
-                    <CardHeader className="flex-row items-center justify-between">
-                        <div className="flex items-center gap-3">
-                           {method.logoUrl ? (
-                               <Image src={method.logoUrl} alt={method.name} width={40} height={40} className="rounded-full object-contain"/>
-                           ) : (
-                                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center"><Wallet className="h-5 w-5 text-muted-foreground"/></div>
-                           )}
-                           <div>
-                                <CardTitle className="text-base">{method.name}</CardTitle>
-                                <CardDescription>{method.description}</CardDescription>
-                           </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => startEditing(method)}>
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive">
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        هل أنت متأكد من رغبتك في حذف طريقة الدفع "{method.name}"؟
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteMethod(method.id)}>تأكيد الحذف</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2 pt-2">
-                         <InfoRow label="اسم الحساب" value={method.accountName} />
-                         <InfoRow label="رقم الحساب" value={method.accountNumber} mono />
-                    </CardContent>
-                    </>
-                )}
-            </Card>
-          ))}
+          {isLoading ? (
+            <LoadingSkeleton />
+          ) : (
+            paymentMethodsState.map((method) => (
+                <Card key={method.id} className="w-full shadow-md rounded-2xl bg-card/50">
+                    {editingMethodId === method.id ? (
+                        <EditForm
+                            formData={editFormData}
+                            setFormData={setEditFormData}
+                            onSave={() => handleUpdateMethod(method.id)}
+                            onCancel={() => cancelEditing(method.id)}
+                        />
+                    ) : (
+                        <>
+                        <CardHeader className="flex-row items-center justify-between">
+                            <div className="flex items-center gap-3">
+                               {method.logoUrl ? (
+                                   <Image src={method.logoUrl} alt={method.name} width={40} height={40} className="rounded-full object-contain"/>
+                               ) : (
+                                    <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center"><Wallet className="h-5 w-5 text-muted-foreground"/></div>
+                               )}
+                               <div>
+                                    <CardTitle className="text-base">{method.name}</CardTitle>
+                                    <CardDescription>{method.description}</CardDescription>
+                               </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Button size="icon" variant="ghost" onClick={() => startEditing(method)}>
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            هل أنت متأكد من رغبتك في حذف طريقة الدفع "{method.name}"؟
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeleteMethod(method.id)}>تأكيد الحذف</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 pt-2">
+                             <InfoRow label="اسم الحساب" value={method.accountName} />
+                             <InfoRow label="رقم الحساب" value={method.accountNumber} mono />
+                        </CardContent>
+                        </>
+                    )}
+                </Card>
+              ))
+          )}
           <Button variant="secondary" className="w-full" onClick={handleAddMethod}>
             <PlusCircle className="mr-2 h-4 w-4" />
             إضافة طريقة دفع جديدة
@@ -320,3 +346,5 @@ const EditForm = ({ formData, setFormData, onSave, onCancel }: { formData: any, 
         </div>
     )
 };
+
+    
