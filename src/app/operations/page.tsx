@@ -39,7 +39,7 @@ interface Operation {
 const operationConfig = {
   transfer_sent: { icon: ArrowUp, color: "text-red-500", label: "تحويل مرسل" },
   transfer_received: { icon: ArrowDown, color: "text-green-500", label: "تحويل مستلم" },
-  topup_admin: { icon: Coins, color: "text-green-500", label: "تعبئة رصيد" },
+  topup_admin: { icon: Coins, color: "text-green-500", label: "ايداع شراء كرت" },
   purchase: { icon: CreditCard, color: "text-red-500", label: "شراء كرت" },
   withdraw: { icon: Banknote, color: "text-orange-500", label: "طلب سحب" },
 };
@@ -149,7 +149,7 @@ function OperationCard({ operation }: { operation: Operation }) {
                 <Icon className="h-5 w-5" />
               </div>
               <div>
-                <p className="font-semibold text-sm">{config.label}</p>
+                <p className="font-semibold text-sm">{operation.type === 'topup_admin' ? config.label : operation.description}</p>
                 <p className="text-xs text-muted-foreground">{operation.description}</p>
               </div>
             </div>
@@ -190,5 +190,3 @@ function OperationSkeleton() {
         </Card>
     )
 }
-
-    

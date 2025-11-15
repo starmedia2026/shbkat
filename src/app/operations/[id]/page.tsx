@@ -66,7 +66,7 @@ const operationConfig: {
 } = {
   transfer_sent: { icon: ArrowUp, color: "text-red-500", label: "تحويل مرسل" },
   transfer_received: { icon: ArrowDown, color: "text-green-500", label: "تحويل مستلم" },
-  topup_admin: { icon: Coins, color: "text-green-500", label: "إيداع ربح" },
+  topup_admin: { icon: Coins, color: "text-green-500", label: "ايداع شراء كرت" },
   purchase: { icon: CreditCard, color: "text-red-500", label: "شراء كرت" },
   withdraw: { icon: Banknote, color: "text-orange-500", label: "طلب سحب" },
 };
@@ -218,9 +218,3 @@ const DetailRow: React.FC<DetailRowProps> = ({ icon: Icon, label, value, valueCo
         )}
     </div>
 );
-
-    
-
-    
-
-    

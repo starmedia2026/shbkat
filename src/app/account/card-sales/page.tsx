@@ -189,9 +189,8 @@ function CardSalesContent() {
     }, [isOwner, user, allNetworks]);
     
     const cardsCollectionRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        // Ensure roles are loaded and user has permission before creating query
-        if (areRolesLoading || (!isAdmin && !isOwner)) return null;
+        if (!firestore || areRolesLoading || !user) return null;
+        if (!isAdmin && !isOwner) return null;
 
         let q;
         if (isAdmin) {
@@ -212,7 +211,7 @@ function CardSalesContent() {
             return null;
         }
         return q;
-    }, [firestore, isAdmin, isOwner, areRolesLoading, ownedNetwork, filterNetwork, filterCategory]);
+    }, [firestore, isAdmin, isOwner, areRolesLoading, ownedNetwork, filterNetwork, filterCategory, user]);
 
     const { data: allCards, isLoading: areCardsLoading } = useCollection<CardData>(cardsCollectionRef);
     
@@ -463,7 +462,7 @@ function SoldCardItem({ card, customer, networkOwner, firestore }: { card: CardD
                     type: 'topup_admin', 
                     amount: profitAmount, 
                     date: now, 
-                    description: `إيداع ربح: ${categoryName} - ${categoryPrice} ريال`, 
+                    description: "ايداع شراء كرت", 
                     status: 'completed', 
                     operationNumber: generateOperationNumber(),
                     details: {
@@ -658,7 +657,7 @@ ${customer.balance.toLocaleString('en-US')} ريال
                         <Copy className="h-4 w-4 text-muted-foreground"/>
                     </Button>
                     {customer && <Button onClick={handleWhatsAppRedirect} variant="outline" size="icon" className="h-9 w-9 bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M17 14h-2.5a2.5 2.5 0 1 0 0 5h.5a2.5 2.5 0 1 1 2-5zM12 11.5V13a2 2 0 0 0 4 0v-1.5a6.5 6.5 0 1 0-13 0V13a2 2 0 0 0 4 0v-1.5"/></svg>
+                        <MessageCircle className="h-5 w-5" />
                     </Button>}
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
