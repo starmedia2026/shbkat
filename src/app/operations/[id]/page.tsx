@@ -32,6 +32,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface OperationDetails {
     // For withdrawals
@@ -206,7 +207,7 @@ const DetailRow: React.FC<DetailRowProps> = ({ icon: Icon, label, value, valueCo
         </div>
         { value && (
             <div className="flex items-center gap-2 max-w-[60%]">
-                <p className={`text-sm text-left text-muted-foreground break-words ${valueColor || ''}`}>
+                <p className={cn("text-sm text-left break-words", valueColor || 'text-muted-foreground')}>
                     {value}
                 </p>
                 {onCopy && (
