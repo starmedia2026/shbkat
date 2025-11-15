@@ -25,12 +25,12 @@
     --ring: 169 75% 42%;
     --radius: 0.75rem;
 
-    --chart-1: 199 98% 48%; /* Sky Blue */
-    --chart-2: 142 76% 42%; /* Light Green */
-    --chart-3: 262 80% 58%; /* Purple */
-    --chart-4: 25 95% 53%;  /* Soft Orange */
-    --chart-5: 45 93% 47%;  /* Golden Yellow */
-    --chart-6: 175 70% 40%; /* Light Turquoise */
+    --chart-1: 169 75% 42%;
+    --chart-2: 169 75% 42%;
+    --chart-3: 262 80% 58%;
+    --chart-4: 25 95% 53%;
+    --chart-5: 45 93% 47%;
+    --chart-6: 175 70% 40%;
   }
   .dark {
     --background: 224 71.4% 4.1%;
@@ -53,8 +53,8 @@
     --input: 215 27.9% 16.9%;
     --ring: 169 75% 42%;
     
-    --chart-1: 199 98% 68%;
-    --chart-2: 142 76% 62%;
+    --chart-1: 169 75% 42%;
+    --chart-2: 169 75% 42%;
     --chart-3: 262 80% 78%;
     --chart-4: 25 95% 73%;
     --chart-5: 45 93% 67%;
