@@ -259,6 +259,7 @@ export default function SignupPage() {
                   placeholder="77xxxxxxxx"
                   required
                   dir="ltr"
+                  className="text-right"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
                   maxLength={9}
@@ -272,7 +273,6 @@ export default function SignupPage() {
                     type={passwordVisible ? "text" : "password"} 
                     required value={password} 
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pr-10" 
                   />
                    <button
                     type="button"
@@ -291,7 +291,6 @@ export default function SignupPage() {
                     type={confirmPasswordVisible ? "text" : "password"} 
                     required value={confirmPassword} 
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pr-10"
                   />
                   <button
                     type="button"
