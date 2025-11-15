@@ -78,6 +78,12 @@ export default function FavoritesPage() {
                         <div className="flex-grow text-right">
                               <h2 className="font-bold text-lg">{network.name}</h2>
                             <div className="flex flex-col items-start gap-1 text-xs text-primary-foreground/90 mt-1">
+                               {network.address && (
+                               <div className="flex items-center gap-2">
+                                <MapPin className="h-3 w-3" />
+                                <span>{network.address}</span>
+                               </div>
+                               )}
                                {network.ownerPhone && (
                                 <button
                                     className="flex items-center gap-2"
@@ -90,12 +96,6 @@ export default function FavoritesPage() {
                                     <Phone className="h-3 w-3" />
                                     <span dir="ltr">{network.ownerPhone}</span>
                                 </button>
-                               )}
-                               {network.address && (
-                               <div className="flex items-center gap-2">
-                                <MapPin className="h-3 w-3" />
-                                <span>{network.address}</span>
-                               </div>
                                )}
                             </div>
                         </div>
