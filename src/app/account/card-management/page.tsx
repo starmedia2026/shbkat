@@ -159,8 +159,11 @@ function CardManagementContent() {
             // Add card to all categories in all networks
             networks.forEach(network => {
                 network.categories.forEach(category => {
-                    const cardRef = doc(cardsCollection, `${card.cardNumber}-${network.id}-${category.id}`);
+                    const uniqueCardId = `${card.cardNumber}-${network.id}-${category.id}`;
+                    const cardRef = doc(cardsCollection, uniqueCardId);
                     const cardData = {
+                      id: uniqueCardId, // Store unique ID in the document
+                      cardNumber: card.cardNumber, // Keep original card number
                       networkId: network.id,
                       categoryId: category.id,
                       status: "available",
@@ -173,8 +176,11 @@ function CardManagementContent() {
             });
         } else {
             // Add card to the selected network and category
-            const cardRef = doc(cardsCollection, card.cardNumber);
+            const uniqueCardId = `${card.cardNumber}-${selectedNetworkId}-${selectedCategoryId}`;
+            const cardRef = doc(cardsCollection, uniqueCardId);
             const cardData = {
+              id: uniqueCardId,
+              cardNumber: card.cardNumber,
               networkId: selectedNetworkId,
               categoryId: selectedCategoryId,
               status: "available",
@@ -341,5 +347,7 @@ function LoadingSkeleton() {
         </Card>
     );
 }
+
+    
 
     

@@ -183,6 +183,10 @@ function NetworkManagementContent() {
   };
 
   const handleUpdateNetwork = (networkId: string) => {
+    if (editingNetworkData.ownerPhone.length !== 9) {
+        toast({ variant: "destructive", title: "خطأ", description: "رقم هاتف المالك يجب أن يتكون من 9 أرقام." });
+        return;
+    }
     const newNetworks = networks.map(n => n.id === networkId ? { ...n, ...editingNetworkData } : n);
     updateAndSave(newNetworks);
     setEditingNetworkId(null);
@@ -294,7 +298,7 @@ function NetworkManagementContent() {
                         <Input placeholder="اسم الشبكة" value={editingNetworkData.name} onChange={e => setEditingNetworkData(prev => ({...prev, name: e.target.value}))}/>
                         <Input placeholder="رابط الشعار" value={editingNetworkData.logo} onChange={e => setEditingNetworkData(prev => ({...prev, logo: e.target.value}))}/>
                         <Input placeholder="عنوان الشبكة" value={editingNetworkData.address} onChange={e => setEditingNetworkData(prev => ({...prev, address: e.target.value}))}/>
-                        <Input placeholder="هاتف المالك" value={editingNetworkData.ownerPhone} onChange={e => setEditingNetworkData(prev => ({...prev, ownerPhone: e.target.value}))}/>
+                        <Input placeholder="هاتف المالك" type="tel" maxLength={9} value={editingNetworkData.ownerPhone} onChange={e => setEditingNetworkData(prev => ({...prev, ownerPhone: e.target.value.replace(/[^0-9]/g, '')}))}/>
                         <div className="flex justify-end gap-2 mt-2">
                             <Button size="icon" variant="ghost" onClick={() => handleUpdateNetwork(network.id)}><Save className="h-4 w-4"/></Button>
                             <Button size="icon" variant="ghost" onClick={() => {
@@ -494,5 +498,7 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel, isGlobalFor
         </div>
     )
 };
+
+    
 
     

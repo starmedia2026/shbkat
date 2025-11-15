@@ -14,5 +14,21 @@
         "capacity": "اب"
       }
     ]
+  },
+  {
+    "id": "network-1763181902582",
+    "name": "شبكة صنعاء",
+    "logo": "",
+    "address": "شبام",
+    "ownerPhone": "770393949",
+    "categories": [
+      {
+        "id": "cat-1763181928480",
+        "name": "Fufrj",
+        "price": 8959,
+        "validity": "Xjfj",
+        "capacity": "Djfj"
+      }
+    ]
   }
 ]

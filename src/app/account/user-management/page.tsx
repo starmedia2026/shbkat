@@ -463,8 +463,13 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
     
 
     const handleSaveChanges = () => {
-        if (!name.trim() || !phoneNumber.trim()) {
-            toast({ variant: "destructive", title: "حقول فارغة", description: "الاسم ورقم الهاتف مطلوبان." });
+        if (!name.trim()) {
+            toast({ variant: "destructive", title: "حقل فارغ", description: "الاسم مطلوب." });
+            return;
+        }
+        
+        if (phoneNumber.length !== 9) {
+            toast({ variant: "destructive", title: "رقم هاتف غير صالح", description: "رقم الهاتف يجب أن يتكون من 9 أرقام." });
             return;
         }
 
@@ -517,7 +522,7 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="phone" className="text-right col-span-1">الهاتف</Label>
-                        <Input id="phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="col-span-3" dir="ltr" />
+                        <Input id="phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9]/g, ''))} maxLength={9} className="col-span-3" dir="ltr" />
                     </div>
                 </div>
                 <DialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-2">
@@ -534,5 +539,8 @@ function EditCustomerDialog({ customer }: { customer: Customer }) {
 }
 
     
+
+    
+
 
     
