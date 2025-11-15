@@ -44,9 +44,14 @@ const ThemeScript = ({ primaryColor }: { primaryColor: string }) => (
       __html: `
         (function() {
           try {
+            // Check for explicit dark mode setting in local storage
             const darkMode = localStorage.getItem('darkMode') === 'true';
             if (darkMode) {
               document.documentElement.classList.add('dark');
+            } else {
+              // If it's not explicitly 'true', ensure dark mode is off.
+              // This makes light mode the default for first-time users (where the item is null).
+              document.documentElement.classList.remove('dark');
             }
             document.documentElement.style.setProperty('--primary', '${primaryColor}');
             document.documentElement.style.setProperty('--ring', '${primaryColor}');
