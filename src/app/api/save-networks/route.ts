@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     }
 
     // Changed path to be outside `src` to avoid dev server reloads
-    const filePath = path.join(process.cwd(), 'lib', 'networks.json');
+    const filePath = path.join(process.cwd(), 'data', 'networks.json');
     
     // Construct the JSON file content
     const fileContent = JSON.stringify(networks, null, 2);
@@ -26,5 +26,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'حدث خطأ أثناء حفظ الملف' }, { status: 500 });
   }
 }
-
-    

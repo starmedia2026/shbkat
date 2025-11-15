@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
@@ -11,7 +12,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'بيانات المواقع مفقودة' }, { status: 400 });
     }
     
-    const filePath = path.join(process.cwd(), 'lib', 'locations.json');
+    // Changed path to be outside `src` to avoid dev server reloads
+    const filePath = path.join(process.cwd(), 'data', 'locations.json');
     
     const fileContent = JSON.stringify(locations, null, 2);
 
