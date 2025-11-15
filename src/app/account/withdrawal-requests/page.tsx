@@ -61,7 +61,7 @@ export default function WithdrawalRequestsPage() {
   const router = useRouter();
   const { isAdmin, isOwner, isLoading: areRolesLoading } = useAdmin();
 
-  const canViewPage = isAdmin || isOwner;
+  const canViewPage = isOwner;
 
   useEffect(() => {
     // Redirect non-admins after loading is complete
@@ -126,11 +126,14 @@ function WithdrawalRequestsContent() {
   }, [firestore, user, isAdmin, isOwner]);
   
   const { data: operations, isLoading: isOperationsLoading } = useCollection<Operation>(withdrawalRequestsQuery, {
-      transform: (doc) => ({
-        id: doc.id,
-        path: doc.ref.path,
-        ...(doc.data() as Operation),
-      })
+      transform: (doc) => {
+        const { id, ...data } = doc.data() as Omit<Operation, 'id' | 'path'> & { id?: string };
+        return {
+          id: doc.id,
+          path: doc.ref.path,
+          ...data,
+        } as Operation;
+      }
   });
   
   const sortedOperations = useMemo(() => {
