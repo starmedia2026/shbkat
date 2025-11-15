@@ -225,7 +225,7 @@ export default function HomePage() {
       <header className="bg-background p-4 pb-20 rounded-b-[3rem]">
         <div className="flex justify-between items-center">
           <div className="flex-1">
-             <Button variant="ghost" size="icon" className="w-11 h-11 rounded-full bg-card relative" onClick={handleNotificationsClick}>
+             <Button variant="ghost" size="icon" className="w-11 h-11 rounded-full bg-card relative focus-visible:ring-0 focus-visible:ring-offset-0" onClick={handleNotificationsClick}>
               <Bell className="h-6 w-6 text-primary" />
               {hasNotifications && (
                 <span className="absolute top-0 right-0 flex h-3 w-3">
