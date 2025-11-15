@@ -34,6 +34,8 @@ import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import allNetworks from "@/data/networks.json";
+
 
 interface NetworkCategory {
     id: string;
@@ -74,26 +76,11 @@ export default function NetworkDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchNetwork() {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/get-networks');
-            if (!response.ok) {
-                throw new Error("Failed to fetch networks");
-            }
-            const allNetworks: Network[] = await response.json();
-            const foundNetwork = allNetworks.find(n => n.id === slug);
-            setNetwork(foundNetwork || null);
-        } catch (e) {
-            console.error("Failed to fetch network", e);
-            setNetwork(null);
-        } finally {
-            setIsLoading(false);
-        }
-    }
     if (slug) {
-        fetchNetwork();
+        const foundNetwork = allNetworks.find(n => n.id === slug);
+        setNetwork(foundNetwork || null);
     }
+    setIsLoading(false);
   }, [slug]);
 
   if (isLoading) {
@@ -472,5 +459,3 @@ function LoadingSkeleton() {
         </div>
     );
 }
-
-    

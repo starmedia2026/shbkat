@@ -8,10 +8,24 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { paymentMethods, type PaymentMethod } from "@/lib/payment-methods";
+import paymentMethodsData from "@/data/payment-methods.json";
 import Image from "next/image";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
+
+interface PaymentMethod {
+  id: string;
+  name: string;
+  description: string;
+  accountName: string;
+  accountNumber: string;
+  logoUrl?: string; 
+  theme: {
+    iconBg: string;
+    iconColor: string;
+    borderColor: string;
+  };
+}
 
 const DEFAULT_SUPPORT_PHONE = "770326828";
 
@@ -20,6 +34,7 @@ interface AppSettings {
 }
 
 export default function TopUpPage() {
+  const [paymentMethods] = useState<PaymentMethod[]>(paymentMethodsData);
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(paymentMethods[0] || null);
   const firestore = useFirestore();
   const router = useRouter();
@@ -35,7 +50,7 @@ export default function TopUpPage() {
     // Read directly from appSettings state which is updated by useDoc
     const supportPhoneNumber = appSettings?.supportPhoneNumber || DEFAULT_SUPPORT_PHONE;
     const message = encodeURIComponent("مرحباً، أود إرسال إشعار الدفع.");
-    window.open(`https://wa.me/${supportPhoneNumber}?text=${message}`, "_blank");
+    window.open(`https://wa.me/967${supportPhoneNumber}?text=${message}`, "_blank");
   };
 
   const { toast } = useToast();

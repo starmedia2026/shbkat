@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
-import { locations } from "@/lib/locations";
+import locations from "@/data/locations.json";
 
 
 interface AppSettings {
@@ -155,34 +155,9 @@ export default function SignupPage() {
         const userDocRef = doc(firestore, "customers", user.uid);
         await setDoc(userDocRef, customerData);
 
-        // Step 3: If network owner, add the network to the networks.json file
+        // Step 3: If network owner, show a toast.
         if (customerData.accountType === 'network-owner') {
-            const newNetwork = {
-                id: `network-${Date.now()}`,
-                name: networkName,
-                address: networkAddress,
-                logo: "",
-                ownerPhone: phone,
-                categories: [],
-            };
-            
-            // Fetch current networks
-            const currentNetworksRes = await fetch('/api/get-networks');
-            if(!currentNetworksRes.ok) throw new Error("فشل في جلب قائمة الشبكات الحالية.");
-            const currentNetworks = await currentNetworksRes.json();
-            const updatedNetworks = [...currentNetworks, newNetwork];
-
-            // Save updated networks
-            const saveRes = await fetch('/api/save-networks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ networks: updatedNetworks }),
-            });
-            if (!saveRes.ok) {
-                const errorData = await saveRes.json();
-                // We don't block signup, just inform about the network creation failure.
-                toast({ variant: "destructive", title: "فشل إضافة الشبكة", description: errorData.message || "فشل حفظ الشبكة الجديدة." });
-            }
+            toast({ title: "طلب معلق", description: "سيتم مراجعة طلبك لإنشاء الشبكة من قبل المسؤول." });
         }
         
         toast({

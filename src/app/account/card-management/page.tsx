@@ -32,6 +32,8 @@ import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase
 import { writeBatch, collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import allNetworks from '@/data/networks.json';
+
 
 interface Category {
   id: string;
@@ -98,8 +100,8 @@ function CardManagementContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [networks, setNetworks] = useState<Network[]>([]);
-  const [areNetworksLoading, setAreNetworksLoading] = useState(true);
+  const [networks] = useState<Network[]>(allNetworks);
+  const [areNetworksLoading, setAreNetworksLoading] = useState(false);
 
   const [selectedNetworkId, setSelectedNetworkId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
@@ -111,26 +113,6 @@ function CardManagementContent() {
     failed: number;
   } | null>(null);
   const ALL_NETWORKS_VALUE = "all";
-
-   useEffect(() => {
-    async function fetchNetworks() {
-        setAreNetworksLoading(true);
-        try {
-            const response = await fetch('/api/get-networks');
-            if (!response.ok) {
-                throw new Error("Failed to fetch networks");
-            }
-            const data: Network[] = await response.json();
-            setNetworks(data);
-        } catch (e) {
-            console.error("Failed to fetch networks", e);
-            toast({ variant: 'destructive', title: "فشل", description: "فشل في تحميل بيانات الشبكات."});
-        } finally {
-            setAreNetworksLoading(false);
-        }
-    }
-    fetchNetworks();
-  }, [toast]);
 
   const availableCategories = useMemo(() => {
     if (selectedNetworkId === ALL_NETWORKS_VALUE) return [];
@@ -186,11 +168,11 @@ function CardManagementContent() {
     let totalCardsAdded = 0;
 
     cardsToSave.forEach((card) => {
+        const cardRef = doc(cardsCollection, card.cardNumber);
         if (isSelectAll) {
             // Add card to all categories in all networks
             networks.forEach(network => {
                 network.categories.forEach(category => {
-                    const cardRef = doc(cardsCollection, card.cardNumber);
                     const cardData = {
                       networkId: network.id,
                       categoryId: category.id,
@@ -204,7 +186,6 @@ function CardManagementContent() {
             });
         } else {
             // Add card to the selected network and category
-            const cardRef = doc(cardsCollection, card.cardNumber);
             const cardData = {
               networkId: selectedNetworkId,
               categoryId: selectedCategoryId,

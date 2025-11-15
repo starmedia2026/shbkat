@@ -47,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import allNetworksData from '@/data/networks.json';
 
 
 interface Category {
@@ -115,8 +116,8 @@ export default function NetworkManagementPage() {
 
 function NetworkManagementContent() {
   const { toast } = useToast();
-  const [networks, setNetworks] = useState<Network[]>([]);
-  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [networks, setNetworks] = useState<Network[]>(allNetworksData);
+  const [isDataLoading, setIsDataLoading] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
@@ -126,55 +127,13 @@ function NetworkManagementContent() {
   
   const [globalCategory, setGlobalCategory] = useState<Omit<Category, 'id' | 'name'>>(initialGlobalCategoryState);
   
-  useEffect(() => {
-    async function fetchNetworks() {
-        setIsDataLoading(true);
-        try {
-            const response = await fetch('/api/get-networks');
-            if (!response.ok) throw new Error("Failed to fetch networks");
-            const data: Network[] = await response.json();
-            setNetworks(data);
-        } catch (e) {
-            console.error("Failed to fetch networks", e);
-            toast({ variant: 'destructive', title: "فشل", description: "فشل في تحميل بيانات الشبكات."});
-        } finally {
-            setIsDataLoading(false);
-        }
-    }
-    fetchNetworks();
-  }, [toast]);
-  
-
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/save-networks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ networks: updatedNetworks }),
-      });
-
-      if (!response.ok) {
-        throw new Error('فشل في حفظ البيانات على الخادم');
-      }
-
-      setNetworks(updatedNetworks); // Update local state
-      toast({
-        title: "تم الحفظ",
-        description: "تم حفظ تغييرات الشبكات بنجاح.",
-      });
-    } catch (error) {
-        console.error(error);
-      toast({
-        variant: "destructive",
-        title: "فشل الحفظ",
-        description: "حدث خطأ أثناء حفظ الشبكات.",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    toast({
+        variant: 'destructive',
+        title: 'غير قابل للتعديل',
+        description: 'لا يمكن تعديل بيانات الشبكات في هذا الوضع. تواصل مع المطور.',
+    });
+    return;
   }, [toast]);
   
   const updateAndSave = (newNetworks: Network[]) => {

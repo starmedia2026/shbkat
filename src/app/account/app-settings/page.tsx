@@ -60,9 +60,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { locations as initialLocations } from "@/lib/locations";
-import type { Location } from "@/lib/locations";
+import initialLocations from "@/data/locations.json";
 
+
+interface Location {
+  id: string;
+  name: string;
+  value: string;
+}
 
 interface AppSettings {
   logoUrlLight?: string;
@@ -426,7 +431,7 @@ function AppSettingsContent() {
 
 function LocationManagementCard() {
     const { toast } = useToast();
-    const [locations, setLocations] = useState<Location[]>(initialLocations);
+    const [locations, setLocations] = useState<Location[]>(initialLocations as Location[]);
     const [isSaving, setIsSaving] = useState(false);
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
 

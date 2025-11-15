@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
+import allNetworksData from '@/data/networks.json';
 
 
 interface Customer {
@@ -145,41 +146,24 @@ function CardSalesContent() {
     const filterCategory = searchParams.get('category');
     const { toast } = useToast();
 
-    const [allNetworks, setAllNetworks] = useState<Network[]>([]);
-    const [areNetworksLoading, setAreNetworksLoading] = useState(true);
+    const [allNetworks, setAllNetworks] = useState<Network[]>(allNetworksData);
+    const [areNetworksLoading, setAreNetworksLoading] = useState(false);
     
      useEffect(() => {
-        async function fetchNetworks() {
-            setAreNetworksLoading(true);
-            try {
-                const response = await fetch('/api/get-networks');
-                if (!response.ok) {
-                    throw new Error("Failed to fetch networks");
-                }
-                const data: Network[] = await response.json();
-                setAllNetworks(data);
-                // Re-build lookup on fetch
-                networkLookup = data.reduce((acc, net) => {
-                    acc[net.id] = {
-                        name: net.name,
-                        logo: net.logo,
-                        ownerPhone: net.ownerPhone,
-                        categories: net.categories.reduce((catAcc, cat) => {
-                            catAcc[cat.id] = { name: cat.name, price: cat.price, capacity: cat.capacity };
-                            return catAcc;
-                        }, {} as Record<string, { name: string; price: number, capacity: string }>)
-                    };
-                    return acc;
-                }, {} as typeof networkLookup);
-            } catch (e) {
-                console.error("Failed to fetch networks", e);
-                toast({ variant: 'destructive', title: "فشل", description: "فشل في تحميل بيانات الشبكات."});
-            } finally {
-                setAreNetworksLoading(false);
-            }
-        }
-        fetchNetworks();
-    }, [toast]);
+        // Re-build lookup on mount
+        networkLookup = allNetworksData.reduce((acc, net) => {
+            acc[net.id] = {
+                name: net.name,
+                logo: net.logo,
+                ownerPhone: net.ownerPhone,
+                categories: net.categories.reduce((catAcc, cat) => {
+                    catAcc[cat.id] = { name: cat.name, price: cat.price, capacity: cat.capacity };
+                    return catAcc;
+                }, {} as Record<string, { name: string; price: number, capacity: string }>)
+            };
+            return acc;
+        }, {} as typeof networkLookup);
+    }, []);
 
 
     const ownedNetwork = useMemo(() => {

@@ -58,6 +58,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import allNetworksData from '@/data/networks.json';
 
 
 interface Category {
@@ -129,7 +130,7 @@ export default function MyNetworkPage() {
 function MyNetworkContent() {
   const { toast } = useToast();
   const { user } = useUser();
-  const [allNetworks, setAllNetworks] = useState<Network[]>([]);
+  const [allNetworks, setAllNetworks] = useState<Network[]>(allNetworksData);
   const [network, setNetwork] = useState<Network | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   
@@ -140,75 +141,23 @@ function MyNetworkContent() {
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
   useEffect(() => {
-    async function fetchNetworks() {
-        setIsDataLoading(true);
-        try {
-            const response = await fetch('/api/get-networks');
-            if (!response.ok) {
-                throw new Error("Failed to fetch networks");
-            }
-            const data: Network[] = await response.json();
-            setAllNetworks(data);
-            
-            if (user?.email) {
-                const phone = user.email.split('@')[0];
-                const ownedNetwork = data.find(n => n.ownerPhone === phone);
-                setNetwork(ownedNetwork || null);
-            }
-        } catch (e) {
-            console.error("Failed to fetch networks", e);
-            toast({ variant: 'destructive', title: "فشل", description: "فشل في تحميل بيانات الشبكة."});
-        } finally {
-            setIsDataLoading(false);
-        }
-    }
     if (user?.email) {
-        fetchNetworks();
-    } else {
-        // If user is not loaded yet, we wait.
-        setIsDataLoading(false);
+        const phone = user.email.split('@')[0];
+        const ownedNetwork = allNetworksData.find(n => n.ownerPhone === phone);
+        setNetwork(ownedNetwork || null);
     }
-  }, [user, toast]);
+    setIsDataLoading(false);
+  }, [user]);
   
 
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/save-networks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ networks: updatedNetworks }),
-      });
-
-      if (!response.ok) {
-        throw new Error('فشل في حفظ البيانات على الخادم');
-      }
-      
-      const phone = user?.email?.split('@')[0];
-      const updatedNetworkForState = updatedNetworks.find(n => n.ownerPhone === phone);
-      
-      setAllNetworks(updatedNetworks);
-      if(updatedNetworkForState) {
-        setNetwork(updatedNetworkForState);
-      }
-
-      toast({
-        title: "تم الحفظ",
-        description: "تم حفظ تغييرات الشبكات بنجاح.",
-      });
-    } catch (error) {
-        console.error(error);
-      toast({
-        variant: "destructive",
-        title: "فشل الحفظ",
-        description: "حدث خطأ أثناء حفظ الشبكات.",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [toast, user?.email]);
+    toast({
+        variant: 'destructive',
+        title: 'غير قابل للتعديل',
+        description: 'لا يمكن تعديل بيانات الشبكات في هذا الوضع. تواصل مع المطور.',
+    });
+    return;
+  }, [toast]);
   
   const updateAndSave = (updatedNetwork: Network) => {
     const networksToSave = allNetworks.map(n => n.id === updatedNetwork.id ? updatedNetwork : n);
@@ -723,3 +672,5 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
 };
 
     
+
+

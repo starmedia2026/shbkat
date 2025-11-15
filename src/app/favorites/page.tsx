@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
-import { networks as allNetworks } from "@/lib/networks";
+import allNetworks from "@/data/networks.json";
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -118,5 +118,3 @@ export default function FavoritesPage() {
     </div>
   );
 }
-
-    

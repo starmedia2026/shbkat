@@ -27,8 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
-import { paymentMethods as initialPaymentMethods } from "@/lib/payment-methods";
-import type { PaymentMethod } from "@/lib/payment-methods";
+import initialPaymentMethods from "@/data/payment-methods.json";
 import { useToast } from "@/hooks/use-toast";
 import {
     AlertDialog,
@@ -44,6 +43,21 @@ import {
 import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  description: string;
+  accountName: string;
+  accountNumber: string;
+  logoUrl?: string; // The URL for the payment method's logo
+  theme: {
+    iconBg: string;
+    iconColor: string;
+    borderColor: string;
+  };
+}
+
 
 export default function PaymentManagementPage() {
   const router = useRouter();
@@ -101,34 +115,12 @@ function PaymentManagementContent() {
   });
 
   const handleSave = useCallback(async (updatedMethods: PaymentMethod[]) => {
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/save-payment-methods', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ paymentMethods: updatedMethods }),
-      });
-
-      if (!response.ok) {
-        throw new Error('فشل في حفظ البيانات على الخادم');
-      }
-
-      toast({
-        title: "تم الحفظ",
-        description: "تم حفظ تغييرات طرق الدفع بنجاح.",
-      });
-    } catch (error) {
-        console.error(error);
-      toast({
-        variant: "destructive",
-        title: "فشل الحفظ",
-        description: "حدث خطأ أثناء حفظ طرق الدفع.",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    toast({
+        variant: 'destructive',
+        title: 'غير قابل للتعديل',
+        description: 'لا يمكن تعديل بيانات الدفع في هذا الوضع. تواصل مع المطور.',
+    });
+    return;
   }, [toast]);
   
   const updateAndSave = (newMethods: PaymentMethod[]) => {

@@ -19,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { locations } from "@/lib/locations";
+import locations from "@/data/locations.json";
+import allNetworksData from '@/data/networks.json';
 
 
 interface Category {
@@ -50,29 +51,9 @@ export default function NetworksPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const [allNetworks, setAllNetworks] = useState<Network[]>([]);
-  const [areNetworksLoading, setAreNetworksLoading] = useState(true);
+  const [allNetworks] = useState<Network[]>(allNetworksData);
+  const [areNetworksLoading, setAreNetworksLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
-
-  useEffect(() => {
-    async function fetchNetworks() {
-        setAreNetworksLoading(true);
-        try {
-            const response = await fetch('/api/get-networks');
-            if (!response.ok) {
-                throw new Error("Failed to fetch networks");
-            }
-            const data: Network[] = await response.json();
-            setAllNetworks(data);
-        } catch (e) {
-            console.error("Failed to fetch networks", e);
-            toast({ variant: 'destructive', title: "فشل", description: "فشل في تحميل بيانات الشبكات."});
-        } finally {
-            setAreNetworksLoading(false);
-        }
-    }
-    fetchNetworks();
-  }, [toast]);
 
   const favoritesCollectionRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;

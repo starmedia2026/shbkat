@@ -140,11 +140,13 @@ export default function AccountPage() {
   
   const accountItems = useMemo(() => {
     if (isLoading) return []; // Return empty array while loading to prevent flicker
-    return isAdmin 
-      ? adminAccountItems 
-      : isOwner 
-      ? networkOwnerAccountItems 
-      : userAccountItems;
+    if (isAdmin) {
+        return adminAccountItems;
+    }
+    if (isOwner) {
+        return networkOwnerAccountItems;
+    }
+    return userAccountItems;
   }, [isAdmin, isOwner, isLoading]);
   
 
