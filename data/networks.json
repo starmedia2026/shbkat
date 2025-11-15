@@ -1,42 +1,18 @@
 [
   {
-    "id": "network-1763179119219",
-    "name": "شبكة الخير",
+    "id": "network-1763180531331",
+    "name": "شبكة دوعن ",
     "address": "مديرية شبام",
     "logo": "",
-    "ownerPhone": "777646686",
-    "categories": []
-  },
-  {
-    "id": "network-1763179360836",
-    "name": "شبكة بيحم",
-    "address": "مديرية شبام",
-    "logo": "",
-    "ownerPhone": "773108411",
-    "categories": []
-  },
-  {
-    "id": "network-1763179557160",
-    "name": "شبكة بيحم",
-    "address": "مديرية شبام",
-    "logo": "",
-    "ownerPhone": "776468668",
-    "categories": []
-  },
-  {
-    "id": "network-1763179726455",
-    "name": "شبكة بيحم",
-    "address": "مديرية شبام",
-    "logo": "",
-    "ownerPhone": "555556566",
-    "categories": []
-  },
-  {
-    "id": "network-1763180043815",
-    "name": "شبكة الخير",
-    "address": "مديرية شبام",
-    "logo": "",
-    "ownerPhone": "770356868",
-    "categories": []
+    "ownerPhone": "775555555",
+    "categories": [
+      {
+        "id": "new-cat-1763180558553",
+        "name": "بنبن",
+        "price": 900,
+        "validity": "تا",
+        "capacity": "قتت"
+      }
+    ]
   }
 ]

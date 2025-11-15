@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -30,32 +29,34 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, Firestore
 import { doc, collection, writeBatch, getDocs, query, where, limit, runTransaction } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { networks } from "@/lib/networks";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
+interface NetworkCategory {
+    id: string;
+    name: string;
+    price: number;
+    validity: string;
+    capacity: string;
+}
 
-const networkData = networks.reduce((acc, network) => {
-    acc[network.id] = network;
-    return acc;
-  }, {} as { [key: string]: typeof networks[0] });
-  
+interface Network {
+  id: string;
+  name: string;
+  logo?: string;
+  address?: string;
+  ownerPhone?: string;
+  categories: NetworkCategory[];
+}
 
 interface Customer {
     id: string;
     name: string;
     phoneNumber: string;
     balance: number;
-}
-
-interface Category {
-    id: string;
-    name: string;
-    price: number;
-    validity: string;
-    capacity: string;
 }
 
 interface PurchasedCardInfo {
@@ -68,18 +69,56 @@ export default function NetworkDetailPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
-  const network = networkData[slug];
-  const [isClient, setIsClient] = useState(false);
+  
+  const [network, setNetwork] = useState<Network | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    async function fetchNetwork() {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/get-networks');
+            if (!response.ok) {
+                throw new Error("Failed to fetch networks");
+            }
+            const allNetworks: Network[] = await response.json();
+            const foundNetwork = allNetworks.find(n => n.id === slug);
+            setNetwork(foundNetwork || null);
+        } catch (e) {
+            console.error("Failed to fetch network", e);
+            setNetwork(null);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    if (slug) {
+        fetchNetwork();
+    }
+  }, [slug]);
 
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
 
   if (!network) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p>الشبكة غير موجودة</p>
+      <div className="flex flex-col items-center justify-center h-screen">
+         <header className="p-4 flex items-center relative border-b w-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+              className="absolute left-4"
+            >
+              <ArrowRight className="h-6 w-6" />
+            </Button>
+            <h1 className="text-lg font-normal text-right flex-grow mr-16">
+              خطأ
+            </h1>
+        </header>
+        <div className="flex-grow flex items-center justify-center">
+            <p>الشبكة غير موجودة</p>
+        </div>
       </div>
     );
   }
@@ -108,7 +147,7 @@ export default function NetworkDetailPage() {
   );
 }
 
-function PackageCard({ category, network }: { category: Category, network: typeof networks[0] }) {
+function PackageCard({ category, network }: { category: NetworkCategory, network: Network }) {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -331,7 +370,6 @@ function PurchasedCardDialog({ card, isOpen, onClose, onSendSms }: { card: Purch
             <Dialog open={isOpen && !smsDialogOpen} onOpenChange={(open) => !open && onClose()}>
                 <DialogContent className="sm:max-w-[425px] rounded-2xl">
                     <DialogHeader className="pt-4">
-                        {/* Title is visually present but also accessible */}
                         <DialogTitle className="text-center text-lg font-bold">تم الشراء بنجاح!</DialogTitle>
                     </DialogHeader>
                     <div className="flex flex-col items-center pb-4 -mt-4">
@@ -402,19 +440,35 @@ function PurchasedCardDialog({ card, isOpen, onClose, onSendSms }: { card: Purch
     );
 }
 
-
-function BackButton() {
-    const router = useRouter();
+function LoadingSkeleton() {
     return (
-        <button
-            onClick={() => router.back()}
-            className="p-2"
-        >
-            <ArrowRight className="h-6 w-6" />
-        </button>
+        <div className="bg-background text-foreground min-h-screen">
+          <header className="p-4 flex items-center relative border-b">
+             <Skeleton className="h-10 w-10" />
+             <Skeleton className="h-6 w-32 flex-grow mr-16" />
+          </header>
+          <main className="p-4 space-y-4">
+            {[...Array(3)].map((_, i) => (
+                 <Card key={i} className="w-full shadow-md rounded-2xl bg-card/50 overflow-hidden">
+                    <CardContent className="p-0 flex h-full">
+                        <Skeleton className="w-24 h-32" />
+                        <div className="flex-grow p-3 pr-4 flex flex-col justify-between">
+                             <div className="flex justify-between items-start">
+                                <div>
+                                    <Skeleton className="h-5 w-24 mb-2" />
+                                    <Skeleton className="h-5 w-16" />
+                                </div>
+                                <Skeleton className="h-8 w-16" />
+                            </div>
+                             <div className="mt-3 pt-3 border-t flex space-x-4 space-x-reverse">
+                               <Skeleton className="h-4 w-20" />
+                               <Skeleton className="h-4 w-20" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+          </main>
+        </div>
     );
 }
-
-    
-
-
