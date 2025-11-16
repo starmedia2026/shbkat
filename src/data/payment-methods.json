@@ -9,9 +9,9 @@
             "accountNumber": "123456789",
             "logoUrl": "https://i.postimg.cc/D0mC0fN4/kremy.png",
             "theme": {
-                "iconBg": "bg-blue-100 dark:bg-blue-900/50",
-                "iconColor": "text-blue-600 dark:text-blue-400",
-                "borderColor": "border-blue-500"
+                "iconBg": "bg-gray-100 dark:bg-gray-900/50",
+                "iconColor": "text-gray-600 dark:text-gray-400",
+                "borderColor": "border-gray-500"
             }
         },
         {
@@ -22,12 +22,62 @@
             "accountNumber": "987654321",
             "logoUrl": "https://i.postimg.cc/8cR5nBfP/alamal-bank.png",
             "theme": {
-                "iconBg": "bg-red-100 dark:bg-red-900/50",
-                "iconColor": "text-red-600 dark:text-red-400",
-                "borderColor": "border-red-500"
+                "iconBg": "bg-gray-100 dark:bg-gray-900/50",
+                "iconColor": "text-gray-600 dark:text-gray-400",
+                "borderColor": "border-gray-500"
+            }
+        },
+        {
+            "id": "haseb",
+            "name": "خدمة حاسب",
+            "description": "تحويل عبر خدمة حاسب",
+            "accountName": "محمد راضي باشادي",
+            "accountNumber": "234567890",
+            "logoUrl": "",
+            "theme": {
+                "iconBg": "bg-gray-100 dark:bg-gray-900/50",
+                "iconColor": "text-gray-600 dark:text-gray-400",
+                "borderColor": "border-gray-500"
+            }
+        },
+        {
+            "id": "alamqi",
+            "name": "شركة العمقي",
+            "description": "تحويل عبر شركة العمقي",
+            "accountName": "محمد راضي باشادي",
+            "accountNumber": "345678901",
+            "logoUrl": "",
+            "theme": {
+                "iconBg": "bg-gray-100 dark:bg-gray-900/50",
+                "iconColor": "text-gray-600 dark:text-gray-400",
+                "borderColor": "border-gray-500"
+            }
+        },
+        {
+            "id": "bcash",
+            "name": "بي كاش",
+            "description": "تحويل عبر محفظة بي كاش",
+            "accountName": "محمد راضي باشادي",
+            "accountNumber": "456789012",
+            "logoUrl": "",
+            "theme": {
+                "iconBg": "bg-gray-100 dark:bg-gray-900/50",
+                "iconColor": "text-gray-600 dark:text-gray-400",
+                "borderColor": "border-gray-500"
+            }
+        },
+        {
+            "id": "bindoul",
+            "name": "بن دول",
+            "description": "تحويل عبر خدمة بن دول",
+            "accountName": "محمد راضي باشادي",
+            "accountNumber": "567890123",
+            "logoUrl": "",
+            "theme": {
+                "iconBg": "bg-gray-100 dark:bg-gray-900/50",
+                "iconColor": "text-gray-600 dark:text-gray-400",
+                "borderColor": "border-gray-500"
             }
         }
     ]
 }
-
-    
