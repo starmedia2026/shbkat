@@ -37,10 +37,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
-import paymentMethodsData from "@/lib/payment-methods.json";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
+import { type PaymentMethod } from "@/app/account/payment-management/page";
+
 
 interface Customer {
   id: string;
@@ -49,7 +50,9 @@ interface Customer {
   balance: number;
 }
 
-const withdrawalMethods = paymentMethodsData.filter(p => p.id === 'kareemi' || p.id === 'amqi');
+interface PaymentMethodsData {
+    all: PaymentMethod[];
+}
 
 export default function WithdrawPage() {
   const router = useRouter();
@@ -99,8 +102,16 @@ function WithdrawContent() {
   const [recipientName, setRecipientName] = useState("");
   const [recipientAccount, setRecipientAccount] = useState("");
   const [amount, setAmount] = useState("");
-  const [selectedMethod, setSelectedMethod] = useState<(typeof paymentMethodsData)[0] | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  const paymentMethodsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "paymentMethods");
+  }, [firestore]);
+
+  const { data: paymentMethodsData, isLoading: arePaymentMethodsLoading } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
+  const withdrawalMethods = paymentMethodsData?.all || [];
 
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -108,12 +119,12 @@ function WithdrawContent() {
   }, [firestore, user?.uid]);
 
   const { data: owner, isLoading: isCustomerLoading } = useDoc<Customer>(customerDocRef);
-  const isLoading = isUserLoading || isCustomerLoading;
+  const isLoading = isUserLoading || isCustomerLoading || arePaymentMethodsLoading;
   
   const findAdminUid = async (): Promise<string | null> => {
       if (!firestore) return null;
       try {
-          const q = query(collection(firestore, "customers"), where("phoneNumber", "==", "770326828"), limit(1));
+          const q = query(collection(firestore, "customers"), where("accountType", "==", "admin"), limit(1));
           const adminSnapshot = await getDocs(q);
           if (!adminSnapshot.empty) {
               return adminSnapshot.docs[0].id;
@@ -272,16 +283,23 @@ function WithdrawContent() {
           <CardTitle className="text-lg">اختر طريقة السحب</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            {withdrawalMethods.map(method => (
-              <PaymentOption
-                key={method.id}
-                method={method}
-                isSelected={selectedMethod?.id === method.id}
-                onSelect={() => setSelectedMethod(method)}
-              />
-            ))}
-          </div>
+          {arePaymentMethodsLoading ? (
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-28 w-full" />
+              <Skeleton className="h-28 w-full" />
+            </div>
+          ) : (
+             <div className="grid grid-cols-2 gap-4">
+              {withdrawalMethods.map(method => (
+                <PaymentOption
+                  key={method.id}
+                  method={method}
+                  isSelected={selectedMethod?.id === method.id}
+                  onSelect={() => setSelectedMethod(method)}
+                />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -359,7 +377,7 @@ function WithdrawContent() {
 }
 
 
-function PaymentOption({ method, isSelected, onSelect }: { method: (typeof paymentMethodsData)[0]; isSelected: boolean; onSelect: () => void; }) {
+function PaymentOption({ method, isSelected, onSelect }: { method: PaymentMethod; isSelected: boolean; onSelect: () => void; }) {
     return (
         <div 
             onClick={onSelect}
