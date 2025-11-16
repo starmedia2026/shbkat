@@ -23,13 +23,14 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from "@/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { type Location } from "../account/app-settings/page";
+import { type Network } from "../account/network-management/page";
 
 
 interface AppSettings {
@@ -151,11 +152,9 @@ export default function SignupPage() {
     const email = `${phone}@shabakat.app`;
 
     try {
-        // Step 1: Create the user in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Step 2: Create the customer document in Firestore
         const customerData = {
           id: user.uid,
           name: name,
@@ -168,9 +167,21 @@ export default function SignupPage() {
         const userDocRef = doc(firestore, "customers", user.uid);
         await setDoc(userDocRef, customerData);
 
-        // Step 3: If network owner, show a toast.
         if (customerData.accountType === 'network-owner') {
-            toast({ title: "طلب معلق", description: "سيتم مراجعة طلبك لإنشاء الشبكة من قبل المسؤول." });
+            const networksDocRef = doc(firestore, "settings", "networks");
+            const newNetwork: Network = {
+                id: `network-${Date.now()}`,
+                name: networkName,
+                address: networkAddress,
+                ownerPhone: phone,
+                categories: []
+            };
+            
+            await updateDoc(networksDocRef, {
+                all: arrayUnion(newNetwork)
+            });
+
+            toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح. يمكنك الآن إدارتها." });
         }
         
         toast({
@@ -182,9 +193,9 @@ export default function SignupPage() {
     } catch (error: any) {
       if (error.code === 'firestore/permission-denied') {
           const permissionError = new FirestorePermissionError({
-              path: `customers`,
+              path: `customers or settings/networks`,
               operation: 'create',
-              requestResourceData: { note: 'Failed to create customer document during signup' }
+              requestResourceData: { note: 'Failed to create customer or network document during signup' }
           });
           errorEmitter.emit('permission-error', permissionError);
       } else {
@@ -344,5 +355,3 @@ export default function SignupPage() {
     </main>
   );
 }
-
-    
