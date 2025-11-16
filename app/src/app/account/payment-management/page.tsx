@@ -44,6 +44,7 @@ import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
+import defaultPaymentMethods from '@/data/payment-methods.json';
 
 
 export interface PaymentMethod {
@@ -115,7 +116,36 @@ function PaymentManagementContent() {
   }, [firestore]);
 
   const { data: paymentMethodsData, isLoading } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
-  const paymentMethodsState = paymentMethodsData?.all || [];
+
+  const [paymentMethodsState, setPaymentMethodsState] = useState<PaymentMethod[]>([]);
+  const [isSeeding, setIsSeeding] = useState(true);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (paymentMethodsData && paymentMethodsData.all && paymentMethodsData.all.length > 0) {
+        setPaymentMethodsState(paymentMethodsData.all);
+        setIsSeeding(false);
+      } else {
+        // Data is not in Firestore, let's seed it from the default file
+        const seedData = defaultPaymentMethods.paymentMethods as PaymentMethod[];
+        setPaymentMethodsState(seedData);
+        if (paymentMethodsDocRef) {
+          setDoc(paymentMethodsDocRef, { all: seedData }, { merge: true })
+            .then(() => {
+              toast({ title: "تمت تهيئة طرق الدفع", description: "تم إنشاء قائمة طرق الدفع الافتراضية." });
+              setIsSeeding(false);
+            })
+            .catch(error => {
+                console.error("Failed to seed payment methods:", error);
+                setIsSeeding(false);
+            });
+        } else {
+            setIsSeeding(false);
+        }
+      }
+    }
+  }, [paymentMethodsData, isLoading, paymentMethodsDocRef, toast]);
+
 
   const [isSaving, setIsSaving] = useState(false);
   const [editingMethodId, setEditingMethodId] = useState<string | null>(null);
@@ -133,6 +163,7 @@ function PaymentManagementContent() {
     setIsSaving(true);
     try {
         await setDoc(paymentMethodsDocRef, { all: updatedMethods }, { merge: true });
+        setPaymentMethodsState(updatedMethods); // Update local state on successful save
         toast({ title: "تم الحفظ", description: "تم حفظ قائمة طرق الدفع بنجاح." });
     } catch (error) {
         console.error(error);
@@ -197,6 +228,8 @@ function PaymentManagementContent() {
       }
       setEditingMethodId(null);
   }
+  
+  const finalIsLoading = isLoading || isSeeding;
 
   return (
         <div className="space-y-6">
@@ -206,7 +239,7 @@ function PaymentManagementContent() {
                     <span>جاري الحفظ...</span>
                 </div>
             )}
-          {isLoading ? (
+          {finalIsLoading ? (
             <LoadingSkeleton />
           ) : (
             paymentMethodsState.map((method) => (
@@ -346,3 +379,5 @@ const EditForm = ({ formData, setFormData, onSave, onCancel }: { formData: any, 
         </div>
     )
 };
+
+    

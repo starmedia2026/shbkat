@@ -1,0 +1,33 @@
+
+{
+    "paymentMethods": [
+        {
+            "id": "karemi",
+            "name": "بنك الكريمي",
+            "description": "تحويل إلى حساب بنك الكريمي",
+            "accountName": "محمد راضي باشادي",
+            "accountNumber": "123456789",
+            "logoUrl": "https://i.postimg.cc/D0mC0fN4/kremy.png",
+            "theme": {
+                "iconBg": "bg-blue-100 dark:bg-blue-900/50",
+                "iconColor": "text-blue-600 dark:text-blue-400",
+                "borderColor": "border-blue-500"
+            }
+        },
+        {
+            "id": "amalk",
+            "name": "بنك الأمل",
+            "description": "تحويل إلى حساب بنك الأمل",
+            "accountName": "محمد راضي باشادي",
+            "accountNumber": "987654321",
+            "logoUrl": "https://i.postimg.cc/8cR5nBfP/alamal-bank.png",
+            "theme": {
+                "iconBg": "bg-red-100 dark:bg-red-900/50",
+                "iconColor": "text-red-600 dark:text-red-400",
+                "borderColor": "border-red-500"
+            }
+        }
+    ]
+}
+
+    

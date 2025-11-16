@@ -13,6 +13,8 @@ import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { type PaymentMethod } from "@/app/account/payment-management/page";
 import { Skeleton } from "@/components/ui/skeleton";
+import defaultPaymentMethods from '@/data/payment-methods.json';
+
 
 const DEFAULT_SUPPORT_PHONE = "770326828";
 
@@ -35,15 +37,22 @@ export default function TopUpPage() {
   }, [firestore]);
 
   const { data: paymentMethodsData, isLoading: arePaymentMethodsLoading } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
-  const paymentMethods = paymentMethodsData?.all || [];
   
+  const paymentMethods = useMemo(() => {
+    if (paymentMethodsData && paymentMethodsData.all && paymentMethodsData.all.length > 0) {
+      return paymentMethodsData.all;
+    }
+    // Fallback to default if Firestore is empty or loading
+    return defaultPaymentMethods.paymentMethods as PaymentMethod[];
+  }, [paymentMethodsData]);
+
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(null);
 
   React.useEffect(() => {
-      if (!arePaymentMethodsLoading && paymentMethods.length > 0 && !selectedPayment) {
+      if (paymentMethods.length > 0 && !selectedPayment) {
           setSelectedPayment(paymentMethods[0]);
       }
-  }, [paymentMethods, arePaymentMethodsLoading, selectedPayment]);
+  }, [paymentMethods, selectedPayment]);
 
 
   const appSettingsDocRef = useMemoFirebase(() => {
@@ -86,7 +95,7 @@ export default function TopUpPage() {
             <p className="text-right text-muted-foreground text-sm px-2">اختر الحساب الذي تود التحويل إليه.</p>
         </div>
         
-        {isLoading ? (
+        {isLoading && paymentMethods.length === 0 ? (
              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-square w-full rounded-xl" />)}
             </div>
@@ -177,3 +186,5 @@ function PaymentOption({ method, isSelected, onSelect }: { method: PaymentMethod
         </div>
     );
 }
+
+    
