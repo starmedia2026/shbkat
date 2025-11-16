@@ -165,11 +165,7 @@ export default function SignupPage() {
           description: "يتم توجيهك الآن...",
         });
 
-        if (customerData.accountType === 'network-owner') {
-             router.push("/account/my-network");
-        } else {
-             router.push("/home");
-        }
+        router.push("/home");
       
     } catch (error: any) {
         let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
@@ -335,5 +331,3 @@ export default function SignupPage() {
     </main>
   );
 }
-
-    
