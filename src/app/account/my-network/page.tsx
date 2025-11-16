@@ -46,7 +46,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
-import { writeBatch, collection, doc, query, where, getDocs, setDoc } from "firebase/firestore";
+import { writeBatch, collection, doc, query, where, getDocs, setDoc, getDoc } from "firebase/firestore";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -148,7 +148,6 @@ function MyNetworkContent() {
         const ownedNetwork = allNetworks.find(n => n.ownerPhone === phone);
         setNetwork(ownedNetwork || null);
     } else if (user?.email && !isDataLoading && allNetworks.length === 0) {
-        // This handles the case where the user is the first network owner.
         setNetwork(null);
     }
   }, [user, allNetworks, isDataLoading]);
@@ -174,7 +173,7 @@ function MyNetworkContent() {
   
     // Effect to handle pending network creation from localStorage
   useEffect(() => {
-    if (isDataLoading || !user) return; // Wait for data and user to be loaded
+    if (isDataLoading || !user || !networksDocRef) return;
 
     const pendingNetworkJSON = localStorage.getItem('pending_network');
     if (pendingNetworkJSON) {
@@ -182,7 +181,6 @@ function MyNetworkContent() {
             const pendingNetwork = JSON.parse(pendingNetworkJSON);
             const phone = user.email?.split('@')[0];
 
-            // Ensure this action is for the current user and the network doesn't already exist
             if (pendingNetwork.phone === phone && !allNetworks.some(n => n.ownerPhone === phone)) {
                 
                 const newNetwork: Network = {
@@ -203,7 +201,7 @@ function MyNetworkContent() {
             localStorage.removeItem('pending_network');
         }
     }
-  }, [isDataLoading, allNetworks, user, handleSave]);
+  }, [isDataLoading, allNetworks, user, handleSave, networksDocRef]);
 
 
   const updateAndSave = (updatedNetwork: Network) => {

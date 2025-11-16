@@ -23,14 +23,13 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase, initializeFirebase } from "@/firebase";
-import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { type Location } from "../account/app-settings/page";
-import { type Network } from "../account/network-management/page";
 
 
 interface AppSettings {
@@ -121,13 +120,11 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
-
+    
     if (name.trim().split(/\s+/).length < 4) {
       const msg = "الرجاء إدخال اسمك الرباعي على الأقل.";
       setError(msg);
       toast({ variant: "destructive", title: "خطأ في الإدخال", description: msg });
-      setIsLoading(false);
       return;
     }
     
@@ -135,7 +132,6 @@ export default function SignupPage() {
         const msg = "رقم الهاتف يجب أن يتكون من 9 أرقام بالضبط.";
         setError(msg);
         toast({ variant: "destructive", title: "خطأ في رقم الهاتف", description: msg });
-        setIsLoading(false);
         return;
     }
 
@@ -143,7 +139,6 @@ export default function SignupPage() {
       const msg = "كلمتا المرور غير متطابقتين";
       setError(msg);
       toast({ variant: "destructive", title: "خطأ", description: msg });
-      setIsLoading(false);
       return;
     }
     
@@ -151,7 +146,6 @@ export default function SignupPage() {
       const msg = "الرجاء اختيار موقعك";
       setError(msg);
       toast({ variant: "destructive", title: "خطأ", description: msg });
-      setIsLoading(false);
       return;
     }
     
@@ -159,10 +153,10 @@ export default function SignupPage() {
       const msg = "الرجاء إدخال اسم وعنوان الشبكة.";
       setError(msg);
       toast({ variant: "destructive", title: "بيانات الشبكة ناقصة", description: msg });
-      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     const email = `${phone}@shabakat.app`;
 
     try {
@@ -182,7 +176,6 @@ export default function SignupPage() {
         await setDoc(userDocRef, customerData);
 
         if (customerData.accountType === 'network-owner') {
-            // Save network details to localStorage to be picked up by the my-network page
             const newNetworkData = {
                 name: networkName,
                 address: networkAddress,
@@ -196,7 +189,6 @@ export default function SignupPage() {
           description: "يتم توجيهك الآن...",
         });
 
-        // Redirect to my-network if owner, otherwise home
         if (customerData.accountType === 'network-owner') {
              router.push("/account/my-network");
         } else {
