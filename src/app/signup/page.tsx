@@ -31,6 +31,7 @@ import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { type Location } from "../account/app-settings/page";
 import { type Network } from "../account/network-management/page";
+import allLocationsData from "@/lib/locations.json";
 
 
 interface AppSettings {
@@ -38,14 +39,8 @@ interface AppSettings {
     logoUrlDark?: string;
 }
 
-interface LocationsData {
-    all: Location[];
-}
-
 const ThemeAwareLogo = () => {
     const { darkMode } = useTheme();
-    // We can't use the regular useFirestore hook here as it requires auth.
-    // So we initialize a temporary client-side instance just for this component.
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const [isLogoLoading, setIsLogoLoading] = useState(true);
 
@@ -112,34 +107,7 @@ export default function SignupPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [allLocations, setAllLocations] = useState<Location[]>([]);
-  const [areLocationsLoading, setAreLocationsLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch locations manually since useDoc/useCollection require auth
-    const fetchLocations = async () => {
-      setAreLocationsLoading(true);
-      try {
-        const { firestore: fs } = initializeFirebase();
-        const locationsDocRef = doc(fs, "settings", "locations");
-        const docSnap = await getDoc(locationsDocRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data() as LocationsData;
-          setAllLocations(data.all || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch locations for signup:", error);
-        toast({
-            variant: "destructive",
-            title: "خطأ في تحميل البيانات",
-            description: "لم نتمكن من تحميل قائمة المواقع. يرجى المحاولة مرة أخرى."
-        });
-      } finally {
-        setAreLocationsLoading(false);
-      }
-    };
-    fetchLocations();
-  }, [toast]);
+  const allLocations: Location[] = allLocationsData;
 
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -215,15 +183,12 @@ export default function SignupPage() {
                 categories: []
             };
             
-            // It's safer to read the document first then update it to avoid race conditions.
-            // But for signup, arrayUnion is generally safe if the doc is guaranteed to exist.
             const networksDocSnap = await getDoc(networksDocRef);
             if (networksDocSnap.exists()) {
                 await updateDoc(networksDocRef, {
                     all: arrayUnion(newNetwork)
                 });
             } else {
-                // If the document doesn't exist, create it.
                 await setDoc(networksDocRef, { all: [newNetwork] });
             }
 
@@ -343,7 +308,7 @@ export default function SignupPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2 text-right">
                   <Label htmlFor="location">موقعك</Label>
-                  <Select dir="rtl" onValueChange={setLocation} value={location} required disabled={areLocationsLoading}>
+                  <Select dir="rtl" onValueChange={setLocation} value={location} required>
                     <SelectTrigger id="location">
                       <SelectValue placeholder="اختر موقعك" />
                     </SelectTrigger>
