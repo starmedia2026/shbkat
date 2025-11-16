@@ -8,12 +8,11 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import paymentMethodsData from "@/lib/payment-methods.json";
 import Image from "next/image";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
-
-const paymentMethods = paymentMethodsData;
+import { type PaymentMethod } from "@/app/account/payment-management/page";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const DEFAULT_SUPPORT_PHONE = "770326828";
 
@@ -21,26 +20,45 @@ interface AppSettings {
   supportPhoneNumber?: string;
 }
 
+interface PaymentMethodsData {
+    all: PaymentMethod[];
+}
+
 export default function TopUpPage() {
-  const [selectedPayment, setSelectedPayment] = useState<(typeof paymentMethods)[0] | null>(paymentMethods[0] || null);
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
+
+  const paymentMethodsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "paymentMethods");
+  }, [firestore]);
+
+  const { data: paymentMethodsData, isLoading: arePaymentMethodsLoading } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
+  const paymentMethods = paymentMethodsData?.all || [];
+  
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(null);
+
+  React.useEffect(() => {
+      if (!arePaymentMethodsLoading && paymentMethods.length > 0 && !selectedPayment) {
+          setSelectedPayment(paymentMethods[0]);
+      }
+  }, [paymentMethods, arePaymentMethodsLoading, selectedPayment]);
+
 
   const appSettingsDocRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, "settings", "app");
   }, [firestore]);
 
-  const { data: appSettings } = useDoc<AppSettings>(appSettingsDocRef);
+  const { data: appSettings, isLoading: areAppSettingsLoading } = useDoc<AppSettings>(appSettingsDocRef);
 
   const handleWhatsAppRedirect = () => {
-    // Read directly from appSettings state which is updated by useDoc
     const supportPhoneNumber = appSettings?.supportPhoneNumber || DEFAULT_SUPPORT_PHONE;
     const message = encodeURIComponent("مرحباً، أود إرسال إشعار الدفع.");
     window.open(`https://wa.me/967${supportPhoneNumber}?text=${message}`, "_blank");
   };
-
-  const { toast } = useToast();
+    
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(() => {
         toast({
@@ -51,6 +69,8 @@ export default function TopUpPage() {
         console.error("Failed to copy to clipboard:", err);
     });
   };
+
+  const isLoading = arePaymentMethodsLoading || areAppSettingsLoading;
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -66,16 +86,22 @@ export default function TopUpPage() {
             <p className="text-right text-muted-foreground text-sm px-2">اختر الحساب الذي تود التحويل إليه.</p>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {paymentMethods.map((method) => (
-                <PaymentOption 
-                    key={method.id}
-                    method={method}
-                    isSelected={selectedPayment?.id === method.id}
-                    onSelect={() => setSelectedPayment(method)}
-                />
-            ))}
-        </div>
+        {isLoading ? (
+             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                 {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-square w-full rounded-xl" />)}
+            </div>
+        ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {paymentMethods.map((method) => (
+                    <PaymentOption 
+                        key={method.id}
+                        method={method}
+                        isSelected={selectedPayment?.id === method.id}
+                        onSelect={() => setSelectedPayment(method)}
+                    />
+                ))}
+            </div>
+        )}
 
         {selectedPayment && (
             <div>
@@ -116,6 +142,7 @@ export default function TopUpPage() {
             onClick={handleWhatsAppRedirect}
             className="w-full py-6 text-base font-bold bg-green-600 hover:bg-green-700 text-white"
             size="lg"
+            disabled={isLoading}
           >
             <Upload className="ml-2 h-5 w-5" />
             رفع صورة الإيصال عبر واتساب
@@ -126,7 +153,7 @@ export default function TopUpPage() {
   );
 }
 
-function PaymentOption({ method, isSelected, onSelect }: { method: (typeof paymentMethods)[0]; isSelected: boolean; onSelect: () => void; }) {
+function PaymentOption({ method, isSelected, onSelect }: { method: PaymentMethod; isSelected: boolean; onSelect: () => void; }) {
     return (
         <div 
             onClick={onSelect}
