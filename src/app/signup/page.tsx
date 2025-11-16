@@ -41,32 +41,17 @@ interface AppSettings {
 
 const ThemeAwareLogo = () => {
     const { darkMode } = useTheme();
-    const [logoUrl, setLogoUrl] = useState<string | null>(null);
-    const [isLogoLoading, setIsLogoLoading] = useState(true);
+    const firestore = useFirestore();
+    const appSettingsDocRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, "settings", "app");
+    }, [firestore]);
+    const { data: appSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(appSettingsDocRef);
 
-    useEffect(() => {
-        const fetchLogo = async () => {
-            try {
-                const { firestore } = initializeFirebase();
-                const appSettingsDocRef = doc(firestore, "settings", "app");
-                const docSnap = await getDoc(appSettingsDocRef);
-                if (docSnap.exists()) {
-                    const settings = docSnap.data() as AppSettings;
-                    setLogoUrl(darkMode ? settings.logoUrlDark || settings.logoUrlLight || null : settings.logoUrlLight || null);
-                }
-            } catch (error) {
-                console.error("Failed to fetch logo for signup page:", error);
-            } finally {
-                setIsLogoLoading(false);
-            }
-        };
-        fetchLogo();
-    }, [darkMode]);
-
-
+    const logoUrl = darkMode ? appSettings?.logoUrlDark : appSettings?.logoUrlLight;
     const fallbackLogo = "https://i.postimg.cc/76FCwnKs/44.png";
 
-    if (isLogoLoading) {
+    if (isSettingsLoading) {
         return (
             <div className="flex flex-col items-center justify-center gap-6 h-[118px]">
                  <div className="h-[120px] w-[200px] bg-transparent"></div>
