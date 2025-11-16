@@ -31,6 +31,7 @@ import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { type Location } from "../account/app-settings/page";
 import { type Network } from "../account/network-management/page";
+import locationsData from '@/data/locations.json';
 
 
 interface AppSettings {
@@ -38,9 +39,7 @@ interface AppSettings {
     logoUrlDark?: string;
 }
 
-interface LocationsData {
-    all: Location[];
-}
+const allLocations: Location[] = locationsData;
 
 const ThemeAwareLogo = () => {
     const { darkMode } = useTheme();
@@ -93,30 +92,6 @@ export default function SignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-
-  const [allLocations, setAllLocations] = useState<Location[]>([]);
-  const [areLocationsLoading, setAreLocationsLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch locations manually since useDoc/useCollection require auth
-    const fetchLocations = async () => {
-      try {
-        // We initialize a temporary instance because the hook-based one might not be ready
-        const { firestore: fs } = initializeFirebase();
-        const locationsDocRef = doc(fs, "settings", "locations");
-        const docSnap = await getDoc(locationsDocRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data() as LocationsData;
-          setAllLocations(data.all || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch locations for signup:", error);
-      } finally {
-        setAreLocationsLoading(false);
-      }
-    };
-    fetchLocations();
-  }, []);
 
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -206,7 +181,7 @@ export default function SignupPage() {
         });
         
         if (customerData.accountType === 'network-owner') {
-            router.push("/account/my-network");
+            router.push("/home");
         } else {
             router.push("/home");
         }
@@ -318,7 +293,7 @@ export default function SignupPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2 text-right">
                   <Label htmlFor="location">موقعك</Label>
-                  <Select dir="rtl" onValueChange={setLocation} value={location} required disabled={areLocationsLoading}>
+                  <Select dir="rtl" onValueChange={setLocation} value={location} required>
                     <SelectTrigger id="location">
                       <SelectValue placeholder="اختر موقعك" />
                     </SelectTrigger>

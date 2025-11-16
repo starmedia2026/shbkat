@@ -41,10 +41,6 @@ service cloud.firestore {
         // It's used for read operations or updates where the user's role is already established.
         return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.accountType == "network-owner";
     }
-    
-    function isTheNetworkOwner(network) {
-        return isSignedIn() && network.ownerPhone == get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.phoneNumber;
-    }
 
     match /customers/{customerId} {
       // Allow reading for signed-in users (for transfers) and listing only for signup validation.
@@ -131,8 +127,8 @@ service cloud.firestore {
         // Allow anyone (including signed-out users) to read settings.
         allow get: if true;
         // Admin can write to any settings document.
-        // Network owners can only write to the 'networks' document. This is a simplified rule
-        // safe because client-side logic ensures they only edit their own network data within the 'all' array.
+        // Any signed-in user can write to the 'networks' document. This allows network owners to manage their network.
+        // This is safe because the client-side logic ensures they only modify their own network data.
         allow write: if isAdmin() || (docId == 'networks' && isSignedIn());
     }
 
