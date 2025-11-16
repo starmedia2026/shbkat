@@ -8,10 +8,12 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { paymentMethods } from "@/lib/payment-methods";
+import paymentMethodsData from "@/lib/payment-methods.json";
 import Image from "next/image";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
+
+const paymentMethods = paymentMethodsData;
 
 const DEFAULT_SUPPORT_PHONE = "770326828";
 
