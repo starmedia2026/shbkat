@@ -127,7 +127,7 @@ service cloud.firestore {
         // Allow anyone (including signed-out users) to read settings.
         allow get: if true;
         // Admin can write to any settings document.
-        // For the 'networks' document, any signed-in user can write.
+        // Any signed-in user can write to the 'networks' document.
         // This is safe because the client-side logic ensures they only modify their own network.
         allow write: if isAdmin() || (docId == 'networks' && isSignedIn());
     }
