@@ -169,13 +169,10 @@ export default function SignupPage() {
             };
             
             const networksDocSnap = await getDoc(networksDocRef);
-            if (networksDocSnap.exists()) {
-                await updateDoc(networksDocRef, {
-                    all: arrayUnion(newNetwork)
-                });
-            } else {
-                await setDoc(networksDocRef, { all: [newNetwork] });
-            }
+            const currentNetworks = networksDocSnap.exists() ? networksDocSnap.data().all : [];
+            const updatedNetworks = [...currentNetworks, newNetwork];
+            
+            await setDoc(networksDocRef, { all: updatedNetworks });
 
             toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح. يمكنك الآن إدارتها." });
         }
