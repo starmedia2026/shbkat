@@ -366,10 +366,15 @@ function MyNetworkContent() {
                 </CardContent>
                 </Card>
             ) : (
-                <Button variant="secondary" className="w-full py-6 text-lg" onClick={handleAddNetwork}>
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    إضافة شبكتي
-                </Button>
+                <div className="text-center text-muted-foreground pt-10">
+                    <h2 className="text-xl font-bold">لا تملك شبكة بعد</h2>
+                    <p className="mt-2">إذا قمت بالتسجيل كمالك شبكة ولم تظهر شبكتك، حاول تحديث الصفحة.</p>
+                    <p className="mt-1">إذا استمرت المشكلة، تواصل مع الدعم.</p>
+                    <Button variant="secondary" className="w-full mt-6" onClick={handleAddNetwork}>
+                        <PlusCircle className="mr-2 h-5 w-5" />
+                        إضافة شبكتي
+                    </Button>
+                </div>
             )}
         </div>
   );
