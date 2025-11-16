@@ -147,10 +147,12 @@ function MyNetworkContent() {
         const phone = user.email.split('@')[0];
         const ownedNetwork = allNetworks.find(n => n.ownerPhone === phone);
         setNetwork(ownedNetwork || null);
+    } else if (user?.email && !isDataLoading && allNetworks.length === 0) {
+        // This handles the case where the user is the first network owner.
+        setNetwork(null);
     }
-  }, [user, allNetworks]);
+  }, [user, allNetworks, isDataLoading]);
   
-
   const handleSave = useCallback(async (updatedNetworks: Network[]) => {
     if (!networksDocRef) return;
     setIsSaving(true);
@@ -170,6 +172,40 @@ function MyNetworkContent() {
     }
   }, [networksDocRef, toast]);
   
+    // Effect to handle pending network creation from localStorage
+  useEffect(() => {
+    if (isDataLoading || !user) return; // Wait for data and user to be loaded
+
+    const pendingNetworkJSON = localStorage.getItem('pending_network');
+    if (pendingNetworkJSON) {
+        try {
+            const pendingNetwork = JSON.parse(pendingNetworkJSON);
+            const phone = user.email?.split('@')[0];
+
+            // Ensure this action is for the current user and the network doesn't already exist
+            if (pendingNetwork.phone === phone && !allNetworks.some(n => n.ownerPhone === phone)) {
+                
+                const newNetwork: Network = {
+                    id: `network-${Date.now()}`,
+                    name: pendingNetwork.name,
+                    logo: "",
+                    address: pendingNetwork.address,
+                    ownerPhone: phone,
+                    categories: []
+                };
+                
+                const updatedNetworks = [...allNetworks, newNetwork];
+                handleSave(updatedNetworks);
+            }
+        } catch (e) {
+            console.error("Error processing pending network:", e);
+        } finally {
+            localStorage.removeItem('pending_network');
+        }
+    }
+  }, [isDataLoading, allNetworks, user, handleSave]);
+
+
   const updateAndSave = (updatedNetwork: Network) => {
     const networksToSave = allNetworks.map(n => n.id === updatedNetwork.id ? updatedNetwork : n);
     handleSave(networksToSave);

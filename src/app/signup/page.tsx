@@ -23,7 +23,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase, initializeFirebase } from "@/firebase";
-import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -166,11 +166,9 @@ export default function SignupPage() {
     const email = `${phone}@shabakat.app`;
 
     try {
-        // Step 1: Create the user in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Step 2: Create the customer document in Firestore
         const customerData = {
           id: user.uid,
           name: name,
@@ -183,42 +181,27 @@ export default function SignupPage() {
         const userDocRef = doc(firestore, "customers", user.uid);
         await setDoc(userDocRef, customerData);
 
-        // Step 3: If network owner, create the network
         if (customerData.accountType === 'network-owner') {
-             try {
-                const networksDocRef = doc(firestore, "settings", "networks");
-                const networksDocSnap = await getDoc(networksDocRef);
-                const currentNetworks = networksDocSnap.exists() ? (networksDocSnap.data().all as Network[]) : [];
-                
-                const newNetwork: Network = {
-                    id: `network-${Date.now()}`,
-                    name: networkName,
-                    address: networkAddress,
-                    ownerPhone: phone,
-                    categories: []
-                };
-
-                const updatedNetworks = [...currentNetworks, newNetwork];
-                await setDoc(networksDocRef, { all: updatedNetworks });
-                toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح." });
-
-            } catch (networkError: any) {
-                 const permissionError = new FirestorePermissionError({
-                    path: `settings/networks`,
-                    operation: 'write',
-                    requestResourceData: { note: 'Failed to create network document during signup for new network owner' }
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                // We proceed even if network creation fails, but we notify the user.
-                toast({ variant: "destructive", title: "خطأ في إنشاء الشبكة", description: "تم إنشاء حسابك، لكن فشل إنشاء الشبكة. يرجى إضافتها يدوياً من صفحة حسابي." });
-            }
+            // Save network details to localStorage to be picked up by the my-network page
+            const newNetworkData = {
+                name: networkName,
+                address: networkAddress,
+                phone: phone,
+            };
+            localStorage.setItem('pending_network', JSON.stringify(newNetworkData));
         }
         
         toast({
           title: "تم إنشاء الحساب بنجاح!",
-          description: "يتم تسجيل دخولك الآن...",
+          description: "يتم توجيهك الآن...",
         });
-        router.push("/home");
+
+        // Redirect to my-network if owner, otherwise home
+        if (customerData.accountType === 'network-owner') {
+             router.push("/account/my-network");
+        } else {
+             router.push("/home");
+        }
       
     } catch (error: any) {
         let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
