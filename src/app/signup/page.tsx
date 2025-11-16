@@ -55,7 +55,6 @@ const ThemeAwareLogo = () => {
         return (
             <div className="flex flex-col items-center justify-center gap-6 h-[118px]">
                  <div className="h-[120px] w-[200px] bg-transparent"></div>
-                 <Loader2 className="h-8 w-8 animate-spin text-black dark:text-white" />
             </div>
         );
     }
