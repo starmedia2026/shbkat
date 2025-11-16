@@ -30,15 +30,12 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { type Location } from "../account/app-settings/page";
+import locationsData from "@/data/locations.json";
 
 
 interface AppSettings {
     logoUrlLight?: string;
     logoUrlDark?: string;
-}
-
-interface LocationsData {
-    all: Location[];
 }
 
 const ThemeAwareLogo = () => {
@@ -93,28 +90,7 @@ export default function SignupPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [allLocations, setAllLocations] = useState<Location[]>([]);
-  const [areLocationsLoading, setAreLocationsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchLocations = async () => {
-      if (!firestore) return;
-      setAreLocationsLoading(true);
-      try {
-        const locationsDocRef = doc(firestore, "settings", "locations");
-        const docSnap = await getDoc(locationsDocRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data() as LocationsData;
-          setAllLocations(data.all || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch locations for signup:", error);
-      } finally {
-        setAreLocationsLoading(false);
-      }
-    };
-    fetchLocations();
-  }, [firestore]);
+  const allLocations: Location[] = locationsData;
 
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -301,7 +277,7 @@ export default function SignupPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2 text-right">
                   <Label htmlFor="location">موقعك</Label>
-                  <Select dir="rtl" onValueChange={setLocation} value={location} required disabled={areLocationsLoading}>
+                  <Select dir="rtl" onValueChange={setLocation} value={location} required>
                     <SelectTrigger id="location">
                       <SelectValue placeholder="اختر موقعك" />
                     </SelectTrigger>
