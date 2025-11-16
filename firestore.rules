@@ -11,7 +11,7 @@
  * - /customers/{customerId}/notifications/{notificationId}: Notifications for a customer.
  * - /customers/{customerId}/favorites/{networkId}: A user's favorite networks.
  * - /cards/{cardId}: Stores scratch card information.
- * - /settings/theme: Stores global theme settings.
+ * - /settings/{docId}: Stores global settings like theme, networks, and locations.
  * - /adverts/{advertId}: Stores advertisement images for the home page carousel.
  * - /admin_notifications/{notificationId}: Notifications specifically for the admin.
  */
@@ -124,10 +124,11 @@ service cloud.firestore {
     }
 
     match /settings/{docId} {
-        // Allow anyone (including signed-out users) to read settings like theme.
+        // Allow anyone (including signed-out users) to read settings.
         allow get: if true;
-        // Only the admin can change the settings.
-        allow write: if isAdmin();
+        // Admin can write to any settings document.
+        // Network owners can only write to the 'networks' document.
+        allow write: if isAdmin() || (isNetworkOwner() && docId == 'networks');
     }
 
     match /adverts/{advertId} {
