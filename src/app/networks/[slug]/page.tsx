@@ -210,7 +210,7 @@ function PackageCard({ category, network }: { category: NetworkCategory, network
                 const baseOpData = { date: now, status: 'completed' as const, cardNumber: cardDoc.id, operationNumber: generateOperationNumber() };
                 const baseNotifData = { date: now, read: false, cardNumber: cardDoc.id };
                 
-                transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت: ${category.name}`, amount: -category.price });
+                transaction.set(doc(collection(firestore, `customers/${user.uid}/operations`)), { ...baseOpData, type: "purchase", description: `شراء كرت (${network.name})`, amount: -category.price });
                 transaction.set(doc(collection(firestore, `customers/${user.uid}/notifications`)), { ...baseNotifData, type: 'purchase', title: 'شراء كرت', body: `تم شراء ${category.name} بنجاح.`, amount: -category.price });
 
                 return cardDoc.id;
