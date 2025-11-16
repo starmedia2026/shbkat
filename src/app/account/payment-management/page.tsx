@@ -44,6 +44,7 @@ import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
+import defaultPaymentMethods from '@/data/payment-methods.json';
 
 
 export interface PaymentMethod {
@@ -115,7 +116,45 @@ function PaymentManagementContent() {
   }, [firestore]);
 
   const { data: paymentMethodsData, isLoading } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
-  const paymentMethodsState = paymentMethodsData?.all || [];
+
+  const [paymentMethodsState, setPaymentMethodsState] = useState<PaymentMethod[]>([]);
+  const [isSeeding, setIsSeeding] = useState(true);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (paymentMethodsData && paymentMethodsData.all && paymentMethodsData.all.length > 0) {
+        setPaymentMethodsState(paymentMethodsData.all);
+        setIsSeeding(false);
+      } else if (!paymentMethodsData) {
+        // Data is not in Firestore, let's seed it from the default file
+        const seedData = defaultPaymentMethods.paymentMethods as PaymentMethod[];
+        setPaymentMethodsState(seedData);
+        if (paymentMethodsDocRef) {
+          setDoc(paymentMethodsDocRef, { all: seedData }, { merge: true })
+            .then(() => {
+              toast({ title: "تمت تهيئة طرق الدفع", description: "تم إنشاء قائمة طرق الدفع الافتراضية." });
+              setIsSeeding(false);
+            })
+            .catch(error => {
+                const permissionError = new FirestorePermissionError({
+                    path: paymentMethodsDocRef.path,
+                    operation: 'write',
+                    requestResourceData: { all: seedData }
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                setIsSeeding(false);
+            });
+        } else {
+            setIsSeeding(false);
+        }
+      } else {
+        // Doc exists but is empty
+        setPaymentMethodsState([]);
+        setIsSeeding(false);
+      }
+    }
+  }, [paymentMethodsData, isLoading, paymentMethodsDocRef, toast]);
+
 
   const [isSaving, setIsSaving] = useState(false);
   const [editingMethodId, setEditingMethodId] = useState<string | null>(null);
@@ -133,6 +172,7 @@ function PaymentManagementContent() {
     setIsSaving(true);
     try {
         await setDoc(paymentMethodsDocRef, { all: updatedMethods }, { merge: true });
+        // No need to setPaymentMethodsState here as useDoc will trigger a re-render with fresh data
         toast({ title: "تم الحفظ", description: "تم حفظ قائمة طرق الدفع بنجاح." });
     } catch (error) {
         console.error(error);
@@ -163,7 +203,8 @@ function PaymentManagementContent() {
         }
     };
     const newMethods = [...paymentMethodsState, newMethod];
-    handleSave(newMethods);
+    // Don't save yet, save when user confirms edit
+    setPaymentMethodsState(newMethods); 
     setEditingMethodId(newId);
     setEditFormData({ name: "", description: "", accountName: "", accountNumber: "", logoUrl: ""});
   };
@@ -192,11 +233,14 @@ function PaymentManagementContent() {
 
   const cancelEditing = (methodId: string) => {
       const originalMethod = paymentMethodsState.find(m => m.id === methodId);
+      // If it was a new method that was cancelled, remove it from the state
       if (originalMethod && !originalMethod.name) {
-          handleSave(paymentMethodsState.filter(m => m.id !== methodId));
+          setPaymentMethodsState(paymentMethodsState.filter(m => m.id !== methodId));
       }
       setEditingMethodId(null);
   }
+  
+  const finalIsLoading = isLoading || isSeeding;
 
   return (
         <div className="space-y-6">
@@ -206,7 +250,7 @@ function PaymentManagementContent() {
                     <span>جاري الحفظ...</span>
                 </div>
             )}
-          {isLoading ? (
+          {finalIsLoading ? (
             <LoadingSkeleton />
           ) : (
             paymentMethodsState.map((method) => (
@@ -346,3 +390,5 @@ const EditForm = ({ formData, setFormData, onSave, onCancel }: { formData: any, 
         </div>
     )
 };
+
+    

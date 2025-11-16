@@ -34,13 +34,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDoc, useFirestore, useMemoFirebase, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, doc, writeBatch, getDocs, query, where, limit, runTransaction } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
 import { type PaymentMethod } from "@/app/account/payment-management/page";
+import defaultPaymentMethods from '@/data/payment-methods.json';
 
 
 interface Customer {
@@ -111,7 +112,14 @@ function WithdrawContent() {
   }, [firestore]);
 
   const { data: paymentMethodsData, isLoading: arePaymentMethodsLoading } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
-  const withdrawalMethods = paymentMethodsData?.all || [];
+  
+  const withdrawalMethods = useMemo(() => {
+    if (paymentMethodsData && paymentMethodsData.all && paymentMethodsData.all.length > 0) {
+      return paymentMethodsData.all;
+    }
+    return defaultPaymentMethods.paymentMethods as PaymentMethod[];
+  }, [paymentMethodsData]);
+
 
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -283,7 +291,7 @@ function WithdrawContent() {
           <CardTitle className="text-lg">اختر طريقة السحب</CardTitle>
         </CardHeader>
         <CardContent>
-          {arePaymentMethodsLoading ? (
+          {arePaymentMethodsLoading && withdrawalMethods.length === 0 ? (
             <div className="grid grid-cols-2 gap-4">
               <Skeleton className="h-28 w-full" />
               <Skeleton className="h-28 w-full" />
@@ -412,3 +420,5 @@ function LoadingSkeleton() {
         </div>
     );
 }
+
+    
