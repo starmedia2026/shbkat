@@ -13,7 +13,6 @@ import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { type PaymentMethod } from "@/app/account/payment-management/page";
 import { Skeleton } from "@/components/ui/skeleton";
-import defaultPaymentMethods from '@/data/payment-methods.json';
 
 
 const DEFAULT_SUPPORT_PHONE = "770326828";
@@ -39,11 +38,7 @@ export default function TopUpPage() {
   const { data: paymentMethodsData, isLoading: arePaymentMethodsLoading } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
   
   const paymentMethods = useMemo(() => {
-    if (paymentMethodsData && paymentMethodsData.all && paymentMethodsData.all.length > 0) {
-      return paymentMethodsData.all;
-    }
-    // Fallback to default if Firestore is empty or loading
-    return defaultPaymentMethods.paymentMethods as PaymentMethod[];
+    return paymentMethodsData?.all || [];
   }, [paymentMethodsData]);
 
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(null);
@@ -99,7 +94,7 @@ export default function TopUpPage() {
              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-square w-full rounded-xl" />)}
             </div>
-        ) : (
+        ) : paymentMethods.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {paymentMethods.map((method) => (
                     <PaymentOption 
@@ -110,6 +105,8 @@ export default function TopUpPage() {
                     />
                 ))}
             </div>
+        ) : (
+          <p className="text-center text-muted-foreground">لا توجد طرق دفع متاحة حالياً.</p>
         )}
 
         {selectedPayment && (
@@ -186,5 +183,3 @@ function PaymentOption({ method, isSelected, onSelect }: { method: PaymentMethod
         </div>
     );
 }
-
-    

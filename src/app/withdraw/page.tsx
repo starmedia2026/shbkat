@@ -41,7 +41,6 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
 import { type PaymentMethod } from "@/app/account/payment-management/page";
-import defaultPaymentMethods from '@/data/payment-methods.json';
 
 
 interface Customer {
@@ -114,10 +113,7 @@ function WithdrawContent() {
   const { data: paymentMethodsData, isLoading: arePaymentMethodsLoading } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
   
   const withdrawalMethods = useMemo(() => {
-    if (paymentMethodsData && paymentMethodsData.all && paymentMethodsData.all.length > 0) {
-      return paymentMethodsData.all;
-    }
-    return defaultPaymentMethods.paymentMethods as PaymentMethod[];
+    return paymentMethodsData?.all || [];
   }, [paymentMethodsData]);
 
 
@@ -296,7 +292,7 @@ function WithdrawContent() {
               <Skeleton className="h-28 w-full" />
               <Skeleton className="h-28 w-full" />
             </div>
-          ) : (
+          ) : withdrawalMethods.length > 0 ? (
              <div className="grid grid-cols-2 gap-4">
               {withdrawalMethods.map(method => (
                 <PaymentOption
@@ -307,6 +303,8 @@ function WithdrawContent() {
                 />
               ))}
             </div>
+          ) : (
+            <p className="text-center text-muted-foreground">لا توجد طرق سحب متاحة حالياً.</p>
           )}
         </CardContent>
       </Card>
@@ -420,5 +418,3 @@ function LoadingSkeleton() {
         </div>
     );
 }
-
-    

@@ -115,45 +115,38 @@ function PaymentManagementContent() {
     return doc(firestore, "settings", "paymentMethods");
   }, [firestore]);
 
-  const { data: paymentMethodsData, isLoading } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
+  const { data: paymentMethodsData, isLoading, refetch } = useDoc<PaymentMethodsData>(paymentMethodsDocRef);
 
   const [paymentMethodsState, setPaymentMethodsState] = useState<PaymentMethod[]>([]);
-  const [isSeeding, setIsSeeding] = useState(true);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (paymentMethodsData && paymentMethodsData.all && paymentMethodsData.all.length > 0) {
-        setPaymentMethodsState(paymentMethodsData.all);
-        setIsSeeding(false);
-      } else if (!paymentMethodsData) {
-        // Data is not in Firestore, let's seed it from the default file
-        const seedData = defaultPaymentMethods.paymentMethods as PaymentMethod[];
-        setPaymentMethodsState(seedData);
-        if (paymentMethodsDocRef) {
-          setDoc(paymentMethodsDocRef, { all: seedData }, { merge: true })
-            .then(() => {
-              toast({ title: "تمت تهيئة طرق الدفع", description: "تم إنشاء قائمة طرق الدفع الافتراضية." });
-              setIsSeeding(false);
-            })
-            .catch(error => {
-                const permissionError = new FirestorePermissionError({
-                    path: paymentMethodsDocRef.path,
-                    operation: 'write',
-                    requestResourceData: { all: seedData }
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                setIsSeeding(false);
+    if (isLoading) return; // Wait until loading is complete
+
+    if (paymentMethodsData) {
+      setPaymentMethodsState(paymentMethodsData.all || []);
+    } else if (!isSeeding && paymentMethodsDocRef) {
+      // If doc doesn't exist, seed it from the default JSON
+      setIsSeeding(true);
+      const seedData = defaultPaymentMethods.paymentMethods as PaymentMethod[];
+      setDoc(paymentMethodsDocRef, { all: seedData }, { merge: true })
+        .then(() => {
+          toast({ title: "تمت تهيئة طرق الدفع", description: "تم إنشاء قائمة طرق الدفع الافتراضية." });
+          // The useDoc hook will automatically update with the new data.
+        })
+        .catch(error => {
+            const permissionError = new FirestorePermissionError({
+                path: paymentMethodsDocRef.path,
+                operation: 'write',
+                requestResourceData: { all: seedData }
             });
-        } else {
+            errorEmitter.emit('permission-error', permissionError);
+        })
+        .finally(() => {
             setIsSeeding(false);
-        }
-      } else {
-        // Doc exists but is empty
-        setPaymentMethodsState([]);
-        setIsSeeding(false);
-      }
+        });
     }
-  }, [paymentMethodsData, isLoading, paymentMethodsDocRef, toast]);
+  }, [paymentMethodsData, isLoading, paymentMethodsDocRef, toast, isSeeding]);
 
 
   const [isSaving, setIsSaving] = useState(false);
@@ -172,7 +165,7 @@ function PaymentManagementContent() {
     setIsSaving(true);
     try {
         await setDoc(paymentMethodsDocRef, { all: updatedMethods }, { merge: true });
-        // No need to setPaymentMethodsState here as useDoc will trigger a re-render with fresh data
+        // The useDoc hook will update the state, no need to call setPaymentMethodsState here
         toast({ title: "تم الحفظ", description: "تم حفظ قائمة طرق الدفع بنجاح." });
     } catch (error) {
         console.error(error);
@@ -203,8 +196,8 @@ function PaymentManagementContent() {
         }
     };
     const newMethods = [...paymentMethodsState, newMethod];
-    // Don't save yet, save when user confirms edit
-    setPaymentMethodsState(newMethods); 
+    // Don't save yet, just update local state for the edit form to appear
+    setPaymentMethodsState(newMethods);
     setEditingMethodId(newId);
     setEditFormData({ name: "", description: "", accountName: "", accountNumber: "", logoUrl: ""});
   };
@@ -233,14 +226,14 @@ function PaymentManagementContent() {
 
   const cancelEditing = (methodId: string) => {
       const originalMethod = paymentMethodsState.find(m => m.id === methodId);
-      // If it was a new method that was cancelled, remove it from the state
+      // If it was a new method that was cancelled, remove it from the local state
       if (originalMethod && !originalMethod.name) {
           setPaymentMethodsState(paymentMethodsState.filter(m => m.id !== methodId));
       }
       setEditingMethodId(null);
   }
   
-  const finalIsLoading = isLoading || isSeeding;
+  const finalIsLoading = isLoading && paymentMethodsState.length === 0;
 
   return (
         <div className="space-y-6">
@@ -390,5 +383,3 @@ const EditForm = ({ formData, setFormData, onSave, onCancel }: { formData: any, 
         </div>
     )
 };
-
-    
