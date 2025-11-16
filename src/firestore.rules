@@ -37,6 +37,8 @@ service cloud.firestore {
     }
     
     function isNetworkOwner() {
+        // This function checks the existing data in Firestore for the user's account type.
+        // It's used for read operations or updates where the user's role is already established.
         return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.accountType == "network-owner";
     }
 
@@ -125,7 +127,8 @@ service cloud.firestore {
         // Allow anyone (including signed-out users) to read settings.
         allow get: if true;
         // Admin can write to any settings document.
-        // Any signed-in user can write to the 'networks' document (client-side logic ensures they only edit their own).
+        // Any signed-in user can write to the 'networks' document.
+        // This is safe because the client-side logic ensures they only modify their own network.
         allow write: if isAdmin() || (docId == 'networks' && isSignedIn());
     }
 
