@@ -26,8 +26,58 @@
                 "iconColor": "text-red-600 dark:text-red-400",
                 "borderColor": "border-red-500"
             }
+        },
+        {
+            "id": "haseb",
+            "name": "خدمة حاسب",
+            "description": "تحويل عبر خدمة حاسب",
+            "accountName": "محمد راضي باشادي",
+            "accountNumber": "234567890",
+            "logoUrl": "",
+            "theme": {
+                "iconBg": "bg-gray-100 dark:bg-gray-900/50",
+                "iconColor": "text-gray-600 dark:text-gray-400",
+                "borderColor": "border-gray-500"
+            }
+        },
+        {
+            "id": "alamqi",
+            "name": "شركة العمقي",
+            "description": "تحويل عبر شركة العمقي",
+            "accountName": "محمد راضي باشادي",
+            "accountNumber": "345678901",
+            "logoUrl": "",
+            "theme": {
+                "iconBg": "bg-gray-100 dark:bg-gray-900/50",
+                "iconColor": "text-gray-600 dark:text-gray-400",
+                "borderColor": "border-gray-500"
+            }
+        },
+        {
+            "id": "bcash",
+            "name": "بي كاش",
+            "description": "تحويل عبر محفظة بي كاش",
+            "accountName": "محمد راضي باشادي",
+            "accountNumber": "456789012",
+            "logoUrl": "",
+            "theme": {
+                "iconBg": "bg-gray-100 dark:bg-gray-900/50",
+                "iconColor": "text-gray-600 dark:text-gray-400",
+                "borderColor": "border-gray-500"
+            }
+        },
+        {
+            "id": "bindoul",
+            "name": "بن دول",
+            "description": "تحويل عبر خدمة بن دول",
+            "accountName": "محمد راضي باشادي",
+            "accountNumber": "567890123",
+            "logoUrl": "",
+            "theme": {
+                "iconBg": "bg-gray-100 dark:bg-gray-900/50",
+                "iconColor": "text-gray-600 dark:text-gray-400",
+                "borderColor": "border-gray-500"
+            }
         }
     ]
 }
-
-    
