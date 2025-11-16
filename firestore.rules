@@ -49,8 +49,6 @@ service cloud.firestore {
       allow create: if isOwner(customerId) && request.resource.data.id == customerId;
       
       // An owner can update their own document, or an admin can.
-      // Other signed-in users cannot update another user's balance directly through a simple update.
-      // Transfers and purchases are handled via transactions which have their own implicit security.
       allow update: if isOwner(customerId) || isAdmin();
 
       // An owner can delete their own document, or an admin can.
