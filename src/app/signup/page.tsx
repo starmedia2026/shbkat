@@ -183,25 +183,33 @@ export default function SignupPage() {
         await setDoc(userDocRef, customerData);
 
         if (customerData.accountType === 'network-owner') {
-             // Store pending network in localStorage to be picked up by my-network page
-            const newNetworkData = {
+            const networksDocRef = doc(firestore, "settings", "networks");
+            const newNetwork: Network = {
+                id: `network-${Date.now()}`,
                 name: networkName,
                 address: networkAddress,
-                phone: phone,
+                ownerPhone: phone,
+                categories: []
             };
-            localStorage.setItem('pending_network', JSON.stringify(newNetworkData));
             
-            toast({ title: "تم إنشاء الحساب", description: "جاري إعداد شبكتك..." });
-            // Redirect to my-network page where the network will be created
-            router.push("/account/my-network");
-            return;
+            // Atomically add the new network to the 'all' array.
+            await updateDoc(networksDocRef, {
+                all: arrayUnion(newNetwork)
+            });
+
+            toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح. يمكنك الآن إدارتها." });
         }
         
         toast({
           title: "تم إنشاء الحساب بنجاح!",
           description: "يتم تسجيل دخولك الآن...",
         });
-        router.push("/home");
+        
+        if (customerData.accountType === 'network-owner') {
+            router.push("/account/my-network");
+        } else {
+            router.push("/home");
+        }
       
     } catch (error: any) {
       if (error.code === 'firestore/permission-denied') {

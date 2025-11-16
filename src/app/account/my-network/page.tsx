@@ -143,12 +143,10 @@ function MyNetworkContent() {
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   
   useEffect(() => {
-    if (user?.email && allNetworks.length > 0) {
+    if (user?.email && !isDataLoading) {
         const phone = user.email.split('@')[0];
         const ownedNetwork = allNetworks.find(n => n.ownerPhone === phone);
         setNetwork(ownedNetwork || null);
-    } else if (user?.email && !isDataLoading && allNetworks.length === 0) {
-        setNetwork(null);
     }
   }, [user, allNetworks, isDataLoading]);
   
@@ -170,38 +168,6 @@ function MyNetworkContent() {
         setIsSaving(false);
     }
   }, [networksDocRef, toast]);
-  
-    // Effect to handle pending network creation from localStorage
-  useEffect(() => {
-    if (isDataLoading || !user || !networksDocRef) return;
-
-    const pendingNetworkJSON = localStorage.getItem('pending_network');
-    if (pendingNetworkJSON) {
-        try {
-            const pendingNetwork = JSON.parse(pendingNetworkJSON);
-            const phone = user.email?.split('@')[0];
-
-            if (pendingNetwork.phone === phone && !allNetworks.some(n => n.ownerPhone === phone)) {
-                
-                const newNetwork: Network = {
-                    id: `network-${Date.now()}`,
-                    name: pendingNetwork.name,
-                    logo: "",
-                    address: pendingNetwork.address,
-                    ownerPhone: phone,
-                    categories: []
-                };
-                
-                const updatedNetworks = [...allNetworks, newNetwork];
-                handleSave(updatedNetworks);
-            }
-        } catch (e) {
-            console.error("Error processing pending network:", e);
-        } finally {
-            localStorage.removeItem('pending_network');
-        }
-    }
-  }, [isDataLoading, allNetworks, user, handleSave, networksDocRef]);
 
 
   const updateAndSave = (updatedNetwork: Network) => {
@@ -407,45 +373,38 @@ const CategoryStats = ({ networkId, categoryId }: { networkId: string, categoryI
     const [stats, setStats] = useState({ sold: 0, available: 0 });
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        if (!firestore) return;
-        
-        const fetchStats = async () => {
-            setIsLoading(true);
-            const cardsRef = collection(firestore, "cards");
-            const q = query(
-                cardsRef,
-                where("networkId", "==", networkId),
-                where("categoryId", "==", categoryId)
-            );
-
-            try {
-                const snapshot = await getDocs(q);
-                let soldCount = 0;
-                let availableCount = 0;
-                snapshot.forEach(doc => {
-                    const card = doc.data() as CardData;
-                    if (card.status === 'used' || card.status === 'transferred') {
-                        soldCount++;
-                    } else if (card.status === 'available') {
-                        availableCount++;
-                    }
-                });
-                setStats({ sold: soldCount, available: availableCount });
-            } catch (error) {
-                console.error("Failed to fetch card stats:", error);
-                const permissionError = new FirestorePermissionError({
-                    path: 'cards',
-                    operation: 'list',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchStats();
+    const cardsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, "cards"),
+            where("networkId", "==", networkId),
+            where("categoryId", "==", categoryId)
+        );
     }, [firestore, networkId, categoryId]);
+
+    const { data: cards, isLoading: areCardsLoading } = useCollection<CardData>(cardsQuery);
+    
+    useEffect(() => {
+        if (areCardsLoading) {
+            setIsLoading(true);
+            return;
+        }
+        if (cards) {
+            let soldCount = 0;
+            let availableCount = 0;
+            cards.forEach(card => {
+                if (card.status === 'used' || card.status === 'transferred') {
+                    soldCount++;
+                } else if (card.status === 'available') {
+                    availableCount++;
+                }
+            });
+            setStats({ sold: soldCount, available: availableCount });
+        } else {
+            setStats({ sold: 0, available: 0 });
+        }
+        setIsLoading(false);
+    }, [cards, areCardsLoading]);
     
 
     if (isLoading) {
@@ -586,7 +545,7 @@ const AddCardsForm = ({ networkId, categoryId }: { networkId: string, categoryId
         }).catch((serverError) => {
             const permissionError = new FirestorePermissionError({
                 path: 'cards collection (batch write)',
-                operation: 'write',
+                operation: 'create',
                 requestResourceData: batchData
             });
             errorEmitter.emit('permission-error', permissionError);

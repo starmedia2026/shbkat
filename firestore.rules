@@ -47,8 +47,9 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if true;
 
-      // A user can create their own customer document, but the ID in the data must match their auth UID.
-      allow create: if isOwner(customerId) && request.resource.data.id == customerId;
+      // A user can create their own customer document during signup.
+      // After signup, only admins can create new customer docs.
+      allow create: if isOwner(customerId) || isAdmin();
       
       // An owner can update their own document, or an admin can.
       allow update: if isOwner(customerId) || isAdmin();
