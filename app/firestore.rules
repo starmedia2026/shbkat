@@ -33,7 +33,7 @@ service cloud.firestore {
 
     // The admin is a specific user identified by their phone number/email.
     function isAdmin() {
-       return isSignedIn() && request.auth.token.email == "770326828@shabakat.app";
+       return isSignedIn() && (request.auth.token.email == "770326828@shabakat.app" || request.auth.token.email == "779838290@shabakat.app");
     }
     
     function isNetworkOwner() {

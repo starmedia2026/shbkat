@@ -5,7 +5,7 @@ import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useState, useEffect } from "react";
 
-const ADMIN_PHONE_NUMBER = "770326828";
+export const ADMIN_PHONE_NUMBERS = ["770326828", "779838290"];
 
 interface CustomerData {
     phoneNumber?: string;
@@ -63,7 +63,7 @@ export function useAdmin(): UseAdminResult {
 
   const isLoading = isUserLoading || isCustomerDataLoading;
   
-  const isAdmin = isLoading ? null : (customerData?.accountType === 'admin' || customerData?.phoneNumber === ADMIN_PHONE_NUMBER);
+  const isAdmin = isLoading ? null : (customerData?.accountType === 'admin' || (customerData?.phoneNumber != null && ADMIN_PHONE_NUMBERS.includes(customerData.phoneNumber)));
   const isOwner = isLoading ? null : customerData?.accountType === 'network-owner';
 
   return {

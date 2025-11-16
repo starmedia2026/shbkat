@@ -33,7 +33,7 @@ service cloud.firestore {
 
     // The admin is a specific user identified by their phone number/email.
     function isAdmin() {
-       return isSignedIn() && request.auth.token.email == "770326828@shabakat.app";
+       return isSignedIn() && (request.auth.token.email == "770326828@shabakat.app" || request.auth.token.email == "779838290@shabakat.app");
     }
     
     function isNetworkOwner() {
@@ -127,9 +127,8 @@ service cloud.firestore {
         // Allow anyone (including signed-out users) to read settings.
         allow get: if true;
         // Admin can write to any settings document.
-        // Any signed-in user can write to the 'networks' document.
-        // This is safe because the client-side logic ensures they only modify their own network.
-        allow write: if isAdmin() || (docId == 'networks' && isSignedIn());
+        // Network owners can only write to the 'networks' document.
+        allow write: if isAdmin() || (isNetworkOwner() && docId == 'networks');
     }
 
     match /adverts/{advertId} {

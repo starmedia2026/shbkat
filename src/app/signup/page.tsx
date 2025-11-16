@@ -32,6 +32,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { type Location } from "../account/app-settings/page";
 import { type Network } from "../account/network-management/page";
 import locationsData from '@/data/locations.json';
+import { ADMIN_PHONE_NUMBERS } from "@/hooks/useAdmin";
 
 
 interface AppSettings {
@@ -152,7 +153,7 @@ export default function SignupPage() {
           location: location,
           balance: 0,
           accountNumber: Math.random().toString().slice(2, 12),
-          accountType: phone === "770326828" ? "admin" : accountType,
+          accountType: ADMIN_PHONE_NUMBERS.includes(phone) ? "admin" : accountType,
         };
         const userDocRef = doc(firestore, "customers", user.uid);
         await setDoc(userDocRef, customerData);
