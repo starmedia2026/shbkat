@@ -23,13 +23,15 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase, initializeFirebase } from "@/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { type Location } from "../account/app-settings/page";
+import { type Network } from "../account/network-management/page";
+
 
 interface AppSettings {
     logoUrlLight?: string;
@@ -181,22 +183,29 @@ export default function SignupPage() {
         await setDoc(userDocRef, customerData);
 
         if (customerData.accountType === 'network-owner') {
-            // Instead of writing to DB here, store in localStorage
-            const pendingNetwork = {
+            const networksDocRef = doc(firestore, "settings", "networks");
+            const newNetwork: Network = {
+                id: `network-${Date.now()}`,
                 name: networkName,
                 address: networkAddress,
-                phone: phone,
+                ownerPhone: phone,
+                categories: []
             };
-            localStorage.setItem('pending_network', JSON.stringify(pendingNetwork));
-            router.push("/account/my-network");
-        } else {
-             router.push("/home");
+            
+            // Atomically add the new network to the 'all' array.
+            await updateDoc(networksDocRef, {
+                all: arrayUnion(newNetwork)
+            });
+
+            toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح. يمكنك الآن إدارتها." });
         }
         
         toast({
           title: "تم إنشاء الحساب بنجاح!",
           description: "يتم تسجيل دخولك الآن...",
         });
+        
+        router.push("/home");
       
     } catch (error: any) {
       if (error.code === 'firestore/permission-denied') {
@@ -363,5 +372,3 @@ export default function SignupPage() {
     </main>
   );
 }
-
-    

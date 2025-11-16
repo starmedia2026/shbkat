@@ -46,7 +46,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import Image from "next/image";
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
-import { writeBatch, collection, doc, query, where, getDocs, setDoc, getDoc } from "firebase/firestore";
+import { writeBatch, collection, doc, query, where, getDocs, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -165,34 +165,10 @@ function MyNetworkContent() {
     if (user?.email && !isDataLoading) {
         const phone = user.email.split('@')[0];
         
-        const pendingNetworkJSON = localStorage.getItem('pending_network');
-        if (pendingNetworkJSON) {
-            try {
-                const pendingNetwork = JSON.parse(pendingNetworkJSON);
-                if (pendingNetwork.phone === phone && !allNetworks.some(n => n.ownerPhone === phone)) {
-                    const newNetwork: Network = {
-                        id: `network-${Date.now()}`,
-                        name: pendingNetwork.name,
-                        logo: "",
-                        address: pendingNetwork.address,
-                        ownerPhone: phone,
-                        categories: []
-                    };
-                    const updatedNetworks = [...allNetworks, newNetwork];
-                    handleSave(updatedNetworks); // This will trigger a re-render
-                }
-            } catch (e) {
-                console.error("Error processing pending network:", e);
-            } finally {
-                // Always remove item to prevent retries on error
-                localStorage.removeItem('pending_network');
-            }
-        }
-        
         const ownedNetwork = allNetworks.find(n => n.ownerPhone === phone);
         setNetwork(ownedNetwork || null);
     }
-  }, [user, allNetworks, isDataLoading, handleSave]);
+  }, [user, allNetworks, isDataLoading]);
 
 
   const updateAndSave = (updatedNetwork: Network) => {
@@ -200,22 +176,40 @@ function MyNetworkContent() {
     handleSave(networksToSave);
   };
   
-  const handleAddNetwork = () => {
+  const handleAddNetwork = async () => {
     if (network) {
         toast({ variant: "destructive", title: "لا يمكن الإضافة", description: "يمكنك إدارة شبكة واحدة فقط." });
         return;
     }
     const phone = user?.email?.split('@')[0];
-    if (!phone) {
+    if (!phone || !networksDocRef) {
         toast({ variant: "destructive", title: "خطأ", description: "لا يمكن تحديد رقم الهاتف." });
         return;
     }
-    const newId = `new-network-${Date.now()}`;
-    const newNetwork: Network = { id: newId, name: "", logo: "", address: "", ownerPhone: phone, categories: [] };
-    
-    handleSave([...allNetworks, newNetwork]);
-    setEditingNetworkId(newId);
-    setEditingNetworkData({name: "", logo: "", address: ""});
+    const newNetwork: Network = {
+      id: `network-${Date.now()}`,
+      name: "شبكتي الجديدة", // Default name
+      address: "",
+      ownerPhone: phone,
+      categories: []
+    };
+
+    setIsSaving(true);
+    try {
+      await updateDoc(networksDocRef, {
+        all: arrayUnion(newNetwork)
+      });
+      toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح." });
+    } catch (error) {
+       const permissionError = new FirestorePermissionError({
+            path: networksDocRef.path,
+            operation: 'write',
+            requestResourceData: { note: "Failed to add new network" }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleUpdateNetwork = () => {
@@ -224,10 +218,7 @@ function MyNetworkContent() {
     if (!phone) return;
     const updatedNetwork = { ...network, ...editingNetworkData, ownerPhone: network.ownerPhone || phone };
     
-    const isNew = !allNetworks.some(n => n.id === updatedNetwork.id);
-    const networksToSave = isNew ? [...allNetworks, updatedNetwork] : allNetworks.map(n => n.id === updatedNetwork.id ? updatedNetwork : n);
-
-    handleSave(networksToSave);
+    updateAndSave(updatedNetwork);
     setEditingNetworkId(null);
     setEditingNetworkData({name: "", logo: "", address: ""});
   };
@@ -284,13 +275,7 @@ function MyNetworkContent() {
                         <Input placeholder="عنوان الشبكة" value={editingNetworkData.address} onChange={e => setEditingNetworkData(prev => ({...prev, address: e.target.value}))}/>
                         <div className="flex justify-end gap-2 mt-2">
                             <Button size="icon" variant="ghost" onClick={handleUpdateNetwork}><Save className="h-4 w-4"/></Button>
-                            <Button size="icon" variant="ghost" onClick={() => {
-                                setEditingNetworkId(null);
-                                const originalNetwork = allNetworks.find(n => n.id === network.id);
-                                if (!originalNetwork?.name) { // This means it was a new network being added
-                                    handleSave(allNetworks.filter(n => n.id !== network.id));
-                                }
-                            }}><X className="h-4 w-4"/></Button>
+                            <Button size="icon" variant="ghost" onClick={() => setEditingNetworkId(null)}><X className="h-4 w-4"/></Button>
                         </div>
                     </div>
                     ) : (
@@ -326,7 +311,7 @@ function MyNetworkContent() {
                                     setCategory={setEditingCategory}
                                     onSave={() => handleUpdateCategory()}
                                     onCancel={() => {
-                                        if (category.name === "") {
+                                        if (!category.name) {
                                             const updatedNetwork = { ...network, categories: network.categories.filter(c => c.id !== category.id) };
                                             updateAndSave(updatedNetwork);
                                         }
@@ -359,8 +344,7 @@ function MyNetworkContent() {
             ) : (
                 <div className="text-center text-muted-foreground pt-10">
                     <h2 className="text-xl font-bold">لا تملك شبكة بعد</h2>
-                    <p className="mt-2">إذا قمت بالتسجيل كمالك شبكة ولم تظهر شبكتك، حاول تحديث الصفحة.</p>
-                    <p className="mt-1">إذا استمرت المشكلة، تواصل مع الدعم.</p>
+                    <p className="mt-2">انقر على الزر أدناه لإضافة شبكتك والبدء في إدارتها.</p>
                     <Button variant="secondary" className="w-full mt-6" onClick={handleAddNetwork}>
                         <PlusCircle className="mr-2 h-5 w-5" />
                         إضافة شبكتي
@@ -657,6 +641,10 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
             alert('الرجاء اختيار أو إدخال صلاحية.');
             return;
         }
+        if (!category.capacity) {
+            alert('الرجاء إدخال سعة الباقة.');
+            return;
+        }
         onSave();
     };
 
@@ -707,7 +695,3 @@ const CategoryEditForm = ({ category, setCategory, onSave, onCancel }: { categor
         </div>
     )
 };
-
-    
-
-    
