@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection, useFirestore, useMemoFirebase, errorEmitter, useUser } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, errorEmitter, useUser, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, deleteDoc, writeBatch, runTransaction, getDocs, where, limit } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
-import { allNetworksData, type Network } from "@/lib/networks";
+import { type Network } from "@/app/account/network-management/page";
 
 
 interface Customer {
@@ -79,6 +79,10 @@ interface CardData {
   createdAt: string; // ISO Date
   usedAt?: string; // ISO Date
   usedBy?: string; // UID of user
+}
+
+interface NetworksData {
+    all: Network[];
 }
 
 // Create a lookup map for faster access to network/category names and prices
@@ -136,24 +140,30 @@ function CardSalesContent() {
     const filterCategory = searchParams.get('category');
     const { toast } = useToast();
 
-    const [allNetworks, setAllNetworks] = useState<Network[]>(allNetworksData);
-    const [areNetworksLoading, setAreNetworksLoading] = useState(false);
+    const networksDocRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, "settings", "networks");
+    }, [firestore]);
+    const { data: networksData, isLoading: areNetworksLoading } = useDoc<NetworksData>(networksDocRef);
+    const allNetworks = networksData?.all || [];
     
      useEffect(() => {
         // Re-build lookup on mount
-        networkLookup = allNetworksData.reduce((acc, net) => {
-            acc[net.id] = {
-                name: net.name,
-                logo: net.logo,
-                ownerPhone: net.ownerPhone,
-                categories: net.categories.reduce((catAcc, cat) => {
-                    catAcc[cat.id] = { name: cat.name, price: cat.price, capacity: cat.capacity };
-                    return catAcc;
-                }, {} as Record<string, { name: string; price: number, capacity: string }>)
-            };
-            return acc;
-        }, {} as typeof networkLookup);
-    }, []);
+        if (allNetworks.length > 0) {
+            networkLookup = allNetworks.reduce((acc, net) => {
+                acc[net.id] = {
+                    name: net.name,
+                    logo: net.logo,
+                    ownerPhone: net.ownerPhone,
+                    categories: net.categories.reduce((catAcc, cat) => {
+                        catAcc[cat.id] = { name: cat.name, price: cat.price, capacity: cat.capacity };
+                        return catAcc;
+                    }, {} as Record<string, { name: string; price: number, capacity: string }>)
+                };
+                return acc;
+            }, {} as typeof networkLookup);
+        }
+    }, [allNetworks]);
 
 
     const ownedNetwork = useMemo(() => {

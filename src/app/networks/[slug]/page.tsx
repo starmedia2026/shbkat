@@ -34,7 +34,7 @@ import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { allNetworksData, type Network } from "@/lib/networks";
+import { type Network } from "@/app/account/network-management/page";
 
 
 interface NetworkCategory {
@@ -58,21 +58,33 @@ interface PurchasedCardInfo {
     networkName: string;
 }
 
+interface NetworksData {
+    all: Network[];
+}
+
 export default function NetworkDetailPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
+  const firestore = useFirestore();
+
+  const networksDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "networks");
+  }, [firestore]);
+  
+  const { data: networksData, isLoading: areNetworksLoading } = useDoc<NetworksData>(networksDocRef);
   
   const [network, setNetwork] = useState<Network | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (slug) {
-        const foundNetwork = allNetworksData.find(n => n.id === slug);
+    if (slug && networksData?.all) {
+        const foundNetwork = networksData.all.find(n => n.id === slug);
         setNetwork(foundNetwork || null);
     }
-    setIsLoading(false);
-  }, [slug]);
+  }, [slug, networksData]);
+
+  const isLoading = areNetworksLoading;
 
   if (isLoading) {
     return <LoadingSkeleton />;

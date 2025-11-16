@@ -5,37 +5,50 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, ChevronLeft, Heart, Wifi, Phone, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection } from "firebase/firestore";
-import { allNetworksData } from "@/lib/networks";
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { type Network } from "@/app/account/network-management/page";
+
 
 interface Favorite {
     id: string; // The networkId is the document id
     networkId: string;
 }
 
-const networksMap = new Map(allNetworksData.map(n => [n.id, n]));
+interface NetworksData {
+    all: Network[];
+}
 
 export default function FavoritesPage() {
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
 
+  const networksDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "settings", "networks");
+  }, [firestore]);
+  
+  const { data: networksData, isLoading: areNetworksLoading } = useDoc<NetworksData>(networksDocRef);
+  const allNetworks = networksData?.all || [];
+
   const favoritesCollectionRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return collection(firestore, `customers/${user.uid}/favorites`);
   }, [firestore, user?.uid]);
 
-  const { data: favorites, isLoading } = useCollection<Favorite>(favoritesCollectionRef);
+  const { data: favorites, isLoading: areFavoritesLoading } = useCollection<Favorite>(favoritesCollectionRef);
 
   const favoriteNetworks = React.useMemo(() => {
-    if (!favorites) return [];
+    if (!favorites || !allNetworks) return [];
     // Filter the networks from allNetworksData based on the favorite IDs
-    return allNetworksData.filter(network => favorites.some(fav => fav.id === network.id));
-  }, [favorites]);
+    return allNetworks.filter(network => favorites.some(fav => fav.id === network.id));
+  }, [favorites, allNetworks]);
+
+  const isLoading = areFavoritesLoading || areNetworksLoading;
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -118,4 +131,3 @@ export default function FavoritesPage() {
     </div>
   );
 }
-

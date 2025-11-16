@@ -1,0 +1,139 @@
+
+/**
+ * @fileoverview Firestore Security Rules for the Customer Management App.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for customer data, with an exception for a specific admin user (identified by a phone number) who has full read and write access to all customer data for management purposes.
+ *
+ * Data Structure:
+ * - /customers/{customerId}: Stores public and private data for each customer.
+ * - /customers/{customerId}/operations/{operationId}: A log of financial transactions for a customer.
+ * - /customers/{customerId}/notifications/{notificationId}: Notifications for a customer.
+ * - /customers/{customerId}/favorites/{networkId}: A user's favorite networks.
+ * - /cards/{cardId}: Stores scratch card information.
+ * - /settings/{docId}: Stores global settings like theme, networks, and locations.
+ * - /adverts/{advertId}: Stores advertisement images for the home page carousel.
+ * - /admin_notifications/{notificationId}: Notifications specifically for the admin.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(customerId) {
+      return request.auth.uid == customerId;
+    }
+
+    function isExistingOwner(customerId) {
+      return isOwner(customerId) && resource != null;
+    }
+
+    // The admin is a specific user identified by their phone number/email.
+    function isAdmin() {
+       return isSignedIn() && request.auth.token.email == "770326828@shabakat.app";
+    }
+    
+    function isNetworkOwner() {
+        return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.accountType == "network-owner";
+    }
+
+    match /customers/{customerId} {
+      // Allow reading for signed-in users (for transfers) and listing only for signup validation.
+      allow get: if isSignedIn();
+      allow list: if true;
+
+      // A user can create their own customer document, but the ID in the data must match their auth UID.
+      allow create: if isOwner(customerId) && request.resource.data.id == customerId;
+      
+      // An owner can update their own document, or an admin can.
+      allow update: if isOwner(customerId) || isAdmin();
+
+      // An owner can delete their own document, or an admin can.
+      allow delete: if isExistingOwner(customerId) || isAdmin();
+
+      match /operations/{operationId} {
+        // Admins and Network Owners can see all operations. A user can only see their own.
+        allow read, list: if isOwner(customerId) || isAdmin() || isNetworkOwner();
+        // Allow creating an operation for self, for another user (transfers), or allow admin/network-owner
+        allow create: if isOwner(customerId) || isNetworkOwner() || isAdmin();
+        // Allow admin to update any operation (e.g. to confirm a withdrawal)
+        // Allow network owner to update their own operations
+        allow update: if isAdmin() || (isNetworkOwner() && isOwner(customerId));
+        // Allow owner to delete their own operations (archive)
+        allow delete: if isOwner(customerId) || isAdmin();
+      }
+      
+      match /notifications/{notificationId} {
+        allow read, list: if isOwner(customerId) || isAdmin();
+        // Allow creating a notification for self, for another user, or allow admin/network-owner.
+        // Admin needs this to notify users about withdrawal status changes.
+        allow create: if isOwner(customerId) || isNetworkOwner() || isAdmin();
+        // Allow user/admin to update notifications. The client-side code only updates the 'read' field.
+        // This simpler rule is necessary for batch writes to function correctly.
+        allow update: if isOwner(customerId) || isAdmin();
+        // Allow owner to delete their own notifications (archive)
+        allow delete: if isOwner(customerId) || isAdmin();
+      }
+
+      match /favorites/{networkId} {
+        // User can only read and write to their own favorites subcollection.
+        allow read, list, write, delete: if isOwner(customerId);
+      }
+    }
+    
+    // Rule for the collection group query on 'operations'
+    match /{path=**}/operations/{operationId} {
+      // Allow admin or network owner to read from any 'operations' subcollection.
+      // Network owner can only list their own operations, but this is filtered in the query.
+      allow get, list: if isAdmin() || isNetworkOwner();
+      // Allow admin to update any operation.
+      allow update: if isAdmin();
+    }
+    
+    // Rules for admin-specific notifications
+    match /admin_notifications/{notificationId} {
+      // Only the admin can read, list, or delete these notifications.
+      allow read, list, delete: if isAdmin();
+      // Any authenticated user (specifically network owners) can create a notification for the admin.
+      allow create: if isSignedIn();
+      // Only the admin can update (e.g., mark as read or change status).
+      allow update: if isAdmin();
+    }
+
+    match /cards/{cardId} {
+        // Admin or Network owner can create and delete cards.
+        allow create, delete: if isAdmin() || isNetworkOwner();
+        // Admin or Network owner can list cards (for stats).
+        allow list: if isAdmin() || isNetworkOwner();
+        // Any signed-in user can read card data (needed to find an available card).
+        allow read: if isSignedIn();
+        // Allow updates for the 'purchase' transaction.
+        // User must be signed in.
+        // Card must be transitioning from 'available' to 'used'.
+        // The 'usedBy' field must be the user's own UID.
+        // Also allow admin or network owner to update cards.
+        allow update: if (isSignedIn() && 
+          request.resource.data.status == 'used' &&
+          resource.data.status == 'available' &&
+          request.resource.data.usedBy == request.auth.uid) || isAdmin() || isNetworkOwner();
+    }
+
+    match /settings/{docId} {
+        // Allow anyone (including signed-out users) to read settings.
+        allow get: if true;
+        // Admin can write to any settings document.
+        // Network owners can only write to the 'networks' document.
+        allow write: if isAdmin() || (isNetworkOwner() && docId == 'networks');
+    }
+
+    match /adverts/{advertId} {
+        // Allow anyone to see the adverts.
+        allow get, list: if true;
+        // Only admin can create, update, or delete adverts.
+        allow write: if isAdmin();
+    }
+  }
+}
