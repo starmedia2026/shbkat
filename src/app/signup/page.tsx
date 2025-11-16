@@ -22,15 +22,14 @@ import {
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase, initializeFirebase } from "@/firebase";
-import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from "@/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { type Location } from "../account/app-settings/page";
-import { type Network } from "../account/network-management/page";
 import allLocationsData from "@/lib/locations.json";
 
 
@@ -131,14 +130,6 @@ export default function SignupPage() {
       return;
     }
     
-    if (accountType === 'network-owner' && (!networkName || !networkAddress)) {
-      const msg = "الرجاء إدخال اسم وعنوان الشبكة.";
-      setError(msg);
-      toast({ variant: "destructive", title: "بيانات الشبكة ناقصة", description: msg });
-      setIsLoading(false);
-      return;
-    }
-
     const email = `${phone}@shabakat.app`;
 
     try {
@@ -161,37 +152,6 @@ export default function SignupPage() {
           title: "تم إنشاء الحساب بنجاح!",
           description: "يتم تسجيل دخولك الآن...",
         });
-
-        // Handle network owner logic AFTER user creation and successful login
-        if (customerData.accountType === 'network-owner') {
-            try {
-                const networksDocRef = doc(firestore, "settings", "networks");
-                const newNetwork: Network = {
-                    id: `network-${Date.now()}`,
-                    name: networkName,
-                    address: networkAddress,
-                    ownerPhone: phone,
-                    categories: []
-                };
-                
-                const networksDocSnap = await getDoc(networksDocRef);
-                const currentNetworks = networksDocSnap.exists() ? networksDocSnap.data().all : [];
-                const updatedNetworks = [...currentNetworks, newNetwork];
-                
-                await setDoc(networksDocRef, { all: updatedNetworks });
-                toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح. يمكنك الآن إدارتها." });
-
-            } catch (networkError: any) {
-                // This will catch permission errors specific to network creation
-                 const permissionError = new FirestorePermissionError({
-                    path: `settings/networks`,
-                    operation: 'write',
-                    requestResourceData: { note: 'Failed to create network document during signup for new network owner' }
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                // We still proceed to the home page as the user account was created.
-            }
-        }
         
         router.push("/home");
       
@@ -326,15 +286,8 @@ export default function SignupPage() {
                 </div>
               </div>
               {accountType === 'network-owner' && (
-                  <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2 text-right">
-                          <Label htmlFor="networkName">اسم الشبكة</Label>
-                          <Input id="networkName" placeholder="مثال شبكة ستار" required={accountType === 'network-owner'} value={networkName} onChange={(e) => setNetworkName(e.target.value)} />
-                      </div>
-                      <div className="grid gap-2 text-right">
-                          <Label htmlFor="networkAddress">عنوان الشبكة</Label>
-                          <Input id="networkAddress" placeholder="مثال شبام" required={accountType === 'network-owner'} value={networkAddress} onChange={(e) => setNetworkAddress(e.target.value)} />
-                      </div>
+                  <div className="text-sm text-center bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-3 rounded-md border border-blue-200 dark:border-blue-800">
+                    ملاحظة: ستقوم بإضافة تفاصيل شبكتك من صفحة "إدارة شبكتي" بعد إنشاء الحساب.
                   </div>
               )}
                {error && <p className="text-red-500 text-sm">{error}</p>}
