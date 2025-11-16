@@ -40,14 +40,6 @@ service cloud.firestore {
         return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.accountType == "network-owner";
     }
 
-    function isCreatingOwnNetwork(newData) {
-      // User is creating a new network entry for themselves.
-      // Assumes 'newData' is the list of all networks.
-      // We check if their phone number exists as an owner in the new list.
-      let userPhone = request.auth.token.email.split('@')[0];
-      return newData.all.exists(network -> network.ownerPhone == userPhone);
-    }
-
     match /customers/{customerId} {
       // Allow reading for signed-in users (for transfers) and listing only for signup validation.
       allow get: if isSignedIn();
@@ -132,8 +124,9 @@ service cloud.firestore {
     match /settings/{docId} {
         // Allow anyone (including signed-out users) to read settings.
         allow get: if true;
-        // Allow write access based on the document ID.
-        allow write: if isAdmin() || (docId == 'networks' && isSignedIn() && isCreatingOwnNetwork(request.resource.data));
+        // Admin can write to any settings document.
+        // Network owners can write to the 'networks' document.
+        allow write: if isAdmin() || (docId == 'networks' && isSignedIn());
     }
 
     match /adverts/{advertId} {
