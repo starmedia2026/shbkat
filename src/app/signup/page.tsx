@@ -156,58 +156,70 @@ export default function SignupPage() {
         };
         const userDocRef = doc(firestore, "customers", user.uid);
         await setDoc(userDocRef, customerData);
-
-        if (customerData.accountType === 'network-owner') {
-            const networksDocRef = doc(firestore, "settings", "networks");
-            const newNetwork: Network = {
-                id: `network-${Date.now()}`,
-                name: networkName,
-                address: networkAddress,
-                ownerPhone: phone,
-                categories: []
-            };
-            
-            const networksDocSnap = await getDoc(networksDocRef);
-            const currentNetworks = networksDocSnap.exists() ? networksDocSnap.data().all : [];
-            const updatedNetworks = [...currentNetworks, newNetwork];
-            
-            await setDoc(networksDocRef, { all: updatedNetworks });
-
-            toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح. يمكنك الآن إدارتها." });
-        }
         
         toast({
           title: "تم إنشاء الحساب بنجاح!",
           description: "يتم تسجيل دخولك الآن...",
         });
+
+        // Handle network owner logic AFTER user creation and successful login
+        if (customerData.accountType === 'network-owner') {
+            try {
+                const networksDocRef = doc(firestore, "settings", "networks");
+                const newNetwork: Network = {
+                    id: `network-${Date.now()}`,
+                    name: networkName,
+                    address: networkAddress,
+                    ownerPhone: phone,
+                    categories: []
+                };
+                
+                const networksDocSnap = await getDoc(networksDocRef);
+                const currentNetworks = networksDocSnap.exists() ? networksDocSnap.data().all : [];
+                const updatedNetworks = [...currentNetworks, newNetwork];
+                
+                await setDoc(networksDocRef, { all: updatedNetworks });
+                toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح. يمكنك الآن إدارتها." });
+
+            } catch (networkError: any) {
+                // This will catch permission errors specific to network creation
+                 const permissionError = new FirestorePermissionError({
+                    path: `settings/networks`,
+                    operation: 'write',
+                    requestResourceData: { note: 'Failed to create network document during signup for new network owner' }
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                // We still proceed to the home page as the user account was created.
+            }
+        }
+        
         router.push("/home");
       
     } catch (error: any) {
-      if (error.code === 'firestore/permission-denied') {
+      let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "رقم الهاتف هذا مسجل بالفعل.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "رقم الهاتف غير صالح.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "كلمة المرور ضعيفة جدا. يجب أن تتكون من 6 أحرف على الأقل.";
+      } else if (error.code === 'firestore/permission-denied') {
           const permissionError = new FirestorePermissionError({
-              path: `customers or settings/networks`,
+              path: `customers/${error.request?.auth?.uid || 'new-user'}`,
               operation: 'create',
-              requestResourceData: { note: 'Failed to create customer or network document during signup' }
+              requestResourceData: { note: 'Failed to create customer document during signup' }
           });
           errorEmitter.emit('permission-error', permissionError);
+          errorMessage = 'خطأ في الصلاحيات عند إنشاء حسابك.';
       } else {
-        let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
-        if (error.code === 'auth/email-already-in-use') {
-          errorMessage = "رقم الهاتف هذا مسجل بالفعل.";
-        } else if (error.code === 'auth/invalid-email') {
-          errorMessage = "رقم الهاتف غير صالح.";
-        } else if (error.code === 'auth/weak-password') {
-          errorMessage = "كلمة المرور ضعيفة جدا. يجب أن تتكون من 6 أحرف على الأقل.";
-        } else {
-          errorMessage = error.message;
-        }
-        setError(errorMessage);
-        toast({
-          variant: "destructive",
-          title: "خطأ في إنشاء الحساب",
-          description: errorMessage,
-        });
+        errorMessage = error.message;
       }
+      setError(errorMessage);
+      toast({
+        variant: "destructive",
+        title: "خطأ في إنشاء الحساب",
+        description: errorMessage,
+      });
     } finally {
         setIsLoading(false);
     }
