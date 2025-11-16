@@ -37,7 +37,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
-import { paymentMethods } from "@/lib/payment-methods";
+import paymentMethodsData from "@/lib/payment-methods.json";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { generateOperationNumber } from "@/lib/utils";
@@ -49,7 +49,7 @@ interface Customer {
   balance: number;
 }
 
-const withdrawalMethods = paymentMethods.filter(p => p.id === 'kareemi' || p.id === 'amqi');
+const withdrawalMethods = paymentMethodsData.filter(p => p.id === 'kareemi' || p.id === 'amqi');
 
 export default function WithdrawPage() {
   const router = useRouter();
@@ -99,7 +99,7 @@ function WithdrawContent() {
   const [recipientName, setRecipientName] = useState("");
   const [recipientAccount, setRecipientAccount] = useState("");
   const [amount, setAmount] = useState("");
-  const [selectedMethod, setSelectedMethod] = useState<(typeof paymentMethods)[0] | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<(typeof paymentMethodsData)[0] | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const customerDocRef = useMemoFirebase(() => {
@@ -359,7 +359,7 @@ function WithdrawContent() {
 }
 
 
-function PaymentOption({ method, isSelected, onSelect }: { method: (typeof paymentMethods)[0]; isSelected: boolean; onSelect: () => void; }) {
+function PaymentOption({ method, isSelected, onSelect }: { method: (typeof paymentMethodsData)[0]; isSelected: boolean; onSelect: () => void; }) {
     return (
         <div 
             onClick={onSelect}
