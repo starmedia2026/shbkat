@@ -93,6 +93,7 @@ export default function SignupPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
