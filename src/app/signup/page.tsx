@@ -22,7 +22,7 @@ import {
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from "@/firebase";
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase, initializeFirebase } from "@/firebase";
 import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -44,17 +44,34 @@ interface LocationsData {
 
 const ThemeAwareLogo = () => {
     const { darkMode } = useTheme();
-    const firestore = useFirestore();
-    const appSettingsDocRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return doc(firestore, "settings", "app");
-    }, [firestore]);
-    const { data: appSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(appSettingsDocRef);
+    // We can't use the regular useFirestore hook here as it requires auth.
+    // So we initialize a temporary client-side instance just for this component.
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [isLogoLoading, setIsLogoLoading] = useState(true);
 
-    const logoUrl = darkMode ? appSettings?.logoUrlDark : appSettings?.logoUrlLight;
+    useEffect(() => {
+        const fetchLogo = async () => {
+            try {
+                const { firestore } = initializeFirebase();
+                const appSettingsDocRef = doc(firestore, "settings", "app");
+                const docSnap = await getDoc(appSettingsDocRef);
+                if (docSnap.exists()) {
+                    const settings = docSnap.data() as AppSettings;
+                    setLogoUrl(darkMode ? settings.logoUrlDark || settings.logoUrlLight || null : settings.logoUrlLight || null);
+                }
+            } catch (error) {
+                console.error("Failed to fetch logo for signup page:", error);
+            } finally {
+                setIsLogoLoading(false);
+            }
+        };
+        fetchLogo();
+    }, [darkMode]);
+
+
     const fallbackLogo = "https://i.postimg.cc/76FCwnKs/44.png";
 
-    if (isSettingsLoading) {
+    if (isLogoLoading) {
         return (
             <div className="flex flex-col items-center justify-center gap-6 h-[118px]">
                  <div className="h-[120px] w-[200px] bg-transparent"></div>
@@ -95,13 +112,34 @@ export default function SignupPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const locationsDocRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, "settings", "locations");
-  }, [firestore]);
+  const [allLocations, setAllLocations] = useState<Location[]>([]);
+  const [areLocationsLoading, setAreLocationsLoading] = useState(true);
 
-  const { data: locationsData, isLoading: areLocationsLoading } = useDoc<LocationsData>(locationsDocRef);
-  const allLocations = locationsData?.all || [];
+  useEffect(() => {
+    // Fetch locations manually since useDoc/useCollection require auth
+    const fetchLocations = async () => {
+      setAreLocationsLoading(true);
+      try {
+        const { firestore: fs } = initializeFirebase();
+        const locationsDocRef = doc(fs, "settings", "locations");
+        const docSnap = await getDoc(locationsDocRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data() as LocationsData;
+          setAllLocations(data.all || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch locations for signup:", error);
+        toast({
+            variant: "destructive",
+            title: "خطأ في تحميل البيانات",
+            description: "لم نتمكن من تحميل قائمة المواقع. يرجى المحاولة مرة أخرى."
+        });
+      } finally {
+        setAreLocationsLoading(false);
+      }
+    };
+    fetchLocations();
+  }, [toast]);
 
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -177,9 +215,17 @@ export default function SignupPage() {
                 categories: []
             };
             
-            await updateDoc(networksDocRef, {
-                all: arrayUnion(newNetwork)
-            });
+            // It's safer to read the document first then update it to avoid race conditions.
+            // But for signup, arrayUnion is generally safe if the doc is guaranteed to exist.
+            const networksDocSnap = await getDoc(networksDocRef);
+            if (networksDocSnap.exists()) {
+                await updateDoc(networksDocRef, {
+                    all: arrayUnion(newNetwork)
+                });
+            } else {
+                // If the document doesn't exist, create it.
+                await setDoc(networksDocRef, { all: [newNetwork] });
+            }
 
             toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح. يمكنك الآن إدارتها." });
         }
