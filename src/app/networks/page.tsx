@@ -81,6 +81,7 @@ export default function NetworksPage() {
     if (!locationFilter) {
       return allNetworks;
     }
+    // Match if the network address contains the location name (in Arabic)
     return allNetworks.filter(network => 
       network.address && network.address.includes(locationFilter.name)
     );
@@ -239,5 +240,3 @@ const NetworkCardSkeleton = () => (
         </CardContent>
     </Card>
 );
-
-    
