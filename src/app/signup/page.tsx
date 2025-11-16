@@ -23,19 +23,23 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase, initializeFirebase } from "@/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { type Location } from "../account/app-settings/page";
-import locationsData from "@/data/locations.json";
+import { type Network } from "../account/network-management/page";
 
 
 interface AppSettings {
     logoUrlLight?: string;
     logoUrlDark?: string;
+}
+
+interface LocationsData {
+    all: Location[];
 }
 
 const ThemeAwareLogo = () => {
@@ -90,17 +94,41 @@ export default function SignupPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const allLocations: Location[] = locationsData;
+  const [allLocations, setAllLocations] = useState<Location[]>([]);
+  const [areLocationsLoading, setAreLocationsLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch locations manually since useDoc/useCollection require auth
+    const fetchLocations = async () => {
+      try {
+        // We initialize a temporary instance because the hook-based one might not be ready
+        const { firestore: fs } = initializeFirebase();
+        const locationsDocRef = doc(fs, "settings", "locations");
+        const docSnap = await getDoc(locationsDocRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data() as LocationsData;
+          setAllLocations(data.all || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch locations for signup:", error);
+      } finally {
+        setAreLocationsLoading(false);
+      }
+    };
+    fetchLocations();
+  }, []);
 
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+    setIsLoading(true);
+
     if (name.trim().split(/\s+/).length < 4) {
       const msg = "الرجاء إدخال اسمك الرباعي على الأقل.";
       setError(msg);
       toast({ variant: "destructive", title: "خطأ في الإدخال", description: msg });
+      setIsLoading(false);
       return;
     }
     
@@ -108,6 +136,7 @@ export default function SignupPage() {
         const msg = "رقم الهاتف يجب أن يتكون من 9 أرقام بالضبط.";
         setError(msg);
         toast({ variant: "destructive", title: "خطأ في رقم الهاتف", description: msg });
+        setIsLoading(false);
         return;
     }
 
@@ -115,6 +144,7 @@ export default function SignupPage() {
       const msg = "كلمتا المرور غير متطابقتين";
       setError(msg);
       toast({ variant: "destructive", title: "خطأ", description: msg });
+      setIsLoading(false);
       return;
     }
     
@@ -122,6 +152,7 @@ export default function SignupPage() {
       const msg = "الرجاء اختيار موقعك";
       setError(msg);
       toast({ variant: "destructive", title: "خطأ", description: msg });
+      setIsLoading(false);
       return;
     }
     
@@ -129,10 +160,10 @@ export default function SignupPage() {
       const msg = "الرجاء إدخال اسم وعنوان الشبكة.";
       setError(msg);
       toast({ variant: "destructive", title: "بيانات الشبكة ناقصة", description: msg });
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
     const email = `${phone}@shabakat.app`;
 
     try {
@@ -152,26 +183,35 @@ export default function SignupPage() {
         await setDoc(userDocRef, customerData);
 
         if (customerData.accountType === 'network-owner') {
+             // Store pending network in localStorage to be picked up by my-network page
             const newNetworkData = {
                 name: networkName,
                 address: networkAddress,
                 phone: phone,
             };
             localStorage.setItem('pending_network', JSON.stringify(newNetworkData));
+            
+            toast({ title: "تم إنشاء الحساب", description: "جاري إعداد شبكتك..." });
+            // Redirect to my-network page where the network will be created
+            router.push("/account/my-network");
+            return;
         }
         
         toast({
           title: "تم إنشاء الحساب بنجاح!",
-          description: "يتم توجيهك الآن...",
+          description: "يتم تسجيل دخولك الآن...",
         });
-
-        if (customerData.accountType === 'network-owner') {
-            router.push("/account/my-network");
-        } else {
-            router.push("/home");
-        }
+        router.push("/home");
       
     } catch (error: any) {
+      if (error.code === 'firestore/permission-denied') {
+          const permissionError = new FirestorePermissionError({
+              path: `customers or settings/networks`,
+              operation: 'create',
+              requestResourceData: { note: 'Failed to create customer or network document during signup' }
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      } else {
         let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
         if (error.code === 'auth/email-already-in-use') {
           errorMessage = "رقم الهاتف هذا مسجل بالفعل.";
@@ -179,16 +219,8 @@ export default function SignupPage() {
           errorMessage = "رقم الهاتف غير صالح.";
         } else if (error.code === 'auth/weak-password') {
           errorMessage = "كلمة المرور ضعيفة جدا. يجب أن تتكون من 6 أحرف على الأقل.";
-        } else if (error.code === 'firestore/permission-denied') {
-             const permissionError = new FirestorePermissionError({
-              path: `customers/${error.request?.auth?.uid || 'new-user'}`,
-              operation: 'create',
-              requestResourceData: { note: 'Failed to create customer document during signup' }
-          });
-          errorEmitter.emit('permission-error', permissionError);
-          errorMessage = 'خطأ في الصلاحيات عند إنشاء حسابك.';
         } else {
-            errorMessage = error.message;
+          errorMessage = error.message;
         }
         setError(errorMessage);
         toast({
@@ -196,6 +228,7 @@ export default function SignupPage() {
           title: "خطأ في إنشاء الحساب",
           description: errorMessage,
         });
+      }
     } finally {
         setIsLoading(false);
     }
@@ -277,7 +310,7 @@ export default function SignupPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2 text-right">
                   <Label htmlFor="location">موقعك</Label>
-                  <Select dir="rtl" onValueChange={setLocation} value={location} required>
+                  <Select dir="rtl" onValueChange={setLocation} value={location} required disabled={areLocationsLoading}>
                     <SelectTrigger id="location">
                       <SelectValue placeholder="اختر موقعك" />
                     </SelectTrigger>
