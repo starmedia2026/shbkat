@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, ChevronLeft, Wifi, Phone, MapPin, Heart, Loader2 } from "lucide-react";
+import { ArrowRight, ChevronLeft, Wifi, Phone, MapPin, Heart, Loader2, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo } from "react";
@@ -12,15 +12,8 @@ import { collection, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/fi
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { type Network } from "../account/network-management/page";
-import { type Location } from "../account/app-settings/page";
 
 
 interface Favorite {
@@ -32,10 +25,6 @@ interface NetworksData {
     all: Network[];
 }
 
-interface LocationsData {
-    all: Location[];
-}
-
 
 export default function NetworksPage() {
   const router = useRouter();
@@ -43,22 +32,15 @@ export default function NetworksPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const networksDocRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, "settings", "networks");
   }, [firestore]);
 
-  const locationsDocRef = useMemoFirebase(() => {
-      if (!firestore) return null;
-      return doc(firestore, "settings", "locations");
-  }, [firestore]);
-
   const { data: networksData, isLoading: areNetworksLoading } = useDoc<NetworksData>(networksDocRef);
-  const { data: locationsData, isLoading: areLocationsLoading } = useDoc<LocationsData>(locationsDocRef);
   const allNetworks = networksData?.all || [];
-  const allLocations = locationsData?.all || [];
 
   const favoritesCollectionRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -74,18 +56,13 @@ export default function NetworksPage() {
   }, [favorites]);
   
   const filteredNetworks = useMemo(() => {
-    if (selectedLocation === "all") {
+    if (!searchTerm) {
       return allNetworks;
     }
-    const locationFilter = allLocations.find(l => l.value === selectedLocation);
-    if (!locationFilter) {
-      return allNetworks;
-    }
-    // Match if the network address contains the location name (in Arabic)
-    return allNetworks.filter(network => 
-      network.address && network.address.includes(locationFilter.name)
+    return allNetworks.filter(network =>
+      network.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [allNetworks, selectedLocation, allLocations]);
+  }, [allNetworks, searchTerm]);
 
   const toggleFavorite = (networkId: string, isCurrentlyFavorite: boolean) => {
     if (!firestore || !user?.uid) {
@@ -122,7 +99,7 @@ export default function NetworksPage() {
     }
   }
 
-  const isLoading = isUserLoading || areFavoritesLoading || areNetworksLoading || areLocationsLoading;
+  const isLoading = isUserLoading || areFavoritesLoading || areNetworksLoading;
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -133,17 +110,16 @@ export default function NetworksPage() {
         <h1 className="text-lg font-normal text-center flex-grow">الشبكات</h1>
       </header>
        <div className="p-4">
-          <Select dir="rtl" onValueChange={setSelectedLocation} value={selectedLocation}>
-            <SelectTrigger>
-              <SelectValue placeholder="تصفية حسب الموقع" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">كل المواقع</SelectItem>
-              {allLocations.map((loc) => (
-                <SelectItem key={loc.id} value={loc.value}>{loc.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="ابحث عن شبكة..."
+              className="w-full pr-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          </div>
         </div>
       <main className="p-4 pt-0 space-y-4">
         {isLoading ? (
@@ -213,9 +189,9 @@ export default function NetworksPage() {
             })
         ) : (
             <div className="text-center text-muted-foreground pt-16">
-                <Wifi className="mx-auto h-12 w-12" />
-                <h3 className="mt-4 text-lg font-semibold">لا توجد شبكات متاحة</h3>
-                <p className="mt-1 text-sm">لم يتم العثور على شبكات في الموقع المحدد.</p>
+                <Search className="mx-auto h-12 w-12" />
+                <h3 className="mt-4 text-lg font-semibold">لا توجد نتائج</h3>
+                <p className="mt-1 text-sm">لم يتم العثور على شبكات تطابق بحثك.</p>
             </div>
         )}
       </main>
