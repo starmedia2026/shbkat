@@ -40,6 +40,22 @@ service cloud.firestore {
         return isSignedIn() && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.accountType == "network-owner";
     }
 
+    // Helper function to check if the user is adding their own network during signup.
+    // It verifies that the new network entry in the 'all' array has an 'ownerPhone'
+    // that matches the user's phone number (derived from their email).
+    function isCreatingOwnNetwork(updatedNetworksList) {
+      let existingNetworks = resource.data.all;
+      // The new list must be exactly one larger than the old one.
+      if (updatedNetworksList.size() != existingNetworks.size() + 1) {
+        return false;
+      }
+      // Find the new network by checking which one is not in the old list.
+      let newNetwork = updatedNetworksList.filter(n => !(n.id in existingNetworks.map(en => en.id)))[0];
+      
+      // The new network must exist and its ownerPhone must match the user's phone number.
+      return newNetwork != null && newNetwork.ownerPhone == request.auth.token.email.split('@')[0];
+    }
+
     match /customers/{customerId} {
       // Allow reading for signed-in users (for transfers) and listing only for signup validation.
       allow get: if isSignedIn();
@@ -125,8 +141,9 @@ service cloud.firestore {
         // Allow anyone (including signed-out users) to read settings.
         allow get: if true;
         // Admin can write to any settings document.
-        // Network owners can write to the 'networks' document.
-        allow write: if isAdmin() || (docId == 'networks' && isSignedIn());
+        // A network owner can update the networks doc.
+        // A new network owner can create their network during signup.
+        allow write: if isAdmin() || (docId == 'networks' && (isNetworkOwner() || isCreatingOwnNetwork(request.resource.data.all)));
     }
 
     match /adverts/{advertId} {
