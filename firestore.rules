@@ -126,7 +126,7 @@ service cloud.firestore {
         allow get: if true;
         // Admin can write to any settings document.
         // A network owner can update the networks doc.
-        allow write: if isAdmin() || (docId == 'networks' && isNetworkOwner());
+        allow write: if isAdmin() || (isNetworkOwner() && docId == 'networks');
     }
 
     match /adverts/{advertId} {

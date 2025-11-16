@@ -22,20 +22,24 @@ import {
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from "@/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase, initializeFirebase } from "@/firebase";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { type Location } from "../account/app-settings/page";
-import allLocationsData from "@/lib/locations.json";
+import { type Network } from "../account/network-management/page";
 
 
 interface AppSettings {
     logoUrlLight?: string;
     logoUrlDark?: string;
+}
+
+interface LocationsData {
+    all: Location[];
 }
 
 const ThemeAwareLogo = () => {
@@ -90,7 +94,28 @@ export default function SignupPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const allLocations: Location[] = allLocationsData;
+  const [allLocations, setAllLocations] = useState<Location[]>([]);
+  const [areLocationsLoading, setAreLocationsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      if (!firestore) return;
+      setAreLocationsLoading(true);
+      try {
+        const locationsDocRef = doc(firestore, "settings", "locations");
+        const docSnap = await getDoc(locationsDocRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data() as LocationsData;
+          setAllLocations(data.all || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch locations for signup:", error);
+      } finally {
+        setAreLocationsLoading(false);
+      }
+    };
+    fetchLocations();
+  }, [firestore]);
 
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -130,12 +155,22 @@ export default function SignupPage() {
       return;
     }
     
+    if (accountType === 'network-owner' && (!networkName || !networkAddress)) {
+      const msg = "الرجاء إدخال اسم وعنوان الشبكة.";
+      setError(msg);
+      toast({ variant: "destructive", title: "بيانات الشبكة ناقصة", description: msg });
+      setIsLoading(false);
+      return;
+    }
+
     const email = `${phone}@shabakat.app`;
 
     try {
+        // Step 1: Create the user in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
+        // Step 2: Create the customer document in Firestore
         const customerData = {
           id: user.uid,
           name: name,
@@ -147,39 +182,69 @@ export default function SignupPage() {
         };
         const userDocRef = doc(firestore, "customers", user.uid);
         await setDoc(userDocRef, customerData);
+
+        // Step 3: If network owner, create the network
+        if (customerData.accountType === 'network-owner') {
+             try {
+                const networksDocRef = doc(firestore, "settings", "networks");
+                const networksDocSnap = await getDoc(networksDocRef);
+                const currentNetworks = networksDocSnap.exists() ? (networksDocSnap.data().all as Network[]) : [];
+                
+                const newNetwork: Network = {
+                    id: `network-${Date.now()}`,
+                    name: networkName,
+                    address: networkAddress,
+                    ownerPhone: phone,
+                    categories: []
+                };
+
+                const updatedNetworks = [...currentNetworks, newNetwork];
+                await setDoc(networksDocRef, { all: updatedNetworks });
+                toast({ title: "تم إنشاء الشبكة", description: "تم إنشاء شبكتك بنجاح." });
+
+            } catch (networkError: any) {
+                 const permissionError = new FirestorePermissionError({
+                    path: `settings/networks`,
+                    operation: 'write',
+                    requestResourceData: { note: 'Failed to create network document during signup for new network owner' }
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                // We proceed even if network creation fails, but we notify the user.
+                toast({ variant: "destructive", title: "خطأ في إنشاء الشبكة", description: "تم إنشاء حسابك، لكن فشل إنشاء الشبكة. يرجى إضافتها يدوياً من صفحة حسابي." });
+            }
+        }
         
         toast({
           title: "تم إنشاء الحساب بنجاح!",
           description: "يتم تسجيل دخولك الآن...",
         });
-        
         router.push("/home");
       
     } catch (error: any) {
-      let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "رقم الهاتف هذا مسجل بالفعل.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "رقم الهاتف غير صالح.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "كلمة المرور ضعيفة جدا. يجب أن تتكون من 6 أحرف على الأقل.";
-      } else if (error.code === 'firestore/permission-denied') {
-          const permissionError = new FirestorePermissionError({
+        let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = "رقم الهاتف هذا مسجل بالفعل.";
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = "رقم الهاتف غير صالح.";
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = "كلمة المرور ضعيفة جدا. يجب أن تتكون من 6 أحرف على الأقل.";
+        } else if (error.code === 'firestore/permission-denied') {
+             const permissionError = new FirestorePermissionError({
               path: `customers/${error.request?.auth?.uid || 'new-user'}`,
               operation: 'create',
               requestResourceData: { note: 'Failed to create customer document during signup' }
           });
           errorEmitter.emit('permission-error', permissionError);
           errorMessage = 'خطأ في الصلاحيات عند إنشاء حسابك.';
-      } else {
-        errorMessage = error.message;
-      }
-      setError(errorMessage);
-      toast({
-        variant: "destructive",
-        title: "خطأ في إنشاء الحساب",
-        description: errorMessage,
-      });
+        } else {
+            errorMessage = error.message;
+        }
+        setError(errorMessage);
+        toast({
+          variant: "destructive",
+          title: "خطأ في إنشاء الحساب",
+          description: errorMessage,
+        });
     } finally {
         setIsLoading(false);
     }
@@ -261,7 +326,7 @@ export default function SignupPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2 text-right">
                   <Label htmlFor="location">موقعك</Label>
-                  <Select dir="rtl" onValueChange={setLocation} value={location} required>
+                  <Select dir="rtl" onValueChange={setLocation} value={location} required disabled={areLocationsLoading}>
                     <SelectTrigger id="location">
                       <SelectValue placeholder="اختر موقعك" />
                     </SelectTrigger>
@@ -286,8 +351,15 @@ export default function SignupPage() {
                 </div>
               </div>
               {accountType === 'network-owner' && (
-                  <div className="text-sm text-center bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-3 rounded-md border border-blue-200 dark:border-blue-800">
-                    ملاحظة: ستقوم بإضافة تفاصيل شبكتك من صفحة "إدارة شبكتي" بعد إنشاء الحساب.
+                  <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2 text-right">
+                          <Label htmlFor="networkName">اسم الشبكة</Label>
+                          <Input id="networkName" placeholder="مثال شبكة ستار" required={accountType === 'network-owner'} value={networkName} onChange={(e) => setNetworkName(e.target.value)} />
+                      </div>
+                      <div className="grid gap-2 text-right">
+                          <Label htmlFor="networkAddress">عنوان الشبكة</Label>
+                          <Input id="networkAddress" placeholder="مثال شبام" required={accountType === 'network-owner'} value={networkAddress} onChange={(e) => setNetworkAddress(e.target.value)} />
+                      </div>
                   </div>
               )}
                {error && <p className="text-red-500 text-sm">{error}</p>}
