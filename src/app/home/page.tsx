@@ -25,6 +25,7 @@ import {
   ArrowDown,
   CheckCircle,
   XCircle,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -97,7 +98,8 @@ const defaultServices: HomeService[] = [
     { id: "top-up", href: "/top-up", iconUrl: '', label: "غذي حسابك", order: 3 },
     { id: "operations", href: "/operations", iconUrl: '', label: "العمليات", order: 4 },
     { id: "favorites", href: "/favorites", iconUrl: '', label: "المفضلة", order: 5 },
-    { id: "contact", href: "/contact", iconUrl: '', label: "تجديد الاشتراك", order: 6 },
+    { id: "contact", href: "/contact", iconUrl: '', label: "الدعم الفني", order: 6 },
+    { id: "alwadi-system", href: "/alwadi-system", iconUrl: '', label: "منظومة الوادي", order: 7 },
 ];
 
 export default function HomePage() {
@@ -404,7 +406,8 @@ function ServiceIcon({ id, className }: { id: string; className?: string }) {
     case "top-up": return <Wallet {...commonProps} />;
     case "operations": return <History {...commonProps} />;
     case "favorites": return <Heart {...commonProps} />;
-    case "contact": return <Ticket {...commonProps} />;
+    case "contact": return <Headset {...commonProps} />;
+    case "alwadi-system": return <Ticket {...commonProps} />;
     default: return <HelpCircle {...commonProps} />;
   }
 }
@@ -466,3 +469,9 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
+
+    
+
+    
+
+    
