@@ -99,7 +99,6 @@ const defaultServices: HomeService[] = [
     { id: "operations", href: "/operations", iconUrl: '', label: "العمليات", order: 4 },
     { id: "favorites", href: "/favorites", iconUrl: '', label: "المفضلة", order: 5 },
     { id: "contact", href: "/contact", iconUrl: '', label: "الدعم الفني", order: 6 },
-    { id: "alwadi-system", href: "/alwadi-system", iconUrl: '', label: "منظومة الوادي", order: 7 },
 ];
 
 export default function HomePage() {
