@@ -407,7 +407,7 @@ function ServiceIcon({ id, className }: { id: string; className?: string }) {
     case "operations": return <History {...commonProps} />;
     case "favorites": return <Heart {...commonProps} />;
     case "contact": return <Headset {...commonProps} />;
-    case "alwadi-system": return <Headset {...commonProps} />;
+    case "alwadi-system": return <Ticket {...commonProps} />;
     default: return <HelpCircle {...commonProps} />;
   }
 }
@@ -469,6 +469,10 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
+
+    
+
+    
 
     
 
