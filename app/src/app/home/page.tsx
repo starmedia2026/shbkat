@@ -469,11 +469,3 @@ function LastOperationItem({ operation }: { operation: Operation }) {
         </Card>
     );
 }
-
-    
-
-    
-
-    
-
-    

@@ -118,5 +118,3 @@ const SubscriptionCardSkeleton = () => (
         </CardContent>
     </Card>
 );
-
-    
